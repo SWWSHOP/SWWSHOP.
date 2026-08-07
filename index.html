@@ -1,106 +1,25 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>Vape Store</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root {
-      --bg: #f5f5f7;
-      --surface: #ffffff;
-      --primary: #2481cc;
-      --danger: #d32f2f;
-      --success: #388e3c;
-      --text: #111;
-      --gray: #888;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-    /* Остальной CSS остается без изменений */
-  </style>
+    <meta charset="UTF-8">
+    <title>Vape Shop</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="tg-viewport">
-  <div class="container">
-    <h1>Ассортимент</h1>
-    <div id="main-menu" class="menu-area">
-      <button class="category-btn" data-cat="liquids">Жидкости</button>
-      <button class="category-btn" data-cat="pouches">Шайбы</button>
-      <button class="category-btn" data-cat="coils">Испарители</button>
-      <button class="category-btn" data-cat="devices">Устройства</button>
-    </div>
+<body>
+    <div class="container">
+        <h1>SWW SHOP</h1></h1>
+        
+        <div class="categories">
+            <button onclick="showCategory('liquids')">Жидкости</button>
+            <button onclick="showCategory('pouches')">Шайбы</button>
+            <button onclick="showCategory('coils')">Испарители</button>
+            <button onclick="showCategory('devices')">Устройства</button>
+        </div>
 
-    <div id="category-list" class="hidden"></div>
-    <div id="flavors-view" class="hidden">
-      <button class="back-btn" id="back-from-flavors">← Назад к ассортименту</button>
-      <div id="flavors-list"></div>
-    </div>
-  </div>
+        <div id="content" class="hidden">
+            <!-- Контент будет подгружаться сюда -->
+        </div>
 
-  <div id="cart-section" class="cart-section hidden">
-    <!-- Корзина -->
-  </div>
-
-  <div id="order-result" class="order-result">
-    <!-- Результат заказа -->
-  </div>
-
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-
-    // Данные товаров
-    const products = {
-      // Структура данных остается без изменений
-    };
-
-    let cart = [];
-
-    function updateCartUI() {
-      // Обновление корзины
-    }
-
-    function addToCart(item) {
-      // Добавление в корзину
-    }
-
-    function show(id) {
-      document.querySelectorAll('.hidden').forEach(el => el.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-    }
-
-    // Основная функция рендера категорий
-    function renderCategoryList(category) {
-      const container = document.getElementById('category-list');
-      container.innerHTML = '';
-
-      // Обработка категорий
-      if (['coils', 'devices'].includes(category)) {
-        products[category].forEach(p => {
-          const row = document.createElement('div');
-          row.classList.add('product-row');
-          
-          const statusClass = p.inStock ? 'status-in-stock' : 'status-out-of-stock';
-          const statusText = p.inStock ? 'Имеется' : 'Кончилась';
-
-          row.innerHTML = `
-            <div>
-              <div class="product-name">${p.name}</div>
-              <div class="status-badge ${statusClass}">${statusText}</div>
-            </div>
-            <div>
-              <div class="product-price">${p.price} ₽</div>
-              ${p.inStock ? `<button class="add-to-cart" onclick="addToCart(${JSON.stringify(p)})">В корзину</button>` : ''}
-            </div>
-          `;
-          
-          container.appendChild(row);
-        });
-      } else {
-        products[category
+        <a href="admin.html" style="display:none;" id="admin-link">Админ панель</a>
+    </body>
+</html>
