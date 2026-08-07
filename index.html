@@ -10,89 +10,41 @@
   
   <style>
     :root {
-      --bg: #ffffff;
-      --text: #1a1a1a;
-      --accent: #0078ff;
-      --border: #e0e0e0;
-      --success: #2ecc71;
-      --danger: #e74c3c;
-      --warning: #f39c12;
-      --admin-bg: #f4f6f8;
-      --admin-border: #d1d5db;
-      --card-bg: #f9f9f9;
-      --card-active: #eeeeee;
-      --promo-bg: #fff3cd;
-      --promo-border: #ffc107;
+      --bg: #ffffff; --text: #1a1a1a; --accent: #0078ff; --border: #e0e0e0;
+      --success: #2ecc71; --danger: #e74c3c; --warning: #f39c12;
+      --admin-bg: #f4f6f8; --admin-border: #d1d5db; --card-bg: #f9f9f9; --card-active: #eeeeee;
+      --promo-bg: #fff3cd; --promo-border: #ffc107;
     }
-    
     body.dark {
-      --bg: #1a1a1a;
-      --text: #ffffff;
-      --accent: #4da3ff;
-      --border: #333333;
-      --admin-bg: #2a2a2a;
-      --admin-border: #444444;
-      --card-bg: #2a2a2a;
-      --card-active: #3a3a3a;
-      --promo-bg: #3a3000;
-      --promo-border: #ffc107;
+      --bg: #1a1a1a; --text: #ffffff; --accent: #4da3ff; --border: #333333;
+      --admin-bg: #2a2a2a; --admin-border: #444444; --card-bg: #2a2a2a; --card-active: #3a3a3a;
+      --promo-bg: #3a3000; --promo-border: #ffc107;
     }
-    
     body.telegram {
-      --bg: #18222d;
-      --text: #ffffff;
-      --accent: #5ea3d9;
-      --border: #1f2d3d;
-      --admin-bg: #1e2a38;
-      --admin-border: #2a3a4a;
-      --card-bg: #1e2a38;
-      --card-active: #253545;
-      --promo-bg: #2a2000;
-      --promo-border: #ffc107;
+      --bg: #18222d; --text: #ffffff; --accent: #5ea3d9; --border: #1f2d3d;
+      --admin-bg: #1e2a38; --admin-border: #2a3a4a; --card-bg: #1e2a38; --card-active: #253545;
+      --promo-bg: #2a2000; --promo-border: #ffc107;
     }
-    
     * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      transition: background-color 0.3s, color 0.3s;
+      background-color: var(--bg); color: var(--text); margin: 0; padding: 0;
+      height: 100vh; display: flex; flex-direction: column; transition: background-color 0.3s, color 0.3s;
     }
     .container { flex: 1; overflow-y: auto; padding: 12px 12px 100px; }
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
-    h2 { margin: 12px 0; font-size: 17px; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     
     .category-btn {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--card-bg);
-      text-align: left;
-      font-size: 16px;
-      color: var(--text);
-      cursor: pointer;
-      margin-bottom: 8px;
-      transition: background 0.2s;
-      display: flex;
-      align-items: center;
+      width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text);
+      cursor: pointer; margin-bottom: 8px; transition: background 0.2s; display: flex; align-items: center;
     }
     .category-btn:active { background: var(--card-active); }
     
     .product-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-      gap: 4px;
+      display: flex; justify-content: space-between; align-items: center; padding: 12px 0;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 4px;
     }
     .product-name { font-weight: 500; max-width: 45%; min-width: 100px; font-size: 14px; }
     .product-price { font-weight: 600; color: var(--accent); font-size: 14px; }
@@ -100,207 +52,92 @@
     .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
     .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
     .back-btn {
-      margin-bottom: 8px;
-      padding: 8px 12px;
-      border: none;
-      background: transparent;
-      color: var(--accent);
-      font-size: 14px;
-      cursor: pointer;
+      margin-bottom: 8px; padding: 8px 12px; border: none; background: transparent;
+      color: var(--accent); font-size: 14px; cursor: pointer;
     }
     .flavor-row {
-      padding: 10px 0;
-      border-bottom: 1px dashed var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
+      padding: 10px 0; border-bottom: 1px dashed var(--border);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
     }
     .section-title { margin-top: 16px; margin-bottom: 8px; font-weight: 600; font-size: 15px; }
     
     .add-to-cart-btn {
-      background: var(--success);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 500;
-      margin-left: 8px;
-      white-space: nowrap;
+      background: var(--success); color: white; border: none; border-radius: 6px;
+      padding: 6px 10px; font-size: 12px; cursor: pointer; font-weight: 500; margin-left: 8px; white-space: nowrap;
     }
     .add-line-to-cart-btn {
-      background: var(--success);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 4px;
+      background: var(--success); color: white; border: none; border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px;
     }
     
     .action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
     .btn-sm {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      color: white;
-      font-weight: 500;
+      padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px;
+      cursor: pointer; color: white; font-weight: 500;
     }
     .btn-delete { background: var(--danger); }
     .btn-toggle { background: var(--warning); }
     .btn-complete { background: var(--success); }
     .btn-delete-line {
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 4px;
+      background: var(--danger); color: white; border: none; border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px;
     }
     .btn-delete-flavor {
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      font-size: 16px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 4px;
-      flex-shrink: 0;
+      background: var(--danger); color: white; border: none; border-radius: 50%;
+      width: 28px; height: 28px; font-size: 16px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; flex-shrink: 0;
     }
 
     .header-icons {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      display: flex;
-      gap: 10px;
-      z-index: 1001;
+      position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 1001;
     }
     .icon-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: none;
-      font-size: 20px;
-      position: relative;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; border: none; font-size: 20px;
+      position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
     .cart-btn { background: var(--success); color: white; }
     .orders-btn { background: var(--accent); color: white; }
     .badge {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background: var(--danger);
-      color: white;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
+      position: absolute; top: -5px; right: -5px; background: var(--danger); color: white;
+      width: 22px; height: 22px; border-radius: 50%; font-size: 12px;
+      display: flex; align-items: center; justify-content: center; font-weight: 700;
     }
 
     .promo-section {
-      background: var(--promo-bg);
-      border: 1px solid var(--promo-border);
-      border-radius: 8px;
-      padding: 10px;
-      margin: 8px 0;
-      display: flex;
-      gap: 8px;
-      align-items: center;
+      background: var(--promo-bg); border: 1px solid var(--promo-border);
+      border-radius: 8px; padding: 10px; margin: 8px 0; display: flex; gap: 8px; align-items: center;
     }
     .promo-section input {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid var(--promo-border);
-      border-radius: 6px;
-      background: var(--card-bg);
-      color: var(--text);
-      font-family: inherit;
+      flex: 1; padding: 8px; border: 1px solid var(--promo-border); border-radius: 6px;
+      background: var(--card-bg); color: var(--text); font-family: inherit;
     }
     .promo-apply-btn {
-      background: var(--warning);
-      color: #333;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
+      background: var(--warning); color: #333; border: none; border-radius: 6px;
+      padding: 8px 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
     }
     .promo-applied {
-      background: rgba(46,204,113,0.15);
-      color: var(--success);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      display: inline-block;
-      margin: 4px 0;
+      background: rgba(46,204,113,0.15); color: var(--success); padding: 6px 10px;
+      border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px 0;
     }
 
     .cart-panel, .orders-panel, .all-orders-panel {
-      background: var(--admin-bg);
-      padding: 16px;
-      border-radius: 12px;
-      position: fixed;
-      top: 70px;
-      left: 12px;
-      right: 12px;
-      bottom: 80px;
-      overflow-y: auto;
-      z-index: 999;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      display: none;
+      background: var(--admin-bg); padding: 16px; border-radius: 12px;
+      position: fixed; top: 70px; left: 12px; right: 12px; bottom: 80px;
+      overflow-y: auto; z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: none;
     }
     .cart-panel.active, .orders-panel.active, .all-orders-panel.active { display: block; }
     
-    .cart-item, .order-card {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .cart-item, .order-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
     .cart-item { display: flex; justify-content: space-between; align-items: center; }
     .cart-item-info, .order-info { flex: 1; }
     .cart-item-name, .order-id { font-weight: 500; font-size: 14px; }
     .cart-item-detail, .order-detail { font-size: 12px; opacity: 0.7; }
     .cart-item-price { color: var(--accent); font-weight: 600; white-space: nowrap; }
     .cart-remove-btn {
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 26px;
-      height: 26px;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 8px;
-      flex-shrink: 0;
+      background: var(--danger); color: white; border: none; border-radius: 50%;
+      width: 26px; height: 26px; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; margin-left: 8px; flex-shrink: 0;
     }
     .cart-total { font-size: 18px; font-weight: 700; text-align: right; margin: 12px 0; color: var(--accent); }
     .cart-discount { font-size: 14px; text-align: right; color: var(--success); margin: 4px 0; }
@@ -308,216 +145,102 @@
     
     .order-form { margin-top: 16px; }
     .order-form input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--admin-border);
-      border-radius: 8px;
-      background: var(--card-bg);
-      color: var(--text);
-      margin-bottom: 8px;
-      font-family: inherit;
-      font-size: 14px;
+      width: 100%; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px;
+      background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; font-size: 14px;
     }
     .order-btn {
-      width: 100%;
-      padding: 14px;
-      background: var(--success);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
+      width: 100%; padding: 14px; background: var(--success); color: white;
+      border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
     }
-    .order-success {
-      text-align: center;
-      padding: 20px;
-      color: var(--success);
-      font-weight: 600;
-      font-size: 16px;
-    }
+    .order-success { text-align: center; padding: 20px; color: var(--success); font-weight: 600; font-size: 16px; }
     .promo-code-display {
-      background: linear-gradient(135deg, #ffd700, #ffaa00);
-      color: #333;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 18px;
-      margin: 10px 0;
-      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ffd700, #ffaa00); color: #333; padding: 12px;
+      border-radius: 8px; text-align: center; font-weight: 700; font-size: 18px; margin: 10px 0; letter-spacing: 2px;
     }
 
     .order-status {
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-      display: inline-block;
+      font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block;
     }
     .status-pending { background: rgba(255,193,7,0.2); color: #ffc107; }
     .status-completed { background: rgba(46,204,113,0.2); color: #2ecc71; }
     .status-cancelled { background: rgba(231,76,60,0.2); color: #e74c3c; }
+    .order-actions { display: flex; gap: 8px; margin-top: 8px; }
 
-    .order-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
+    /* Админ-панель */
     .admin-panel {
-      background: var(--admin-bg);
-      padding: 16px;
-      border-radius: 12px;
-      position: fixed;
-      bottom: 80px;
-      left: 12px;
-      right: 12px;
-      max-height: calc(100vh - 120px);
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      display: none;
+      background: var(--admin-bg); padding: 16px; border-radius: 12px 12px 0 0;
+      position: fixed; bottom: 0; left: 0; right: 0; max-height: 70vh;
+      overflow-y: auto; z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); display: none;
     }
     .admin-panel.active { display: block; }
+    .admin-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .admin-close-btn {
+      background: transparent; border: none; color: var(--text); font-size: 24px;
+      cursor: pointer; padding: 4px 8px; opacity: 0.6;
+    }
     .admin-login-form { display: flex; gap: 8px; margin-bottom: 16px; }
     .admin-input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid var(--admin-border);
-      border-radius: 8px;
-      background: var(--card-bg);
-      color: var(--text);
-      margin-bottom: 8px;
-      font-family: inherit;
+      flex: 1; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px;
+      background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit;
     }
     .admin-btn {
-      padding: 10px 16px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      padding: 10px 16px; background: var(--accent); color: white;
+      border: none; border-radius: 8px; cursor: pointer;
     }
     .admin-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     @media (max-width: 500px) { .admin-controls { grid-template-columns: 1fr; } }
     .admin-control-group {
-      border: 1px solid var(--admin-border);
-      padding: 12px;
-      border-radius: 8px;
-      background: var(--card-bg);
-      margin-bottom: 12px;
+      border: 1px solid var(--admin-border); padding: 12px; border-radius: 8px;
+      background: var(--card-bg); margin-bottom: 12px;
     }
     .admin-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; opacity: 0.8; }
     .admin-textarea {
-      width: 100%;
-      height: 60px;
-      resize: vertical;
-      padding: 8px;
-      border: 1px solid var(--admin-border);
-      border-radius: 6px;
-      margin-bottom: 8px;
-      font-family: inherit;
-      font-size: 13px;
-      background: var(--card-bg);
-      color: var(--text);
+      width: 100%; height: 60px; resize: vertical; padding: 8px;
+      border: 1px solid var(--admin-border); border-radius: 6px; margin-bottom: 8px;
+      font-family: inherit; font-size: 13px; background: var(--card-bg); color: var(--text);
     }
     .admin-action-btn {
-      width: 100%;
-      padding: 10px;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 8px;
-      font-weight: 600;
-      font-size: 14px;
+      width: 100%; padding: 10px; color: white; border: none; border-radius: 8px;
+      cursor: pointer; margin-top: 8px; font-weight: 600; font-size: 14px;
     }
     .btn-dark { background: #333; }
     .btn-red { background: var(--danger); }
     .btn-orange { background: var(--warning); }
     .btn-green { background: var(--success); }
     .admin-logout-btn {
-      margin-top: 16px;
-      width: 100%;
-      padding: 12px;
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
+      margin-top: 16px; width: 100%; padding: 12px; background: var(--danger);
+      color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
     }
     
     .admin-toggle-btn {
-      position: fixed;
-      bottom: 80px;
-      right: 16px;
-      width: 52px;
-      height: 52px;
-      background: linear-gradient(135deg, #ffd700, #ffaa00);
-      border: none;
-      border-radius: 50%;
-      color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(255,170,0,0.4);
-      z-index: 998;
+      position: fixed; bottom: 80px; right: 16px; width: 52px; height: 52px;
+      background: linear-gradient(135deg, #ffd700, #ffaa00); border: none; border-radius: 50%;
+      color: #333; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(255,170,0,0.4); z-index: 998; font-size: 24px;
     }
     
     .theme-switcher {
-      position: fixed;
-      bottom: 16px;
-      left: 16px;
-      display: flex;
-      gap: 6px;
-      z-index: 998;
-      background: var(--card-bg);
-      padding: 6px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      position: fixed; bottom: 16px; left: 16px; display: flex; gap: 6px; z-index: 998;
+      background: var(--card-bg); padding: 6px; border-radius: 20px;
+      border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     .theme-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      transition: all 0.2s;
-      padding: 0;
-      color: var(--text);
+      width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      background: transparent; transition: all 0.2s; padding: 0; color: var(--text);
     }
     .theme-btn.active { border-color: var(--accent); background: rgba(0,120,255,0.15); }
     
     .delete-select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid var(--admin-border);
-      border-radius: 6px;
-      margin-bottom: 8px;
-      background: var(--card-bg);
-      color: var(--text);
-      font-family: inherit;
+      width: 100%; padding: 8px; border: 1px solid var(--admin-border); border-radius: 6px;
+      margin-bottom: 8px; background: var(--card-bg); color: var(--text); font-family: inherit;
     }
     .admin-indicator {
-      background: linear-gradient(135deg, #ffd700, #ff8c00);
-      color: #333;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1001;
-      display: none;
+      background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px;
+      border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed;
+      top: 10px; left: 10px; z-index: 1001; display: none;
     }
     .admin-indicator.active { display: block; }
   </style>
@@ -580,9 +303,12 @@
     <button class="theme-btn" onclick="setTheme('dark')">🌑</button>
   </div>
 
-  <!-- Админ-панель -->
+  <!-- Админ-панель (снизу) -->
   <div id="admin-panel" class="admin-panel">
-    <h2 class="shop-title">Админ-панель</h2>
+    <div class="admin-header">
+      <h2 class="shop-title" style="margin:0;">Админ-панель</h2>
+      <button class="admin-close-btn" onclick="closeAdminPanel()">✕</button>
+    </div>
     
     <div id="admin-login-area">
       <div class="admin-login-form">
@@ -631,7 +357,7 @@
         <button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button>
       </div>
       
-      <button class="admin-logout-btn" onclick="adminLogout()">Выйти</button>
+      <button class="admin-logout-btn" onclick="adminLogout()">Выйти из админки</button>
     </div>
   </div>
 
@@ -641,7 +367,7 @@
     const CHAT_ID = '5993502384';
     
     // ============ FIREBASE ============
-    const firebaseConfig = {
+    firebase.initializeApp({
       apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
       authDomain: "swwshop.firebaseapp.com",
       databaseURL: "https://swwshop-default-rtdb.firebaseio.com",
@@ -649,9 +375,7 @@
       storageBucket: "swwshop.firebasestorage.app",
       messagingSenderId: "698268675105",
       appId: "1:698268675105:web:15814d169ee2e74c8e4760"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
+    });
     const db = firebase.database();
     
     // ============ ТЕМА ============
@@ -669,8 +393,9 @@
     let cart = JSON.parse(localStorage.getItem('swwshop_cart') || '[]');
     let appliedPromo = null;
 
+    // Загрузка из Firebase
     db.ref('assortment').on('value', s => { const v = s.val(); if (v) data = v; refreshView(); });
-    db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateOrdersBadge(); if (document.getElementById('orders-panel').classList.contains('active')) showOrders(); if (document.getElementById('all-orders-panel').classList.contains('active')) showAllOrders(); });
+    db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
     db.ref('promos').on('value', s => { promos = s.val() || {}; });
 
     function refreshView() {
@@ -678,11 +403,16 @@
       else if (currentView === 'category') showCategory(currentCategory);
       else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
     }
+    
+    function updateUI() {
+      updateOrdersBadge();
+      if (document.getElementById('orders-panel').classList.contains('active')) showOrders();
+      if (document.getElementById('all-orders-panel').classList.contains('active')) showAllOrders();
+    }
 
     function stText(s) { return s ? 'В наличии' : 'Нет'; }
     function stClass(s) { return s ? 'status-in-stock' : 'status-out-stock'; }
     
-    // ============ ID ПОЛЬЗОВАТЕЛЯ ============
     function getUserId() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       if (tgUser) return tgUser.id.toString();
@@ -695,8 +425,8 @@
     function updateOrdersBadge() {
       const myOrders = orders.filter(o => o.userId === getUserId());
       const b = document.getElementById('orders-badge');
-      if (myOrders.length > 0) { b.style.display = 'flex'; b.textContent = myOrders.length; }
-      else { b.style.display = 'none'; }
+      b.style.display = myOrders.length ? 'flex' : 'none';
+      if (myOrders.length) b.textContent = myOrders.length;
     }
     
     function showOrders() {
@@ -707,15 +437,14 @@
         <div class="order-card">
           <div class="order-id">Заказ #${o.id}</div>
           <div class="order-detail">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB</div>
-          <span class="order-status ${o.status === 'completed' ? 'status-completed' : o.status === 'cancelled' ? 'status-cancelled' : 'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
-          ${o.status === 'completed' && o.promoCode ? `<div class="promo-code-display" style="margin-top:8px;">🎁 Промокод 15%: ${o.promoCode}</div>` : ''}
+          <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
+          ${o.status==='completed' && o.promoCode ? `<div class="promo-code-display" style="margin-top:8px;">🎁 Промокод 15%: ${o.promoCode}</div>` : ''}
         </div>
       `).join('');
     }
     
     function toggleOrders() {
-      document.getElementById('cart-panel').classList.remove('active');
-      document.getElementById('all-orders-panel').classList.remove('active');
+      closeAllPanels();
       document.getElementById('orders-panel').classList.toggle('active');
       if (document.getElementById('orders-panel').classList.contains('active')) showOrders();
     }
@@ -729,41 +458,40 @@
         <div class="order-card">
           <div class="order-id">#${o.id} | ${o.userName} | ${o.userContact}</div>
           <div class="order-detail">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB</div>
-          <div style="font-size:12px;opacity:0.7;margin:4px 0;">${o.items.map(i => i.name + (i.flavorName ? ' - ' + i.flavorName : '')).join(', ')}</div>
-          <span class="order-status ${o.status === 'completed' ? 'status-completed' : o.status === 'cancelled' ? 'status-cancelled' : 'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
-          ${o.status === 'pending' ? `
+          <div style="font-size:12px;opacity:0.7;margin:4px 0;">${o.items.map(i => i.name+(i.flavorName?' - '+i.flavorName:'')).join(', ')}</div>
+          <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
+          ${o.status==='pending' ? `
             <div class="order-actions">
-              <button class="btn-sm btn-complete" onclick="completeOrder('${o.id}')">✅ Выполнить</button>
+              <button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button>
               <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button>
-            </div>
-          ` : ''}
+            </div>` : ''}
         </div>
       `).join('');
     }
     
     function toggleAllOrders() {
       if (!isAdmin) return;
-      document.getElementById('cart-panel').classList.remove('active');
-      document.getElementById('orders-panel').classList.remove('active');
-      document.getElementById('admin-panel').classList.remove('active');
+      closeAllPanels();
       document.getElementById('all-orders-panel').classList.toggle('active');
       if (document.getElementById('all-orders-panel').classList.contains('active')) showAllOrders();
     }
     
-    function completeOrder(orderId) {
+    function completeOrder(orderId, subtotal) {
       if (!isAdmin) return;
-      if (!confirm('Подтвердить выполнение заказа? Клиент получит промокод 15%.')) return;
+      if (!confirm('Подтвердить выполнение?')) return;
       
-      const promoCode = 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      const update = { status: 'completed' };
       
-      // Обновляем заказ
-      db.ref('orders/' + orderId).update({ status: 'completed', promoCode: promoCode });
+      // Промокод только если сумма ≥ 800
+      if (subtotal >= 800) {
+        const promoCode = 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
+        update.promoCode = promoCode;
+        promos[promoCode] = { discount: 15, used: false, created: Date.now(), auto: true };
+        db.ref('promos').set(promos);
+      }
       
-      // Создаём промокод
-      promos[promoCode] = { discount: 15, used: false, created: Date.now(), auto: true };
-      db.ref('promos').set(promos);
-      
-      alert(`Заказ #${orderId} выполнен! Промокод: ${promoCode}`);
+      db.ref('orders/' + orderId).update(update);
+      alert(subtotal >= 800 ? `Заказ выполнен! Промокод: ${update.promoCode}` : 'Заказ выполнен!');
       showAllOrders();
     }
     
@@ -771,7 +499,6 @@
       if (!isAdmin) return;
       if (!confirm('Отменить заказ?')) return;
       db.ref('orders/' + orderId).update({ status: 'cancelled' });
-      alert(`Заказ #${orderId} отменён`);
       showAllOrders();
     }
     
@@ -808,8 +535,8 @@
     function updateCartBadge() {
       const c = cart.reduce((s, i) => s + (i.quantity || 1), 0);
       const el = document.getElementById('cart-count');
-      if (c > 0) { el.style.display = 'flex'; el.textContent = c; }
-      else { el.style.display = 'none'; }
+      el.style.display = c > 0 ? 'flex' : 'none';
+      if (c > 0) el.textContent = c;
     }
     function addToCart(name, price, lineName, flavorName) {
       cart.push({ name, price, lineName: lineName || '', flavorName: flavorName || '', quantity: 1 });
@@ -817,8 +544,7 @@
     }
     function removeFromCart(i) { cart.splice(i, 1); saveCart(); showCart(); }
     function toggleCart() {
-      document.getElementById('orders-panel').classList.remove('active');
-      document.getElementById('all-orders-panel').classList.remove('active');
+      closeAllPanels();
       document.getElementById('cart-panel').classList.toggle('active');
       if (document.getElementById('cart-panel').classList.contains('active')) showCart();
     }
@@ -835,10 +561,7 @@
       let discount = appliedPromo ? Math.round(subtotal * appliedPromo.discount / 100) : 0;
       document.getElementById('cart-items').innerHTML = cart.map((item, i) => `
         <div class="cart-item">
-          <div class="cart-item-info">
-            <div class="cart-item-name">${item.name}</div>
-            ${item.flavorName ? `<div class="cart-item-detail">Вкус: ${item.flavorName}</div>` : ''}
-          </div>
+          <div class="cart-item-info"><div class="cart-item-name">${item.name}</div>${item.flavorName?`<div class="cart-item-detail">Вкус: ${item.flavorName}</div>`:''}</div>
           <span class="cart-item-price">${item.price} RUB</span>
           <button class="cart-remove-btn" onclick="removeFromCart(${i})">×</button>
         </div>
@@ -875,7 +598,6 @@
         promoApplied: appliedPromo, status: 'pending', date: Date.now(), promoCode: null
       });
       
-      // Telegram
       let txt = `🛒 НОВЫЙ ЗАКАЗ #${orderId}\n\n👤 ${name}\n📱 ${contact}`;
       if (tgUser?.username) txt += `\n💬 @${tgUser.username}`;
       txt += `\n\n📋 Товары:\n`;
@@ -885,7 +607,7 @@
         txt += ` - ${item.price}₽\n`;
       });
       if (discount > 0) txt += `\n🎫 Промокод: ${appliedPromo.code} (-${discount}₽)`;
-      txt += `\n💰 Итого: ${total}₽`;
+      txt += `\n💰 Итого: ${total}₽\n📅 ${new Date().toLocaleString()}`;
       
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -902,6 +624,12 @@
       document.getElementById('promo-message').innerHTML = '';
       document.getElementById('promo-input').value = '';
       setTimeout(() => document.getElementById('cart-panel').classList.remove('active'), 4000);
+    }
+
+    function closeAllPanels() {
+      document.getElementById('cart-panel').classList.remove('active');
+      document.getElementById('orders-panel').classList.remove('active');
+      document.getElementById('all-orders-panel').classList.remove('active');
     }
 
     // ============ ОТОБРАЖЕНИЕ ============
@@ -963,10 +691,14 @@
     function toggleFlavor(cat, l, f) { if (!isAdmin) return; data[cat][l].flavors[f].inStock = !data[cat][l].flavors[f].inStock; db.ref('assortment').set(data); showDetail(cat, l); }
     
     function toggleAdminPanel() {
-      document.getElementById('cart-panel').classList.remove('active');
-      document.getElementById('orders-panel').classList.remove('active');
       document.getElementById('admin-panel').classList.toggle('active');
     }
+    
+    function closeAdminPanel() {
+      document.getElementById('admin-panel').classList.remove('active');
+      // НЕ выходим из админки, только закрываем панель
+    }
+    
     function updateIndicator() { document.getElementById('admin-indicator').className = isAdmin ? 'admin-indicator active' : 'admin-indicator'; }
     function updateDelSelect() {
       const cat = document.getElementById('del-category')?.value;
@@ -1041,6 +773,11 @@
     // ============ ЗАПУСК ============
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
+    
+    // Очистка старых данных (однократно)
+    db.ref('promos').set({});
+    db.ref('orders').set({});
+    
     updateCartBadge(); updateIndicator(); showMain();
   </script>
 </body>
