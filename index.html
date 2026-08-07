@@ -3,52 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>SWWSHOP</title>
-  <!-- Подключаем SDK Telegram -->
+  <title>SWW SHOP</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root {
-      --bg: #f5f5f7;
-      --surface: #ffffff;
-      --primary: #2481cc;
-      --danger: #d32f2f;
-      --success: #388e3c;
-      --text: #111;
-      --gray: #888;
-    }
     body {
       margin: 0;
       padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
+
+    /* Переменные будут перезаписаны JS под тему Telegram */
+    :root {
+      --bg-color: #f5f5f7;
+      --surface-color: #ffffff;
+      --text-color: #111111;
+      --secondary-text-color: #888888;
+      --primary-color: #2481cc;
+      --danger-color: #d32f2f;
+      --success-color: #388e3c;
+      --border-radius: 12px;
+    }
+
     .tg-viewport {
       min-height: 100vh;
     }
     .container {
       max-width: 480px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 16px;
     }
     h1 {
       text-align: center;
       font-size: 24px;
       margin-bottom: 20px;
+      color: var(--text-color);
     }
     .category-btn {
       width: 100%;
       padding: 16px;
       border: none;
-      border-radius: 12px;
-      background: var(--surface);
-      color: var(--text);
+      border-radius: var(--border-radius);
+      background: var(--surface-color);
+      color: var(--text-color);
       text-align: left;
       font-size: 16px;
       box-shadow: 0 2px 4px rgba(0,0,0,.08);
       margin-bottom: 10px;
       cursor: pointer;
+      transition: opacity 0.2s;
     }
     .category-btn:active {
       opacity: 0.85;
@@ -57,7 +60,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      color: var(--primary);
+      color: var(--primary-color);
       background: none;
       border: none;
       cursor: pointer;
@@ -68,19 +71,21 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--surface);
+      background: var(--surface-color);
       padding: 14px 16px;
-      border-radius: 12px;
+      border-radius: var(--border-radius);
       margin-bottom: 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      cursor: pointer;
     }
     .product-name {
       font-weight: 600;
       line-height: 1.3;
+      color: var(--text-color);
     }
     .product-price {
       font-weight: 700;
-      color: var(--primary);
+      color: var(--primary-color);
     }
     .status-badge {
       font-size: 13px;
@@ -89,20 +94,20 @@
       color: white;
     }
     .status-in-stock {
-      background-color: var(--success);
+      background-color: var(--success-color);
     }
     .status-out-of-stock {
-      background-color: var(--danger);
+      background-color: var(--danger-color);
     }
     .flavor-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px 12px;
-      background: #fff;
+      background: var(--surface-color);
       border-radius: 8px;
       margin-bottom: 8px;
-      border: 1px solid #eee;
+      border: 1px solid var(--secondary-text-color);
     }
     .cart-section {
       position: fixed;
@@ -110,7 +115,7 @@
       left: 0;
       right: 0;
       padding: 12px 16px;
-      background: var(--surface);
+      background: var(--surface-color);
       box-shadow: 0 -4px 12px rgba(0,0,0,.1);
       z-index: 10;
     }
@@ -119,22 +124,25 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
+      color: var(--text-color);
     }
     .promo-input {
       width: 100%;
       padding: 10px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--secondary-text-color);
       border-radius: 8px;
       font-size: 14px;
       margin-bottom: 8px;
+      background: var(--bg-color);
+      color: var(--text-color);
     }
     .checkout-btn {
       width: 100%;
       padding: 14px;
-      background: var(--primary);
+      background: var(--primary-color);
       color: white;
       border: none;
-      border-radius: 12px;
+      border-radius: var(--border-radius);
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
@@ -143,6 +151,7 @@
       padding: 20px;
       text-align: center;
       display: none;
+      color: var(--text-color);
     }
     .hidden {
       display: none !important;
@@ -193,7 +202,17 @@
     tg.ready();
     tg.expand();
 
-    // --- Данные товаров (как в ТЗ) ---
+    // Применяем цвета темы Telegram
+    const theme = tg.themeParams;
+    document.documentElement.style.setProperty('--bg-color', theme.bg_color || '#f5f5f7');
+    document.documentElement.style.setProperty('--surface-color', theme.secondary_bg_color || theme.bg_color || '#ffffff');
+    document.documentElement.style.setProperty('--text-color', theme.text_color || '#111111');
+    document.documentElement.style.setProperty('--secondary-text-color', theme.hint_color || '#888888');
+    document.documentElement.style.setProperty('--primary-color', theme.button_color || '#2481cc');
+    document.documentElement.style.setProperty('--danger-color', '#d32f2f');
+    document.documentElement.style.setProperty('--success-color', '#388e3c');
+
+    // --- Данные товаров ---
     const products = {
       liquids: [
         {
@@ -261,11 +280,11 @@
         { id: 'hero', name: 'Hero 50-58W', price: 330, stock: 1, inStock: true },
         { id: 'pasito', name: 'Pasito K5', price: 330, stock: 2, inStock: true }
       ],
-      devices: [] // пока пусто, можно добавить
+      devices: []
     };
 
-    // --- Корзина ---
     let cart = [];
+
     function updateCartUI() {
       const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
       document.getElementById('cart-total-display').textContent = `Корзина: ${total.toLocaleString()} ₽`;
@@ -273,27 +292,32 @@
     }
 
     function addToCart(item) {
-      const existing = cart.find(c => c.id === item.id);
-      if (existing) {
-        existing.qty += 1;
-        // уменьшаем остаток (в памяти)
+      // Уменьшаем остаток
+      if (item.stock > 0) {
         item.stock -= 1;
         if (item.stock <= 0) item.inStock = false;
       } else {
+        alert('Товар закончился!');
+        return;
+      }
+
+      const existing = cart.find(c => c.id === item.id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
         cart.push({ ...item, qty: 1 });
-        item.stock -= 1;
-        if (item.stock <= 0) item.inStock = false;
       }
       updateCartUI();
-      renderCategoryList(); // обновить статусы
+      renderCategoryList(); // обновить статусы в каталоге
     }
 
-    // --- Навигация и рендер ---
     function show(id) {
       document.querySelectorAll('.hidden').forEach(el => el.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
     }
 
+    // Обработчики кнопок категорий
     document.querySelectorAll('.category-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const cat = btn.dataset.cat;
@@ -302,60 +326,31 @@
       });
     });
 
-    function renderCategoryList(category) {
-      const container = document.getElementById('category-list');
-      container.innerHTML = '';
+    document.getElementById('back-from-flavors').addEventListener('click', () => {
+      show('category-list');
+    });
 
-      if (category === 'coils' || category === 'devices') {
-        // Для испарителей и устройств — сразу список товаров с кнопкой «в корзину»
-        (products[category] || []).forEach(p => {
-          const row = document.createElement('div');
-          row.className = 'product-row';
-          const statusClass = p.inStock ? 'status-in-stock' : 'status-out-of-stock';
-          const statusText = p.inStock ? 'Имеется' : 'Кончилось';
-          row.innerHTML = `
-            <div>
-              <div class="product-name">${p.name}</div>
-              <div style="font-size:13px; color:var(--gray)">${statusText}</div>
-            </div>
-            <div style="text-align:right;">
-              <div class="product-price">${p.price} ₽</div>
-              ${p.inStock ? `<button class="checkout-btn" style="width:auto; padding:6px 12px;" onclick="addToCart(${JSON.stringify(p)})">В корзину</button>` : ''}
-            </div>
-          `;
-          container.appendChild(row);
-        });
-      } else {
-        // Для жидкостей и шайб — список товаров, по клику показываем вкусы
-        (products[category] || []).forEach(p => {
-          const row = document.createElement('div');
-          row.className = 'product-row';
-          row.innerHTML = `
-            <div class="product-name">${p.name}</div>
-            <div class="product-price">${p.price} ₽</div>
-          `;
-          row.onclick = () => {
-            renderFlavors(p);
-            show('flavors-view');
-          };
-          container.appendChild(row);
-        });
+    document.getElementById('back-to-shop').addEventListener('click', () => {
+      cart = [];
+      updateCartUI();
+      show('main-menu');
+      document.getElementById('cart-section').classList.add('hidden');
+    });
+
+    document.getElementById('checkout-btn').addEventListener('click', () => {
+      if (cart.length === 0) {
+        alert('Корзина пуста');
+        return;
       }
-    }
+      const promo = document.getElementById('promo-code').value.trim();
+      
+      // Генерация номера заказа: 9 символов (A-Z, 0-9)
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let orderNumber = '';
+      for (let i = 0; i < 9; i++) {
+        orderNumber += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
 
-    function renderFlavors(product) {
-      const container = document.getElementById('flavors-list');
-      container.innerHTML = '';
-      product.flavors.forEach(f => {
-        const row = document.createElement('div');
-        row.className = 'flavor-row';
-        const statusClass = f.inStock ? 'status-in-stock' : 'status-out-of-stock';
-        const statusText = f.inStock ? 'Имеется' : 'Кончилось';
-        row.innerHTML = `
-          <div>
-            <div class="product-name">${f.name}</div>
-            <div style="font-size:12px; color:var(--gray)">${statusText}</div>
-          </div>
-          ${f.inStock ? `<button class="checkout-btn" style="width:auto; padding:4px 8px;" onclick="addToCart(${JSON.stringify({...f, id: product.id + '-' + f.name, name: f.name, price: product.price})})">В корзину</button>` : ''}
-        `;
-        container.appendChild(row);
+      let details = '';
+      cart.forEach(item => {
+        details += `${item.name} (${item.qty} шт × ${item.price} ₽) = ${item.price * item.qty} ₽\n`;
