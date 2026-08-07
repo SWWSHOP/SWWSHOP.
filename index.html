@@ -9,33 +9,16 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   
   <style>
-    :root {
-      --bg: #ffffff; --text: #1a1a1a; --accent: #0078ff; --border: #e0e0e0;
-      --success: #2ecc71; --danger: #e74c3c; --warning: #f39c12;
-      --admin-bg: #f4f6f8; --card-bg: #f9f9f9;
-    }
+    :root { --bg: #ffffff; --text: #1a1a1a; --accent: #0078ff; --border: #e0e0e0; --success: #2ecc71; --danger: #e74c3c; --warning: #f39c12; --admin-bg: #f4f6f8; --card-bg: #f9f9f9; }
     body.dark { --bg: #1a1a1a; --text: #ffffff; --accent: #4da3ff; --border: #333; --admin-bg: #2a2a2a; --card-bg: #2a2a2a; }
     body.telegram { --bg: #18222d; --text: #ffffff; --accent: #5ea3d9; --border: #1f2d3d; --admin-bg: #1e2a38; --card-bg: #1e2a38; }
-    
     * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg); color: var(--text); margin: 0; padding: 0;
-      height: 100vh; display: flex; flex-direction: column; transition: background 0.3s, color 0.3s;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
     .container { flex: 1; overflow-y: auto; padding: 12px 12px 100px; }
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
-    
-    .category-btn {
-      width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px;
-      background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text);
-      cursor: pointer; margin-bottom: 8px; display: flex; align-items: center;
-    }
-    .product-row {
-      display: flex; justify-content: space-between; align-items: center; padding: 12px 0;
-      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 4px;
-    }
+    .category-btn { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; }
+    .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 4px; }
     .product-name { font-weight: 500; font-size: 14px; }
     .product-price { font-weight: 600; color: var(--accent); }
     .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; }
@@ -43,11 +26,8 @@
     .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
     .back-btn { padding: 8px 12px; border: none; background: transparent; color: var(--accent); cursor: pointer; font-size: 14px; }
     .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    .section-title { margin-top: 16px; margin-bottom: 8px; font-weight: 600; }
-    
     .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; margin-left: 8px; }
     .add-line-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
-    
     .btn-sm { padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; color: white; font-weight: 500; }
     .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); }
     .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
@@ -57,58 +37,34 @@
     .cart-btn { background: var(--success); color: white; } .orders-btn { background: var(--accent); color: white; }
     .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
-    /* Панели */
-    .overlay-panel {
-      background: var(--admin-bg); padding: 16px; border-radius: 12px;
-      position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px;
-      overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none;
-    }
+    .overlay-panel { background: var(--admin-bg); padding: 16px; border-radius: 12px; position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
     .overlay-panel.active { display: block; }
     .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .panel-close-btn { background: rgba(128,128,128,0.2); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    
+    .panel-close-btn { background: rgba(128,128,128,0.3); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .cart-item, .order-card, .promo-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
     .cart-item { display: flex; justify-content: space-between; align-items: center; }
     .cart-total { font-size: 18px; font-weight: 700; text-align: right; margin: 12px 0; color: var(--accent); }
     .cart-discount { font-size: 14px; text-align: right; color: var(--success); }
-    .cart-empty, .orders-empty { text-align: center; opacity: 0.5; padding: 20px; }
-    
     .order-status { font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block; }
     .status-pending { background: rgba(255,193,7,0.2); color: #ffc107; }
     .status-completed { background: rgba(46,204,113,0.2); color: #2ecc71; }
     .status-cancelled { background: rgba(231,76,60,0.2); color: #e74c3c; }
-    .order-actions { display: flex; gap: 8px; margin-top: 8px; }
     .promo-code-display { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #333; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 18px; margin: 10px 0; }
-
     .promo-section { background: rgba(255,193,7,0.1); border: 1px solid #ffc107; border-radius: 8px; padding: 10px; margin: 8px 0; display: flex; gap: 8px; }
     .promo-section input { flex: 1; padding: 8px; border: 1px solid #ffc107; border-radius: 6px; background: var(--card-bg); color: var(--text); }
     .promo-apply-btn { background: var(--warning); color: #333; border: none; border-radius: 6px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
-    .promo-applied { background: rgba(46,204,113,0.15); color: var(--success); padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-block; }
-
     .order-form input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; }
     .order-btn { width: 100%; padding: 14px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
 
-    /* Админ-панель снизу */
-    .admin-bottom-panel {
-      background: var(--admin-bg); padding: 16px; border-radius: 12px 12px 0 0;
-      position: fixed; bottom: 0; left: 0; right: 0; max-height: 60vh;
-      overflow-y: auto; z-index: 300; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); display: none;
-    }
-    .admin-bottom-panel.active { display: block; }
-    
     .admin-toggle-btn { position: fixed; bottom: 80px; right: 16px; width: 52px; height: 52px; background: linear-gradient(135deg, #ffd700, #ffaa00); border: none; border-radius: 50%; color: #333; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(255,170,0,0.4); z-index: 99; font-size: 24px; }
-    
     .theme-switcher { position: fixed; bottom: 16px; left: 16px; display: flex; gap: 6px; z-index: 99; background: var(--card-bg); padding: 6px; border-radius: 20px; border: 1px solid var(--border); }
     .theme-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text); }
     .theme-btn.active { border-color: var(--accent); }
-    
     .admin-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; }
     .admin-btn { padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
     .admin-action-btn { width: 100%; padding: 10px; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; font-weight: 600; }
     .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); }
-    .admin-logout-btn { margin-top: 16px; width: 100%; padding: 12px; background: var(--danger); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
     .delete-select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--card-bg); color: var(--text); }
-    
     .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 101; display: none; }
     .admin-indicator.active { display: block; }
   </style>
@@ -123,120 +79,40 @@
   
   <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-  <!-- Панель заказов пользователя -->
-  <div id="orders-panel" class="overlay-panel">
-    <div class="panel-header"><h2 class="shop-title" style="margin:0;">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div>
-    <div id="orders-list"></div>
-  </div>
-
-  <!-- Панель всех заказов (админ) -->
-  <div id="all-orders-panel" class="overlay-panel">
-    <div class="panel-header"><h2 class="shop-title" style="margin:0;">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div>
-    <div id="all-orders-list"></div>
-  </div>
-
-  <!-- Панель промокодов (админ) -->
-  <div id="promos-panel" class="overlay-panel">
-    <div class="panel-header"><h2 class="shop-title" style="margin:0;">Промокоды</h2><button class="panel-close-btn" onclick="closePanel('promos')">✕</button></div>
-    <div id="promos-list"></div>
-  </div>
-
-  <!-- Корзина -->
-  <div id="cart-panel" class="overlay-panel">
-    <div class="panel-header"><h2 class="shop-title" style="margin:0;">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div>
-    <div id="cart-items"></div>
-    <div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div>
-    <div id="promo-message"></div>
-    <div class="cart-discount" id="cart-discount"></div>
-    <div class="cart-total" id="cart-total"></div>
-    <div class="order-form" id="order-form" style="display:none;">
-      <input type="text" id="customer-name" placeholder="Ваше имя *" />
-      <input type="text" id="customer-contact" placeholder="Телефон или @username *" />
-      <button class="order-btn" onclick="sendOrder()">Оформить заказ</button>
-    </div>
-    <div class="order-success" id="order-success" style="display:none;"></div>
-  </div>
+  <div id="orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div><div id="orders-list"></div></div>
+  <div id="all-orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div><div id="all-orders-list"></div></div>
+  <div id="promos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Промокоды</h2><button class="panel-close-btn" onclick="closePanel('promos')">✕</button></div><div id="promos-list"></div></div>
+  <div id="cart-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div><div id="cart-items"></div><div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div><div id="promo-message"></div><div class="cart-discount" id="cart-discount"></div><div class="cart-total" id="cart-total"></div><div class="order-form" id="order-form" style="display:none;"><input type="text" id="customer-name" placeholder="Ваше имя *" /><input type="text" id="customer-contact" placeholder="Телефон или @username *" /><button class="order-btn" onclick="sendOrder()">Оформить заказ</button></div><div class="order-success" id="order-success" style="display:none;"></div></div>
 
   <button class="admin-toggle-btn" onclick="toggleAdminPanel()">🔑</button>
+  <div class="theme-switcher"><button class="theme-btn active" onclick="setTheme('telegram')">🌙</button><button class="theme-btn" onclick="setTheme('light')">☀️</button><button class="theme-btn" onclick="setTheme('dark')">🌑</button></div>
 
-  <div class="theme-switcher">
-    <button class="theme-btn active" onclick="setTheme('telegram')">🌙</button>
-    <button class="theme-btn" onclick="setTheme('light')">☀️</button>
-    <button class="theme-btn" onclick="setTheme('dark')">🌑</button>
-  </div>
-
-  <!-- Админ-панель -->
-  <div id="admin-panel" class="admin-bottom-panel">
-    <div class="panel-header"><h2 class="shop-title" style="margin:0;">Админ-панель</h2><button class="panel-close-btn" onclick="closeAdminPanel()">✕</button></div>
-    
-    <div id="admin-login-area">
-      <div style="display:flex;gap:8px;"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div>
-    </div>
-    
+  <div id="admin-panel" class="overlay-panel" style="top:auto;bottom:0;max-height:60vh;border-radius:12px 12px 0 0;">
+    <div class="panel-header"><h2 class="shop-title" style="margin:0;">Админ-панель</h2><button class="panel-close-btn" onclick="closePanel('admin')">✕</button></div>
+    <div id="admin-login-area"><div style="display:flex;gap:8px;"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div></div>
     <div id="admin-controls-area" style="display:none;">
       <button class="admin-action-btn btn-green" onclick="openPanel('all-orders')">📋 Все заказы</button>
       <button class="admin-action-btn btn-orange" onclick="openPanel('promos')">🎫 Промокоды</button>
-      
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
-        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;background:var(--card-bg);">
-          <strong>Линейка</strong>
-          <input type="text" id="line-name" class="admin-input" placeholder="Название" />
-          <input type="number" id="line-price" class="admin-input" placeholder="Цена" />
-          <select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select>
-          <textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES&#10;Вкус,NO" style="height:50px;"></textarea>
-          <button class="admin-action-btn btn-dark" onclick="addLine()">Добавить</button>
-        </div>
-        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;background:var(--card-bg);">
-          <strong>Товар</strong>
-          <input type="text" id="item-name" class="admin-input" placeholder="Название" />
-          <input type="number" id="item-price" class="admin-input" placeholder="Цена" />
-          <select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select>
-          <input type="number" id="item-qty" class="admin-input" placeholder="Кол-во" />
-          <button class="admin-action-btn btn-dark" onclick="addItem()">Добавить</button>
-        </div>
+        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Линейка</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить</button></div>
+        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить</button></div>
       </div>
-      
-      <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;background:var(--card-bg);">
-        <strong>Промокод</strong>
-        <input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" />
-        <input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" />
-        <button class="admin-action-btn btn-dark" onclick="createPromo()">Создать</button>
-      </div>
-      
-      <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;background:var(--card-bg);">
-        <strong style="color:var(--danger);">Удаление</strong>
-        <select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select>
-        <select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select>
-        <button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить</button>
-        <button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button>
-      </div>
-      
-      <button class="admin-logout-btn" onclick="adminLogout()">Выйти из админки</button>
+      <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать</button></div>
+      <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
+      <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">Выйти из админки</button>
     </div>
   </div>
 
   <script>
-    // ============ НАСТРОЙКИ ============
     const BOT_TOKEN = '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
     const CHAT_ID = '5993502384';
     
-    // ============ FIREBASE ============
-    firebase.initializeApp({
-      apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
-      authDomain: "swwshop.firebaseapp.com",
-      databaseURL: "https://swwshop-default-rtdb.firebaseio.com",
-      projectId: "swwshop",
-      storageBucket: "swwshop.firebasestorage.app",
-      messagingSenderId: "698268675105",
-      appId: "1:698268675105:web:15814d169ee2e74c8e4760"
-    });
+    firebase.initializeApp({ apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ", authDomain: "swwshop.firebaseapp.com", databaseURL: "https://swwshop-default-rtdb.firebaseio.com", projectId: "swwshop", storageBucket: "swwshop.firebasestorage.app", messagingSenderId: "698268675105", appId: "1:698268675105:web:15814d169ee2e74c8e4760" });
     const db = firebase.database();
     
-    // ============ ТЕМА ============
     function setTheme(t) { document.body.className = t; localStorage.setItem('swwshop_theme', t); }
     setTheme(localStorage.getItem('swwshop_theme') || 'telegram');
     
-    // ============ ДАННЫЕ ============
     let data = { liquids: [], pouches: [], coils: [], devices: [] };
     let orders = [];
     let promos = {};
@@ -247,9 +123,16 @@
     let cart = JSON.parse(localStorage.getItem('swwshop_cart') || '[]');
     let appliedPromo = null;
     let activePanel = null;
+    let initialized = false;
 
-    // Загрузка из Firebase
-    db.ref('assortment').on('value', s => { const v = s.val(); if (v) data = v; refreshView(); });
+    // Загрузка данных ОДИН раз
+    db.ref('assortment').once('value').then(s => {
+      const v = s.val();
+      if (v && v.liquids) data = v;
+      else db.ref('assortment').set({ liquids: [], pouches: [], coils: [], devices: [] });
+      if (!initialized) { initialized = true; showMain(); }
+    });
+    
     db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
     db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
 
@@ -266,9 +149,8 @@
       if (activePanel === 'promos') showPromos();
     }
 
-    // ============ УПРАВЛЕНИЕ ПАНЕЛЯМИ ============
     function openPanel(name) {
-      closeAllPanels();
+      document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
       const panel = document.getElementById(name + '-panel');
       if (panel) { panel.classList.add('active'); activePanel = name; }
       if (name === 'orders') showOrders();
@@ -280,20 +162,13 @@
     function closePanel(name) {
       const panel = document.getElementById(name + '-panel');
       if (panel) panel.classList.remove('active');
-      if (activePanel === name) activePanel = null;
-    }
-    
-    function closeAllPanels() {
-      document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
       activePanel = null;
     }
     
     function toggleAdminPanel() {
-      document.getElementById('admin-panel').classList.toggle('active');
-    }
-    
-    function closeAdminPanel() {
-      document.getElementById('admin-panel').classList.remove('active');
+      const panel = document.getElementById('admin-panel');
+      if (panel.classList.contains('active')) { panel.classList.remove('active'); activePanel = null; }
+      else { document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active')); panel.classList.add('active'); activePanel = 'admin'; }
     }
 
     function stText(s) { return s ? 'В наличии' : 'Нет'; }
@@ -307,7 +182,6 @@
       return id;
     }
     
-    // ============ ЗАКАЗЫ ============
     function updateOrdersBadge() {
       const myOrders = orders.filter(o => o.userId === getUserId());
       const b = document.getElementById('orders-badge');
@@ -318,7 +192,7 @@
     function showOrders() {
       const myOrders = orders.filter(o => o.userId === getUserId());
       const el = document.getElementById('orders-list');
-      if (!myOrders.length) { el.innerHTML = '<p class="orders-empty">У вас пока нет заказов</p>'; return; }
+      if (!myOrders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">У вас пока нет заказов</p>'; return; }
       el.innerHTML = myOrders.reverse().map(o => `
         <div class="order-card">
           <div><strong>Заказ #${o.id}</strong></div>
@@ -332,26 +206,25 @@
     function showAllOrders() {
       if (!isAdmin) return;
       const el = document.getElementById('all-orders-list');
-      if (!orders.length) { el.innerHTML = '<p class="orders-empty">Нет заказов</p>'; return; }
+      if (!orders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет заказов</p>'; return; }
       el.innerHTML = orders.reverse().map(o => `
         <div class="order-card">
           <div><strong>#${o.id}</strong> | ${o.userName} | ${o.userContact}</div>
           <div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB</div>
           <div style="font-size:12px;">${o.items.map(i => i.name+(i.flavorName?' - '+i.flavorName:'')).join(', ')}</div>
           <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
-          ${o.status==='pending' ? `<div class="order-actions"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button><button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button></div>` : ''}
+          ${o.status==='pending' ? `<div style="margin-top:8px;"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button> <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button></div>` : ''}
         </div>
       `).join('');
     }
     
     function completeOrder(orderId, subtotal) {
-      if (!isAdmin || !confirm('Подтвердить?')) return;
+      if (!isAdmin || !confirm('Подтвердить выполнение?')) return;
       const update = { status: 'completed' };
       if (subtotal >= 800) {
         const promoCode = 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
         update.promoCode = promoCode;
-        promos[promoCode] = { discount: 15, used: false, created: Date.now(), auto: true, orderId };
-        db.ref('promos').set(promos);
+        db.ref('promos/' + promoCode).set({ discount: 15, used: false, created: Date.now(), auto: true });
         alert(`Выполнен! Промокод: ${promoCode}`);
       } else {
         alert('Выполнен! (сумма < 800₽ - без промокода)');
@@ -360,37 +233,34 @@
     }
     
     function cancelOrder(orderId) {
-      if (!isAdmin || !confirm('Отменить?')) return;
+      if (!isAdmin || !confirm('Отменить заказ?')) return;
       db.ref('orders/' + orderId).update({ status: 'cancelled' });
     }
     
-    // ============ ПРОМОКОДЫ ============
     function showPromos() {
       if (!isAdmin) return;
       const el = document.getElementById('promos-list');
       const codes = Object.entries(promos);
-      if (!codes.length) { el.innerHTML = '<p class="orders-empty">Нет промокодов</p>'; return; }
+      if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет промокодов</p>'; return; }
       el.innerHTML = codes.reverse().map(([code, p]) => `
         <div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
-          <div><strong>${code}</strong> - ${p.discount}%<br><small>${p.used ? '❌ Использован' : '✅ Доступен'} | ${p.auto ? 'Авто' : 'Ручной'}</small></div>
+          <div><strong>${code}</strong> - ${p.discount}%<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
           <button class="btn-sm btn-delete" onclick="deletePromo('${code}')">Удалить</button>
         </div>
       `).join('');
     }
     
     function deletePromo(code) {
-      if (!isAdmin || !confirm(`Удалить ${code}?`)) return;
-      delete promos[code];
-      db.ref('promos').set(promos);
+      if (!isAdmin || !confirm('Удалить ' + code + '?')) return;
+      db.ref('promos/' + code).remove();
     }
 
     function createPromo() {
       if (!isAdmin) return;
       const code = document.getElementById('promo-code').value.trim() || 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
       const discount = parseInt(document.getElementById('promo-discount').value) || 15;
-      promos[code] = { discount, used: false, created: Date.now(), auto: false };
-      db.ref('promos').set(promos);
-      alert(`Промокод ${code} создан!`);
+      db.ref('promos/' + code).set({ discount, used: false, created: Date.now(), auto: false });
+      alert('Промокод ' + code + ' создан!');
       document.getElementById('promo-code').value = '';
     }
 
@@ -401,12 +271,11 @@
       if (promos[input]) {
         if (promos[input].used) { msg.innerHTML = '<span style="color:var(--danger);">Использован</span>'; return; }
         appliedPromo = { code: input, discount: promos[input].discount };
-        msg.innerHTML = `<span class="promo-applied">Скидка ${promos[input].discount}%</span>`;
+        msg.innerHTML = '<span style="color:var(--success);">Скидка ' + promos[input].discount + '%</span>';
         showCart();
       } else { msg.innerHTML = '<span style="color:var(--danger);">Не найден</span>'; appliedPromo = null; }
     }
 
-    // ============ КОРЗИНА ============
     function saveCart() { localStorage.setItem('swwshop_cart', JSON.stringify(cart)); updateCartBadge(); }
     function updateCartBadge() {
       const c = cart.reduce((s, i) => s + (i.quantity || 1), 0);
@@ -415,14 +284,14 @@
       if (c > 0) el.textContent = c;
     }
     function addToCart(name, price, lineName, flavorName) {
-      cart.push({ name, price, lineName: lineName || '', flavorName: flavorName || '', quantity: 1 });
+      cart.push({ name, price, lineName: lineName || '', flavorName: flavorName || '' });
       saveCart(); alert('Добавлено!');
     }
     function removeFromCart(i) { cart.splice(i, 1); saveCart(); showCart(); }
 
     function showCart() {
       if (!cart.length) {
-        document.getElementById('cart-items').innerHTML = '<p class="cart-empty">Корзина пуста</p>';
+        document.getElementById('cart-items').innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Корзина пуста</p>';
         document.getElementById('cart-total').textContent = '';
         document.getElementById('cart-discount').textContent = '';
         document.getElementById('order-form').style.display = 'none';
@@ -437,8 +306,8 @@
           <button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button>
         </div>
       `).join('');
-      document.getElementById('cart-discount').textContent = discount > 0 ? `Скидка: -${discount} RUB` : '';
-      document.getElementById('cart-total').textContent = `Итого: ${subtotal - discount} RUB`;
+      document.getElementById('cart-discount').textContent = discount > 0 ? 'Скидка: -' + discount + ' RUB' : '';
+      document.getElementById('cart-total').textContent = 'Итого: ' + (subtotal - discount) + ' RUB';
       document.getElementById('order-form').style.display = 'block';
       document.getElementById('order-success').style.display = 'none';
     }
@@ -453,8 +322,7 @@
       
       if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
         discount = Math.round(subtotal * appliedPromo.discount / 100);
-        promos[appliedPromo.code].used = true;
-        db.ref('promos').set(promos);
+        db.ref('promos/' + appliedPromo.code).update({ used: true, usedBy: name, usedAt: Date.now() });
       }
       
       const total = subtotal - discount;
@@ -462,6 +330,7 @@
       const userId = getUserId();
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       
+      // Сохраняем заказ
       await db.ref('orders/' + orderId).set({
         id: orderId, userId, userName: name, userContact: contact,
         userUsername: tgUser?.username || contact,
@@ -469,18 +338,15 @@
         promoApplied: appliedPromo, status: 'pending', date: Date.now(), promoCode: null
       });
       
-      let txt = `🛒 НОВЫЙ ЗАКАЗ #${orderId}\n\n👤 ${name}\n📱 ${contact}`;
-      if (tgUser?.username) txt += `\n💬 @${tgUser.username}`;
-      txt += `\n\n📋 Товары:\n`;
-      cart.forEach((item, i) => {
-        txt += `${i + 1}. ${item.name}`;
-        if (item.flavorName) txt += ` - ${item.flavorName}`;
-        txt += ` - ${item.price}₽\n`;
-      });
-      if (discount > 0) txt += `\n🎫 Промокод: ${appliedPromo.code} (-${discount}₽)`;
-      txt += `\n💰 Итого: ${total}₽`;
+      // Отправка в Telegram
+      let txt = '🛒 НОВЫЙ ЗАКАЗ #' + orderId + '\n\n👤 ' + name + '\n📱 ' + contact;
+      if (tgUser?.username) txt += '\n💬 @' + tgUser.username;
+      txt += '\n\n📋 Товары:\n';
+      cart.forEach((item, i) => { txt += (i+1) + '. ' + item.name + (item.flavorName ? ' - ' + item.flavorName : '') + ' - ' + item.price + '₽\n'; });
+      if (discount > 0) txt += '\n🎫 Промокод: ' + appliedPromo.code + ' (-' + discount + '₽)';
+      txt += '\n💰 Итого: ' + total + '₽';
       
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      await fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: CHAT_ID, text: txt })
       });
@@ -491,12 +357,11 @@
       document.getElementById('cart-discount').textContent = '';
       document.getElementById('order-form').style.display = 'none';
       document.getElementById('order-success').style.display = 'block';
-      document.getElementById('order-success').innerHTML = `✅ Заказ #${orderId} оформлен!`;
+      document.getElementById('order-success').innerHTML = '✅ Заказ #' + orderId + ' оформлен!';
       document.getElementById('promo-message').innerHTML = '';
       document.getElementById('promo-input').value = '';
     }
 
-    // ============ ОТОБРАЖЕНИЕ ============
     function showMain() {
       currentView = 'main';
       document.getElementById('app').innerHTML = `
@@ -512,24 +377,15 @@
     function showCategory(cat) {
       currentView = 'category'; currentCategory = cat;
       const t = { liquids:'Жидкости', pouches:'Шайбы', coils:'Испарители', devices:'Устройства' };
-      let h = `<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">${t[cat]}</h1>`;
+      let h = '<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">' + t[cat] + '</h1>';
       if (!data[cat]?.length) { h += '<p style="text-align:center;">Нет товаров</p>'; }
       else if (cat === 'liquids' || cat === 'pouches') {
         data[cat].forEach((line, i) => {
-          h += `<div style="margin-bottom:8px;">
-            <button class="category-btn" onclick="showDetail('${cat}',${i})"><span>${line.name}</span><span style="font-size:13px;opacity:0.7;">${line.price} RUB | ${line.flavors.length} вкусов</span></button>
-            <button class="add-line-to-cart-btn" onclick="event.stopPropagation(); addToCart('${line.name}',${line.price},'${line.name}','')">🛒 В корзину</button>
-            ${isAdmin ? `<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine('${cat}',${i})">Удалить</button>` : ''}
-          </div>`;
+          h += '<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\'' + cat + '\',' + i + ')"><span>' + line.name + '</span><span style="font-size:13px;opacity:0.7;">' + line.price + ' RUB | ' + line.flavors.length + ' вкусов</span></button><button class="add-line-to-cart-btn" onclick="event.stopPropagation(); addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button>' + (isAdmin ? '<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
         });
       } else {
         data[cat].forEach((item, i) => {
-          h += `<div class="product-row">
-            <span class="product-name">${item.name}</span><span class="product-price">${item.price} RUB</span>
-            <span class="status-badge ${stClass(item.inStock)}">${stText(item.inStock)}</span>
-            <button class="add-to-cart-btn" onclick="addToCart('${item.name}',${item.price},'','')">🛒</button>
-            ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>` : ''}
-          </div>`;
+          h += '<div class="product-row"><span class="product-name">' + item.name + '</span><span class="product-price">' + item.price + ' RUB</span><span class="status-badge ' + stClass(item.inStock) + '">' + stText(item.inStock) + '</span><button class="add-to-cart-btn" onclick="addToCart(\'' + item.name + '\',' + item.price + ',\'\',\'\')">🛒</button>' + (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleItem(\'' + cat + '\',' + i + ')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
         });
       }
       document.getElementById('app').innerHTML = h;
@@ -538,16 +394,14 @@
     function showDetail(cat, idx) {
       currentView = 'detail'; currentCategory = cat; currentIndex = idx;
       const line = data[cat][idx];
-      let h = `<button class="back-btn" onclick="showCategory('${cat}')">← Назад</button><h1 class="shop-title">${line.name}</h1><p style="text-align:center;color:var(--accent);font-weight:600;">${line.price} RUB</p>`;
-      h += `<button class="add-line-to-cart-btn" onclick="addToCart('${line.name}',${line.price},'${line.name}','')">🛒 В корзину</button>`;
-      h += `<div class="section-title">Вкусы (${line.flavors.length}):</div>`;
+      let h = '<button class="back-btn" onclick="showCategory(\'' + cat + '\')">← Назад</button><h1 class="shop-title">' + line.name + '</h1><p style="text-align:center;color:var(--accent);font-weight:600;">' + line.price + ' RUB</p>';
+      h += '<button class="add-line-to-cart-btn" onclick="addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button><div class="section-title">Вкусы (' + line.flavors.length + '):</div>';
       line.flavors.forEach((flavor, fi) => {
-        h += `<div class="flavor-row"><span>${flavor.name}</span><span class="status-badge ${stClass(flavor.inStock)}">${stText(flavor.inStock)}</span>${flavor.inStock ? `<button class="add-to-cart-btn" onclick="addToCart('${line.name} - ${flavor.name}',${line.price},'${line.name}','${flavor.name}')">🛒</button>` : ''}${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>` : ''}</div>`;
+        h += '<div class="flavor-row"><span>' + flavor.name + '</span><span class="status-badge ' + stClass(flavor.inStock) + '">' + stText(flavor.inStock) + '</span>' + (flavor.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + line.name + ' - ' + flavor.name + '\',' + line.price + ',\'' + line.name + '\',\'' + flavor.name + '\')">🛒</button>' : '') + (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleFlavor(\'' + cat + '\',' + idx + ',' + fi + ')">Сменить</button>' : '') + '</div>';
       });
       document.getElementById('app').innerHTML = h;
     }
 
-    // ============ АДМИН ============
     function deleteLine(cat, idx) { if (!isAdmin) return; if (confirm('Удалить?')) { data[cat].splice(idx, 1); db.ref('assortment').set(data); showCategory(cat); } }
     function deleteItem(cat, idx) { if (!isAdmin) return; if (confirm('Удалить?')) { data[cat].splice(idx, 1); db.ref('assortment').set(data); showCategory(cat); } }
     function toggleItem(cat, idx) { if (!isAdmin) return; data[cat][idx].inStock = !data[cat][idx].inStock; db.ref('assortment').set(data); showCategory(cat); }
@@ -559,7 +413,7 @@
       const sel = document.getElementById('del-item');
       if (!sel || !data[cat]) return;
       sel.innerHTML = '<option value="">-- Выберите --</option>';
-      data[cat].forEach((item, i) => { sel.innerHTML += `<option value="${i}">${item.name}</option>`; });
+      data[cat].forEach((item, i) => { sel.innerHTML += '<option value="' + i + '">' + item.name + '</option>'; });
     }
     function adminLogin() {
       if (document.getElementById('admin-password').value === 'SWWADMIN_SWQ35YTF') {
@@ -574,6 +428,7 @@
       document.getElementById('admin-login-area').style.display = 'block';
       document.getElementById('admin-controls-area').style.display = 'none';
       document.getElementById('admin-panel').classList.remove('active');
+      activePanel = null;
       updateIndicator(); showMain();
     }
     function addLine() {
@@ -616,19 +471,14 @@
       ['liquids','pouches'].forEach(c => { data[c] = data[c].filter(l => l.flavors?.some(f => f.inStock)); });
       ['coils','devices'].forEach(c => { data[c] = data[c].filter(i => i.inStock); });
       db.ref('assortment').set(data);
-      alert('Готово!');
-      showMain();
+      alert('Готово!'); showMain();
     }
 
-    // ============ ЗАПУСК ============
+    // ЗАПУСК
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
-    
-    // Очистка старых данных
-    db.ref('promos').set({});
-    db.ref('orders').set({});
-    
-    updateCartBadge(); updateIndicator(); showMain();
+    updateCartBadge(); updateIndicator();
+    if (!initialized) showMain();
   </script>
 </body>
 </html>
