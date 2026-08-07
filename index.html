@@ -33,6 +33,7 @@
     }
     .container { flex: 1; overflow-y: auto; padding: 12px 12px 100px; }
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
+    h2 { margin: 10px 0; font-size: 17px; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     
     .category-btn {
@@ -51,197 +52,87 @@
     .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
     .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
     .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
-    .back-btn {
-      margin-bottom: 8px; padding: 8px 12px; border: none; background: transparent;
-      color: var(--accent); font-size: 14px; cursor: pointer;
-    }
-    .flavor-row {
-      padding: 10px 0; border-bottom: 1px dashed var(--border);
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-    }
+    .back-btn { margin-bottom: 8px; padding: 8px 12px; border: none; background: transparent; color: var(--accent); font-size: 14px; cursor: pointer; }
+    .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .section-title { margin-top: 16px; margin-bottom: 8px; font-weight: 600; font-size: 15px; }
     
-    .add-to-cart-btn {
-      background: var(--success); color: white; border: none; border-radius: 6px;
-      padding: 6px 10px; font-size: 12px; cursor: pointer; font-weight: 500; margin-left: 8px; white-space: nowrap;
-    }
-    .add-line-to-cart-btn {
-      background: var(--success); color: white; border: none; border-radius: 6px;
-      padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px;
-    }
+    .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; font-weight: 500; margin-left: 8px; white-space: nowrap; }
+    .add-line-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
     
     .action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
-    .btn-sm {
-      padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px;
-      cursor: pointer; color: white; font-weight: 500;
-    }
-    .btn-delete { background: var(--danger); }
-    .btn-toggle { background: var(--warning); }
-    .btn-complete { background: var(--success); }
-    .btn-delete-line {
-      background: var(--danger); color: white; border: none; border-radius: 6px;
-      padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px;
-    }
-    .btn-delete-flavor {
-      background: var(--danger); color: white; border: none; border-radius: 50%;
-      width: 28px; height: 28px; font-size: 16px; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; flex-shrink: 0;
-    }
+    .btn-sm { padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; color: white; font-weight: 500; }
+    .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); }
+    .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
+    .btn-delete-flavor { background: var(--danger); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; flex-shrink: 0; }
 
-    .header-icons {
-      position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 1001;
-    }
-    .icon-btn {
-      width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; border: none; font-size: 20px;
-      position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    .cart-btn { background: var(--success); color: white; }
-    .orders-btn { background: var(--accent); color: white; }
-    .badge {
-      position: absolute; top: -5px; right: -5px; background: var(--danger); color: white;
-      width: 22px; height: 22px; border-radius: 50%; font-size: 12px;
-      display: flex; align-items: center; justify-content: center; font-weight: 700;
-    }
+    .header-icons { position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 1001; }
+    .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .cart-btn { background: var(--success); color: white; } .orders-btn { background: var(--accent); color: white; }
+    .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
-    .promo-section {
-      background: var(--promo-bg); border: 1px solid var(--promo-border);
-      border-radius: 8px; padding: 10px; margin: 8px 0; display: flex; gap: 8px; align-items: center;
-    }
-    .promo-section input {
-      flex: 1; padding: 8px; border: 1px solid var(--promo-border); border-radius: 6px;
-      background: var(--card-bg); color: var(--text); font-family: inherit;
-    }
-    .promo-apply-btn {
-      background: var(--warning); color: #333; border: none; border-radius: 6px;
-      padding: 8px 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
-    }
-    .promo-applied {
-      background: rgba(46,204,113,0.15); color: var(--success); padding: 6px 10px;
-      border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px 0;
-    }
+    .promo-section { background: var(--promo-bg); border: 1px solid var(--promo-border); border-radius: 8px; padding: 10px; margin: 8px 0; display: flex; gap: 8px; align-items: center; }
+    .promo-section input { flex: 1; padding: 8px; border: 1px solid var(--promo-border); border-radius: 6px; background: var(--card-bg); color: var(--text); font-family: inherit; }
+    .promo-apply-btn { background: var(--warning); color: #333; border: none; border-radius: 6px; padding: 8px 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .promo-applied { background: rgba(46,204,113,0.15); color: var(--success); padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px 0; }
 
-    .cart-panel, .orders-panel, .all-orders-panel {
-      background: var(--admin-bg); padding: 16px; border-radius: 12px;
-      position: fixed; top: 70px; left: 12px; right: 12px; bottom: 80px;
-      overflow-y: auto; z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: none;
+    .cart-panel, .orders-panel, .all-orders-panel, .promos-panel {
+      background: var(--admin-bg); padding: 16px; border-radius: 12px; position: fixed; top: 70px;
+      left: 12px; right: 12px; bottom: 80px; overflow-y: auto; z-index: 999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: none;
     }
-    .cart-panel.active, .orders-panel.active, .all-orders-panel.active { display: block; }
+    .cart-panel.active, .orders-panel.active, .all-orders-panel.active, .promos-panel.active { display: block; }
     
-    .cart-item, .order-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .cart-item, .order-card, .promo-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
     .cart-item { display: flex; justify-content: space-between; align-items: center; }
     .cart-item-info, .order-info { flex: 1; }
     .cart-item-name, .order-id { font-weight: 500; font-size: 14px; }
     .cart-item-detail, .order-detail { font-size: 12px; opacity: 0.7; }
     .cart-item-price { color: var(--accent); font-weight: 600; white-space: nowrap; }
-    .cart-remove-btn {
-      background: var(--danger); color: white; border: none; border-radius: 50%;
-      width: 26px; height: 26px; font-size: 14px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; margin-left: 8px; flex-shrink: 0;
-    }
+    .cart-remove-btn { background: var(--danger); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 8px; flex-shrink: 0; }
     .cart-total { font-size: 18px; font-weight: 700; text-align: right; margin: 12px 0; color: var(--accent); }
     .cart-discount { font-size: 14px; text-align: right; color: var(--success); margin: 4px 0; }
     .cart-empty, .orders-empty { text-align: center; opacity: 0.5; padding: 20px; }
     
     .order-form { margin-top: 16px; }
-    .order-form input {
-      width: 100%; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px;
-      background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; font-size: 14px;
-    }
-    .order-btn {
-      width: 100%; padding: 14px; background: var(--success); color: white;
-      border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
-    }
+    .order-form input { width: 100%; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; font-size: 14px; }
+    .order-btn { width: 100%; padding: 14px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
     .order-success { text-align: center; padding: 20px; color: var(--success); font-weight: 600; font-size: 16px; }
-    .promo-code-display {
-      background: linear-gradient(135deg, #ffd700, #ffaa00); color: #333; padding: 12px;
-      border-radius: 8px; text-align: center; font-weight: 700; font-size: 18px; margin: 10px 0; letter-spacing: 2px;
-    }
+    .promo-code-display { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #333; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 18px; margin: 10px 0; letter-spacing: 2px; }
 
-    .order-status {
-      font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block;
-    }
+    .order-status { font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block; }
     .status-pending { background: rgba(255,193,7,0.2); color: #ffc107; }
     .status-completed { background: rgba(46,204,113,0.2); color: #2ecc71; }
     .status-cancelled { background: rgba(231,76,60,0.2); color: #e74c3c; }
     .order-actions { display: flex; gap: 8px; margin-top: 8px; }
 
-    /* Админ-панель */
     .admin-panel {
       background: var(--admin-bg); padding: 16px; border-radius: 12px 12px 0 0;
       position: fixed; bottom: 0; left: 0; right: 0; max-height: 70vh;
       overflow-y: auto; z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); display: none;
     }
     .admin-panel.active { display: block; }
-    .admin-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
-    }
-    .admin-close-btn {
-      background: transparent; border: none; color: var(--text); font-size: 24px;
-      cursor: pointer; padding: 4px 8px; opacity: 0.6;
-    }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .admin-close-btn { background: transparent; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 4px 8px; opacity: 0.6; }
     .admin-login-form { display: flex; gap: 8px; margin-bottom: 16px; }
-    .admin-input {
-      flex: 1; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px;
-      background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit;
-    }
-    .admin-btn {
-      padding: 10px 16px; background: var(--accent); color: white;
-      border: none; border-radius: 8px; cursor: pointer;
-    }
+    .admin-input { flex: 1; padding: 10px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; }
+    .admin-btn { padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
     .admin-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     @media (max-width: 500px) { .admin-controls { grid-template-columns: 1fr; } }
-    .admin-control-group {
-      border: 1px solid var(--admin-border); padding: 12px; border-radius: 8px;
-      background: var(--card-bg); margin-bottom: 12px;
-    }
+    .admin-control-group { border: 1px solid var(--admin-border); padding: 12px; border-radius: 8px; background: var(--card-bg); margin-bottom: 12px; }
     .admin-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; opacity: 0.8; }
-    .admin-textarea {
-      width: 100%; height: 60px; resize: vertical; padding: 8px;
-      border: 1px solid var(--admin-border); border-radius: 6px; margin-bottom: 8px;
-      font-family: inherit; font-size: 13px; background: var(--card-bg); color: var(--text);
-    }
-    .admin-action-btn {
-      width: 100%; padding: 10px; color: white; border: none; border-radius: 8px;
-      cursor: pointer; margin-top: 8px; font-weight: 600; font-size: 14px;
-    }
-    .btn-dark { background: #333; }
-    .btn-red { background: var(--danger); }
-    .btn-orange { background: var(--warning); }
-    .btn-green { background: var(--success); }
-    .admin-logout-btn {
-      margin-top: 16px; width: 100%; padding: 12px; background: var(--danger);
-      color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
-    }
+    .admin-textarea { width: 100%; height: 60px; resize: vertical; padding: 8px; border: 1px solid var(--admin-border); border-radius: 6px; margin-bottom: 8px; font-family: inherit; font-size: 13px; background: var(--card-bg); color: var(--text); }
+    .admin-action-btn { width: 100%; padding: 10px; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; font-weight: 600; font-size: 14px; }
+    .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); }
+    .admin-logout-btn { margin-top: 16px; width: 100%; padding: 12px; background: var(--danger); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
     
-    .admin-toggle-btn {
-      position: fixed; bottom: 80px; right: 16px; width: 52px; height: 52px;
-      background: linear-gradient(135deg, #ffd700, #ffaa00); border: none; border-radius: 50%;
-      color: #333; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; box-shadow: 0 4px 16px rgba(255,170,0,0.4); z-index: 998; font-size: 24px;
-    }
+    .admin-toggle-btn { position: fixed; bottom: 80px; right: 16px; width: 52px; height: 52px; background: linear-gradient(135deg, #ffd700, #ffaa00); border: none; border-radius: 50%; color: #333; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(255,170,0,0.4); z-index: 998; font-size: 24px; }
     
-    .theme-switcher {
-      position: fixed; bottom: 16px; left: 16px; display: flex; gap: 6px; z-index: 998;
-      background: var(--card-bg); padding: 6px; border-radius: 20px;
-      border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    .theme-btn {
-      width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      background: transparent; transition: all 0.2s; padding: 0; color: var(--text);
-    }
+    .theme-switcher { position: fixed; bottom: 16px; left: 16px; display: flex; gap: 6px; z-index: 998; background: var(--card-bg); padding: 6px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .theme-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; background: transparent; transition: all 0.2s; padding: 0; color: var(--text); }
     .theme-btn.active { border-color: var(--accent); background: rgba(0,120,255,0.15); }
     
-    .delete-select {
-      width: 100%; padding: 8px; border: 1px solid var(--admin-border); border-radius: 6px;
-      margin-bottom: 8px; background: var(--card-bg); color: var(--text); font-family: inherit;
-    }
-    .admin-indicator {
-      background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px;
-      border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed;
-      top: 10px; left: 10px; z-index: 1001; display: none;
-    }
+    .delete-select { width: 100%; padding: 8px; border: 1px solid var(--admin-border); border-radius: 6px; margin-bottom: 8px; background: var(--card-bg); color: var(--text); font-family: inherit; }
+    .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 1001; display: none; }
     .admin-indicator.active { display: block; }
   </style>
 </head>
@@ -255,35 +146,25 @@
   
   <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-  <!-- Мои заказы -->
   <div id="orders-panel" class="orders-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h2 class="shop-title" style="margin:0;">Мои заказы</h2>
-      <button class="back-btn" onclick="toggleOrders()" style="margin:0;">✕</button>
-    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h2 class="shop-title" style="margin:0;">Мои заказы</h2><button class="back-btn" onclick="toggleOrders()" style="margin:0;">✕</button></div>
     <div id="orders-list"><p class="orders-empty">У вас пока нет заказов</p></div>
   </div>
 
-  <!-- Все заказы (админ) -->
   <div id="all-orders-panel" class="all-orders-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h2 class="shop-title" style="margin:0;">Все заказы</h2>
-      <button class="back-btn" onclick="toggleAllOrders()" style="margin:0;">✕</button>
-    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h2 class="shop-title" style="margin:0;">Все заказы</h2><button class="back-btn" onclick="toggleAllOrders()" style="margin:0;">✕</button></div>
     <div id="all-orders-list"><p class="orders-empty">Нет заказов</p></div>
   </div>
 
-  <!-- Корзина -->
+  <div id="promos-panel" class="promos-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h2 class="shop-title" style="margin:0;">Промокоды</h2><button class="back-btn" onclick="togglePromos()" style="margin:0;">✕</button></div>
+    <div id="promos-list"><p class="orders-empty">Нет промокодов</p></div>
+  </div>
+
   <div id="cart-panel" class="cart-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h2 class="shop-title" style="margin:0;">Корзина</h2>
-      <button class="back-btn" onclick="toggleCart()" style="margin:0;">✕</button>
-    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h2 class="shop-title" style="margin:0;">Корзина</h2><button class="back-btn" onclick="toggleCart()" style="margin:0;">✕</button></div>
     <div id="cart-items"><p class="cart-empty">Корзина пуста</p></div>
-    <div class="promo-section">
-      <input type="text" id="promo-input" placeholder="Промокод" />
-      <button class="promo-apply-btn" onclick="applyPromo()">Применить</button>
-    </div>
+    <div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div>
     <div id="promo-message"></div>
     <div class="cart-discount" id="cart-discount"></div>
     <div class="cart-total" id="cart-total"></div>
@@ -303,22 +184,16 @@
     <button class="theme-btn" onclick="setTheme('dark')">🌑</button>
   </div>
 
-  <!-- Админ-панель (снизу) -->
   <div id="admin-panel" class="admin-panel">
-    <div class="admin-header">
-      <h2 class="shop-title" style="margin:0;">Админ-панель</h2>
-      <button class="admin-close-btn" onclick="closeAdminPanel()">✕</button>
-    </div>
+    <div class="admin-header"><h2 class="shop-title" style="margin:0;">Админ-панель</h2><button class="admin-close-btn" onclick="closeAdminPanel()">✕</button></div>
     
     <div id="admin-login-area">
-      <div class="admin-login-form">
-        <input type="password" id="admin-password" class="admin-input" placeholder="Пароль" />
-        <button class="admin-btn" onclick="adminLogin()">Войти</button>
-      </div>
+      <div class="admin-login-form"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div>
     </div>
     
     <div id="admin-controls-area" style="display:none;">
-      <button class="admin-action-btn btn-green" onclick="toggleAllOrders()" style="margin-bottom:16px;">📋 Все заказы</button>
+      <button class="admin-action-btn btn-green" onclick="toggleAllOrders()" style="margin-bottom:8px;">📋 Все заказы</button>
+      <button class="admin-action-btn btn-orange" onclick="togglePromos()" style="margin-bottom:16px;">🎫 Все промокоды</button>
       
       <div class="admin-controls">
         <div class="admin-control-group">
@@ -340,7 +215,7 @@
       </div>
       
       <div class="admin-control-group">
-        <span class="admin-label">Промокод</span>
+        <span class="admin-label">Создать промокод</span>
         <input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" />
         <input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" />
         <button class="admin-action-btn btn-dark" onclick="createPromo()">Создать</button>
@@ -396,7 +271,7 @@
     // Загрузка из Firebase
     db.ref('assortment').on('value', s => { const v = s.val(); if (v) data = v; refreshView(); });
     db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
-    db.ref('promos').on('value', s => { promos = s.val() || {}; });
+    db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
 
     function refreshView() {
       if (currentView === 'main') showMain();
@@ -408,6 +283,7 @@
       updateOrdersBadge();
       if (document.getElementById('orders-panel').classList.contains('active')) showOrders();
       if (document.getElementById('all-orders-panel').classList.contains('active')) showAllOrders();
+      if (document.getElementById('promos-panel').classList.contains('active')) showPromos();
     }
 
     function stText(s) { return s ? 'В наличии' : 'Нет'; }
@@ -419,6 +295,13 @@
       let id = localStorage.getItem('swwshop_userId');
       if (!id) { id = 'user_' + Date.now(); localStorage.setItem('swwshop_userId', id); }
       return id;
+    }
+    
+    function closeAllPanels() {
+      document.getElementById('cart-panel').classList.remove('active');
+      document.getElementById('orders-panel').classList.remove('active');
+      document.getElementById('all-orders-panel').classList.remove('active');
+      document.getElementById('promos-panel').classList.remove('active');
     }
     
     // ============ ЗАКАЗЫ (пользователь) ============
@@ -443,11 +326,7 @@
       `).join('');
     }
     
-    function toggleOrders() {
-      closeAllPanels();
-      document.getElementById('orders-panel').classList.toggle('active');
-      if (document.getElementById('orders-panel').classList.contains('active')) showOrders();
-    }
+    function toggleOrders() { closeAllPanels(); document.getElementById('orders-panel').classList.toggle('active'); if (document.getElementById('orders-panel').classList.contains('active')) showOrders(); }
     
     // ============ ВСЕ ЗАКАЗЫ (админ) ============
     function showAllOrders() {
@@ -460,54 +339,67 @@
           <div class="order-detail">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB</div>
           <div style="font-size:12px;opacity:0.7;margin:4px 0;">${o.items.map(i => i.name+(i.flavorName?' - '+i.flavorName:'')).join(', ')}</div>
           <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
-          ${o.status==='pending' ? `
-            <div class="order-actions">
-              <button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button>
-              <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button>
-            </div>` : ''}
+          ${o.status==='pending' ? `<div class="order-actions"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button><button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button></div>` : ''}
         </div>
       `).join('');
     }
     
-    function toggleAllOrders() {
-      if (!isAdmin) return;
-      closeAllPanels();
-      document.getElementById('all-orders-panel').classList.toggle('active');
-      if (document.getElementById('all-orders-panel').classList.contains('active')) showAllOrders();
-    }
+    function toggleAllOrders() { if (!isAdmin) return; closeAllPanels(); document.getElementById('all-orders-panel').classList.toggle('active'); if (document.getElementById('all-orders-panel').classList.contains('active')) showAllOrders(); }
     
     function completeOrder(orderId, subtotal) {
-      if (!isAdmin) return;
-      if (!confirm('Подтвердить выполнение?')) return;
-      
+      if (!isAdmin || !confirm('Подтвердить выполнение?')) return;
       const update = { status: 'completed' };
-      
-      // Промокод только если сумма ≥ 800
+      // Промокод ТОЛЬКО если сумма >= 800
       if (subtotal >= 800) {
         const promoCode = 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
         update.promoCode = promoCode;
-        promos[promoCode] = { discount: 15, used: false, created: Date.now(), auto: true };
+        promos[promoCode] = { discount: 15, used: false, created: Date.now(), auto: true, orderId };
         db.ref('promos').set(promos);
+        alert(`Заказ выполнен! Промокод: ${promoCode}`);
+      } else {
+        alert('Заказ выполнен! (промокод не выдан - сумма менее 800₽)');
       }
-      
       db.ref('orders/' + orderId).update(update);
-      alert(subtotal >= 800 ? `Заказ выполнен! Промокод: ${update.promoCode}` : 'Заказ выполнен!');
       showAllOrders();
     }
     
     function cancelOrder(orderId) {
-      if (!isAdmin) return;
-      if (!confirm('Отменить заказ?')) return;
+      if (!isAdmin || !confirm('Отменить заказ?')) return;
       db.ref('orders/' + orderId).update({ status: 'cancelled' });
       showAllOrders();
     }
     
-    // ============ ПРОМОКОДЫ ============
+    // ============ ПРОМОКОДЫ (админ) ============
+    function showPromos() {
+      if (!isAdmin) return;
+      const el = document.getElementById('promos-list');
+      const codes = Object.entries(promos);
+      if (!codes.length) { el.innerHTML = '<p class="orders-empty">Нет промокодов</p>'; return; }
+      el.innerHTML = codes.reverse().map(([code, p]) => `
+        <div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong>${code}</strong> - ${p.discount}%
+            <div style="font-size:12px;opacity:0.7;">${p.used ? '❌ Использован' : '✅ Доступен'} | ${p.auto ? 'Авто' : 'Ручной'}</div>
+          </div>
+          <button class="btn-sm btn-delete" onclick="deletePromo('${code}')">Удалить</button>
+        </div>
+      `).join('');
+    }
+    
+    function togglePromos() { if (!isAdmin) return; closeAllPanels(); document.getElementById('promos-panel').classList.toggle('active'); if (document.getElementById('promos-panel').classList.contains('active')) showPromos(); }
+    
+    function deletePromo(code) {
+      if (!isAdmin || !confirm(`Удалить промокод ${code}?`)) return;
+      delete promos[code];
+      db.ref('promos').set(promos);
+      showPromos();
+    }
+
     function createPromo() {
       if (!isAdmin) return;
       const code = document.getElementById('promo-code').value.trim() || 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
       const discount = parseInt(document.getElementById('promo-discount').value) || 15;
-      promos[code] = { discount, used: false, created: Date.now() };
+      promos[code] = { discount, used: false, created: Date.now(), auto: false };
       db.ref('promos').set(promos);
       alert(`Промокод ${code} создан!`);
       document.getElementById('promo-code').value = '';
@@ -543,11 +435,7 @@
       saveCart(); alert('Добавлено!');
     }
     function removeFromCart(i) { cart.splice(i, 1); saveCart(); showCart(); }
-    function toggleCart() {
-      closeAllPanels();
-      document.getElementById('cart-panel').classList.toggle('active');
-      if (document.getElementById('cart-panel').classList.contains('active')) showCart();
-    }
+    function toggleCart() { closeAllPanels(); document.getElementById('cart-panel').classList.toggle('active'); if (document.getElementById('cart-panel').classList.contains('active')) showCart(); }
 
     function showCart() {
       if (!cart.length) {
@@ -583,6 +471,8 @@
       if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
         discount = Math.round(subtotal * appliedPromo.discount / 100);
         promos[appliedPromo.code].used = true;
+        promos[appliedPromo.code].usedBy = name;
+        promos[appliedPromo.code].usedAt = Date.now();
         db.ref('promos').set(promos);
       }
       
@@ -624,12 +514,6 @@
       document.getElementById('promo-message').innerHTML = '';
       document.getElementById('promo-input').value = '';
       setTimeout(() => document.getElementById('cart-panel').classList.remove('active'), 4000);
-    }
-
-    function closeAllPanels() {
-      document.getElementById('cart-panel').classList.remove('active');
-      document.getElementById('orders-panel').classList.remove('active');
-      document.getElementById('all-orders-panel').classList.remove('active');
     }
 
     // ============ ОТОБРАЖЕНИЕ ============
@@ -690,15 +574,8 @@
     function toggleItem(cat, idx) { if (!isAdmin) return; data[cat][idx].inStock = !data[cat][idx].inStock; db.ref('assortment').set(data); showCategory(cat); }
     function toggleFlavor(cat, l, f) { if (!isAdmin) return; data[cat][l].flavors[f].inStock = !data[cat][l].flavors[f].inStock; db.ref('assortment').set(data); showDetail(cat, l); }
     
-    function toggleAdminPanel() {
-      document.getElementById('admin-panel').classList.toggle('active');
-    }
-    
-    function closeAdminPanel() {
-      document.getElementById('admin-panel').classList.remove('active');
-      // НЕ выходим из админки, только закрываем панель
-    }
-    
+    function toggleAdminPanel() { document.getElementById('admin-panel').classList.toggle('active'); }
+    function closeAdminPanel() { document.getElementById('admin-panel').classList.remove('active'); }
     function updateIndicator() { document.getElementById('admin-indicator').className = isAdmin ? 'admin-indicator active' : 'admin-indicator'; }
     function updateDelSelect() {
       const cat = document.getElementById('del-category')?.value;
@@ -734,9 +611,7 @@
       data[cat].push({ name, price, flavors });
       db.ref('assortment').set(data);
       alert('Добавлено!');
-      document.getElementById('line-name').value = '';
-      document.getElementById('line-price').value = '';
-      document.getElementById('line-flavors').value = '';
+      document.getElementById('line-name').value = ''; document.getElementById('line-price').value = ''; document.getElementById('line-flavors').value = '';
       showMain();
     }
     function addItem() {
@@ -749,9 +624,7 @@
       data[cat].push({ name, price, inStock: qty > 0 });
       db.ref('assortment').set(data);
       alert('Добавлено!');
-      document.getElementById('item-name').value = '';
-      document.getElementById('item-price').value = '';
-      document.getElementById('item-qty').value = '';
+      document.getElementById('item-name').value = ''; document.getElementById('item-price').value = ''; document.getElementById('item-qty').value = '';
       showMain();
     }
     function deleteSelected() {
@@ -770,11 +643,11 @@
       showMain();
     }
 
-    // ============ ЗАПУСК ============
+    // ============ ЗАПУСК + ОЧИСТКА ============
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     
-    // Очистка старых данных (однократно)
+    // Полная очистка старых данных
     db.ref('promos').set({});
     db.ref('orders').set({});
     
