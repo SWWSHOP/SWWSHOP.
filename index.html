@@ -57,6 +57,7 @@
       cursor: pointer;
       transition: background 0.2s;
       margin-bottom: 8px;
+      box-sizing: border-box;
     }
     .category-btn:active {
       background: #eeeeee;
@@ -67,11 +68,14 @@
       align-items: center;
       padding: 12px 0;
       border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 4px;
     }
     .product-name {
       font-weight: 500;
       word-break: break-word;
-      max-width: 55%;
+      max-width: 50%;
+      min-width: 100px;
     }
     .product-price {
       font-weight: 600;
@@ -84,11 +88,11 @@
       white-space: nowrap;
     }
     .status-in-stock {
-      background: rgba(46, 204, 113, 0.1);
+      background: rgba(46, 204, 113, 0.15);
       color: var(--success);
     }
     .status-out-stock {
-      background: rgba(231, 76, 60, 0.1);
+      background: rgba(231, 76, 60, 0.15);
       color: var(--danger);
     }
     .back-btn {
@@ -114,33 +118,43 @@
       font-size: 15px;
     }
     
-    /* Кнопки удаления и управления */
-    .delete-line-btn {
-      background: var(--danger);
-      color: white;
-      border: none;
-      border-radius: 6px;
+    /* Кнопки действий */
+    .action-btns {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .btn-sm {
       padding: 6px 10px;
-      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
       cursor: pointer;
-      margin-top: 4px;
-      width: 100%;
+      color: white;
+      font-weight: 500;
     }
-    .delete-item-btn {
+    .btn-delete {
+      background: var(--danger);
+    }
+    .btn-toggle {
+      background: var(--warning);
+    }
+    .btn-delete-line {
       background: var(--danger);
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 14px;
+      padding: 8px 12px;
+      font-size: 13px;
       cursor: pointer;
-      margin-left: 4px;
+      width: 100%;
+      margin-top: 4px;
     }
-    .delete-flavor-btn {
+    .btn-delete-flavor {
       background: var(--danger);
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 50%;
       width: 28px;
       height: 28px;
       font-size: 16px;
@@ -148,34 +162,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-left: 8px;
-    }
-    .toggle-stock-btn {
-      background: var(--warning);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 12px;
-      cursor: pointer;
       margin-left: 4px;
-    }
-    .admin-mode-indicator {
-      background: var(--warning);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 1001;
-      display: none;
-    }
-    .admin-mode-indicator.active {
-      display: block;
+      flex-shrink: 0;
     }
 
+    /* Админ-панель */
     .admin-panel {
       background: var(--admin-bg);
       padding: 16px;
@@ -187,16 +178,11 @@
       max-height: calc(100vh - 120px);
       overflow-y: auto;
       z-index: 1000;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
       display: none;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
     }
     .admin-panel.active {
       display: block;
-      animation: fadeIn 0.2s ease;
     }
     .admin-login-form {
       display: flex;
@@ -248,7 +234,7 @@
     }
     .admin-textarea {
       width: 100%;
-      height: 70px;
+      height: 60px;
       resize: vertical;
       padding: 8px;
       border: 1px solid var(--admin-border);
@@ -256,6 +242,7 @@
       box-sizing: border-box;
       margin-bottom: 8px;
       font-family: inherit;
+      font-size: 13px;
     }
     .admin-action-btn {
       width: 100%;
@@ -266,21 +253,23 @@
       cursor: pointer;
       margin-top: 8px;
       font-weight: 600;
+      font-size: 14px;
     }
-    .btn-primary { background: #333; }
-    .btn-danger { background: var(--danger); }
-    .btn-warning { background: var(--warning); }
+    .btn-dark { background: #333; }
+    .btn-red { background: var(--danger); }
+    .btn-orange { background: var(--warning); }
     
     .admin-logout-btn {
       margin-top: 16px;
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       background: var(--danger);
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
+      font-size: 14px;
     }
     .admin-note {
       font-size: 12px;
@@ -318,590 +307,482 @@
       box-sizing: border-box;
     }
     
-    .admin-actions-inline {
-      display: flex;
-      gap: 4px;
-      align-items: center;
+    .admin-indicator {
+      background: var(--warning);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1001;
+      display: none;
+    }
+    .admin-indicator.active {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <div class="admin-mode-indicator" id="admin-indicator">🔧 Администратор</div>
+  <div class="admin-indicator" id="admin-indicator">🔧 АДМИН</div>
   <div class="container" id="app"></div>
 
-  <button class="admin-toggle-btn" id="adminToggleBtn" title="ADMIN">🔐</button>
+  <button class="admin-toggle-btn" onclick="toggleAdminPanel()" title="ADMIN">🔐</button>
 
+  <!-- Админ-панель -->
   <div id="admin-panel" class="admin-panel">
     <h2 class="shop-title">SWWSHOP: Админ-панель</h2>
+    
+    <!-- Форма входа -->
     <div id="admin-login-area">
       <p class="admin-note">Введите пароль для входа</p>
       <div class="admin-login-form">
-        <input type="password" id="admin-password-input" class="admin-input" placeholder="Пароль" />
-        <button class="admin-btn" id="loginBtn">Войти</button>
+        <input type="password" id="admin-password" class="admin-input" placeholder="Пароль" onkeypress="if(event.key==='Enter')adminLogin()" />
+        <button class="admin-btn" onclick="adminLogin()">Войти</button>
       </div>
     </div>
+    
+    <!-- Панель управления (скрыта до входа) -->
     <div id="admin-controls-area" style="display:none;">
       <div class="admin-controls">
-        <!-- Добавление линейки -->
+        <!-- Добавить линейку -->
         <div class="admin-control-group">
           <span class="admin-label">➕ Добавить линейку</span>
-          <input type="text" id="admin-line-name" class="admin-input" placeholder="Название" />
-          <input type="number" id="admin-line-price" class="admin-input" placeholder="Цена (₽)" />
-          <select id="admin-line-category" class="admin-input">
+          <input type="text" id="line-name" class="admin-input" placeholder="Название" />
+          <input type="number" id="line-price" class="admin-input" placeholder="Цена (₽)" />
+          <select id="line-category" class="admin-input">
             <option value="liquids">Жидкости</option>
             <option value="pouches">Шайбы</option>
           </select>
-          <textarea id="admin-line-flavors" class="admin-textarea" placeholder="Вкусы: название,✅ или название,❌"></textarea>
-          <button class="admin-action-btn btn-primary" id="addLineBtn">Добавить линейку</button>
+          <textarea id="line-flavors" class="admin-textarea" placeholder="Вкус,✅&#10;Вкус,❌"></textarea>
+          <button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button>
         </div>
-        <!-- Добавление товара -->
+        
+        <!-- Добавить товар -->
         <div class="admin-control-group">
           <span class="admin-label">➕ Добавить товар</span>
-          <input type="text" id="admin-item-name" class="admin-input" placeholder="Название" />
-          <input type="number" id="admin-item-price" class="admin-input" placeholder="Цена (₽)" />
-          <select id="admin-item-category" class="admin-input">
+          <input type="text" id="item-name" class="admin-input" placeholder="Название" />
+          <input type="number" id="item-price" class="admin-input" placeholder="Цена (₽)" />
+          <select id="item-category" class="admin-input">
             <option value="coils">Испарители</option>
             <option value="devices">Устройства</option>
           </select>
-          <input type="number" id="admin-item-qty" class="admin-input" placeholder="Количество (0 - нет в наличии)" />
-          <button class="admin-action-btn btn-primary" id="addItemBtn">Добавить товар</button>
+          <input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0 = нет)" />
+          <button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button>
         </div>
       </div>
       
-      <!-- Удаление товаров -->
+      <!-- Удаление -->
       <div class="admin-control-group delete-section">
-        <span class="admin-label" style="color: var(--danger);">🗑️ Удаление товаров</span>
-        <select id="admin-delete-category" class="delete-select">
+        <span class="admin-label" style="color:var(--danger);">🗑️ Удаление</span>
+        <select id="del-category" class="delete-select" onchange="updateDelSelect()">
           <option value="liquids">Жидкости</option>
           <option value="pouches">Шайбы</option>
           <option value="coils">Испарители</option>
           <option value="devices">Устройства</option>
         </select>
-        <select id="admin-delete-item" class="delete-select">
-          <option value="">-- Выберите товар --</option>
+        <select id="del-item" class="delete-select">
+          <option value="">-- Выберите --</option>
         </select>
-        <button class="admin-action-btn btn-danger" id="deleteItemBtn">🗑️ Удалить выбранный товар</button>
-        <button class="admin-action-btn btn-warning" id="deleteOutOfStockBtn">⚠️ Удалить всё что закончилось</button>
+        <button class="admin-action-btn btn-red" onclick="deleteSelected()">🗑️ Удалить выбранное</button>
+        <button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">⚠️ Удалить всё что закончилось</button>
       </div>
       
       <!-- Обновление остатков -->
       <div class="admin-control-group">
         <span class="admin-label">📦 Обновить остатки</span>
-        <textarea id="admin-stock-update" class="admin-textarea" placeholder="категория|название|количество&#10;liquids|ALFA VAPE 50MG|10"></textarea>
-        <button class="admin-action-btn btn-primary" id="updateStockBtn">Обновить остатки</button>
+        <textarea id="stock-update" class="admin-textarea" placeholder="категория|название|кол-во&#10;liquids|ALFA VAPE 50MG|10"></textarea>
+        <button class="admin-action-btn btn-dark" onclick="updateStock()">Обновить</button>
       </div>
       
-      <button class="admin-logout-btn" id="logoutBtn">🚪 Выйти из админки</button>
+      <button class="admin-logout-btn" onclick="adminLogout()">🚪 Выйти</button>
     </div>
   </div>
 
   <script>
-    (function() {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-
-      // Данные
-      const data = {
-        liquids: [
-          {
-            name: 'ALFA VAPE 50MG',
-            price: 350,
-            flavors: [
-              { name: 'Черничный лимонад', inStock: false },
-              { name: 'Персик манго', inStock: true },
-              { name: 'Вишневая кола', inStock: false },
-              { name: 'Манго пинаколада', inStock: true },
-              { name: 'Мармеладные мишки', inStock: true },
-              { name: 'Леденцы лимонные', inStock: true },
-              { name: 'Клубнично-банановая жвачка', inStock: true },
-              { name: 'Энергетик киви яблоко', inStock: true },
-              { name: 'Ананас малина', inStock: true },
-              { name: 'Ягодный микс', inStock: false }
-            ]
-          },
-          {
-            name: 'ISTERIKA CLASSIC 70MG',
-            price: 600,
-            flavors: [
-              { name: 'Ананас ежевика', inStock: true },
-              { name: 'Арбузные леденцы', inStock: true },
-              { name: 'Ежевичный мармелад', inStock: true },
-              { name: 'Зелёный Бёрн', inStock: true },
-              { name: 'Клубника банан дыня', inStock: true },
-              { name: 'Клубника драгонфрут', inStock: true },
-              { name: 'Клубника малиновое варенье', inStock: true },
-              { name: 'Кола чупа чупс', inStock: true },
-              { name: 'Лимонад черника', inStock: true },
-              { name: 'Маракуйя грейпфрут', inStock: true },
-              { name: 'Персик зеленый виноград', inStock: true },
-              { name: 'Фруктовые мармеладные мишки', inStock: true },
-              { name: 'Черная смородина груша', inStock: true },
-              { name: 'Экзотик микс', inStock: true },
-              { name: 'Яблоко лесной микс', inStock: true }
-            ]
-          }
-        ],
-        pouches: [
-          {
-            name: 'GLITCH POUCHES 200MG',
-            price: 500,
-            flavors: [
-              { name: 'Груша', inStock: true },
-              { name: 'Фанта', inStock: true },
-              { name: 'Баблгам', inStock: true }
-            ]
-          },
-          {
-            name: 'ICEBERG EXTREME 150MG',
-            price: 500,
-            flavors: [
-              { name: 'Манго банан', inStock: true }
-            ]
-          }
-        ],
-        coils: [
-          { name: 'XROS 0.6-0.4', price: 330, inStock: true },
-          { name: 'Hero 50-58W', price: 330, inStock: true },
-          { name: 'Pasito K5', price: 330, inStock: true }
-        ],
-        devices: []
-      };
-
-      let isAdminLoggedIn = false;
-      let currentView = { type: 'main' };
-
-      // DOM элементы
-      const app = document.getElementById('app');
-      const adminPanel = document.getElementById('admin-panel');
-      const adminIndicator = document.getElementById('admin-indicator');
-      const adminLoginArea = document.getElementById('admin-login-area');
-      const adminControlsArea = document.getElementById('admin-controls-area');
-      const adminPasswordInput = document.getElementById('admin-password-input');
-      const adminDeleteCategory = document.getElementById('admin-delete-category');
-      const adminDeleteItem = document.getElementById('admin-delete-item');
-
-      // Вспомогательные функции
-      function statusText(inStock) {
-        return inStock ? '✅ В наличии' : '❌ Нет';
-      }
-
-      function statusClass(inStock) {
-        return inStock ? 'status-in-stock' : 'status-out-stock';
-      }
-
-      function updateAdminUI() {
-        if (isAdminLoggedIn) {
-          adminIndicator.classList.add('active');
-        } else {
-          adminIndicator.classList.remove('active');
+    // ============ ДАННЫЕ ============
+    const data = {
+      liquids: [
+        {
+          name: 'ALFA VAPE 50MG',
+          price: 350,
+          flavors: [
+            { name: 'Черничный лимонад', inStock: false },
+            { name: 'Персик манго', inStock: true },
+            { name: 'Вишневая кола', inStock: false },
+            { name: 'Манго пинаколада', inStock: true },
+            { name: 'Мармеладные мишки', inStock: true },
+            { name: 'Леденцы лимонные', inStock: true },
+            { name: 'Клубнично-банановая жвачка', inStock: true },
+            { name: 'Энергетик киви яблоко', inStock: true },
+            { name: 'Ананас малина', inStock: true },
+            { name: 'Ягодный микс', inStock: false }
+          ]
+        },
+        {
+          name: 'ISTERIKA CLASSIC 70MG',
+          price: 600,
+          flavors: [
+            { name: 'Ананас ежевика', inStock: true },
+            { name: 'Арбузные леденцы', inStock: true },
+            { name: 'Ежевичный мармелад', inStock: true },
+            { name: 'Зелёный Бёрн', inStock: true },
+            { name: 'Клубника банан дыня', inStock: true },
+            { name: 'Клубника драгонфрут', inStock: true },
+            { name: 'Клубника малиновое варенье', inStock: true },
+            { name: 'Кола чупа чупс', inStock: true },
+            { name: 'Лимонад черника', inStock: true },
+            { name: 'Маракуйя грейпфрут', inStock: true },
+            { name: 'Персик зеленый виноград', inStock: true },
+            { name: 'Фруктовые мармеладные мишки', inStock: true },
+            { name: 'Черная смородина груша', inStock: true },
+            { name: 'Экзотик микс', inStock: true },
+            { name: 'Яблоко лесной микс', inStock: true }
+          ]
         }
-        // Перерисовать текущий вид
-        if (currentView.type === 'main') showMainMenu();
-        else if (currentView.type === 'category') showCategory(currentView.category);
-        else if (currentView.type === 'detail') showProductDetail(currentView.category, currentView.index);
-      }
-
-      function updateDeleteSelect() {
-        const category = adminDeleteCategory.value;
-        adminDeleteItem.innerHTML = '<option value="">-- Выберите товар --</option>';
-        
-        if (data[category]) {
-          data[category].forEach((item, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = item.name;
-            adminDeleteItem.appendChild(option);
-          });
+      ],
+      pouches: [
+        {
+          name: 'GLITCH POUCHES 200MG',
+          price: 500,
+          flavors: [
+            { name: 'Груша', inStock: true },
+            { name: 'Фанта', inStock: true },
+            { name: 'Баблгам', inStock: true }
+          ]
+        },
+        {
+          name: 'ICEBERG EXTREME 150MG',
+          price: 500,
+          flavors: [
+            { name: 'Манго банан', inStock: true }
+          ]
         }
-      }
+      ],
+      coils: [
+        { name: 'XROS 0.6-0.4', price: 330, inStock: true },
+        { name: 'Hero 50-58W', price: 330, inStock: true },
+        { name: 'Pasito K5', price: 330, inStock: true }
+      ],
+      devices: []
+    };
 
-      // Функции отображения
-      function showMainMenu() {
-        currentView = { type: 'main' };
-        let html = `
-          <h1 class="shop-title">SWWSHOP</h1>
-          <p style="text-align:center;color:#666;margin-bottom:16px;">Выберите категорию:</p>
-          <button class="category-btn" data-action="category" data-category="liquids">💧 Жидкости</button>
-          <button class="category-btn" data-action="category" data-category="pouches">👄 Шайбы</button>
-          <button class="category-btn" data-action="category" data-category="coils">🔄 Испарители</button>
-          <button class="category-btn" data-action="category" data-category="devices">📱 Устройства</button>
-        `;
-        app.innerHTML = html;
-        attachMainListeners();
-      }
+    let isAdmin = false;
+    let currentView = 'main'; // main, category, detail
+    let currentCategory = '';
+    let currentIndex = 0;
 
-      function showCategory(category) {
-        currentView = { type: 'category', category: category };
-        const titles = {
-          liquids: '💧 Жидкости',
-          pouches: '👄 Шайбы',
-          coils: '🔄 Испарители',
-          devices: '📱 Устройства'
-        };
+    // ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
+    function stText(s) { return s ? '✅ В наличии' : '❌ Нет'; }
+    function stClass(s) { return s ? 'status-in-stock' : 'status-out-stock'; }
+    function backBtn(action) { return `<button class="back-btn" onclick="${action}">← Назад</button>`; }
+    
+    function updateIndicator() {
+      document.getElementById('admin-indicator').className = isAdmin ? 'admin-indicator active' : 'admin-indicator';
+    }
 
-        let html = `<button class="back-btn" data-action="main">← Назад</button>`;
-        html += `<h1 class="shop-title">${titles[category]}</h1>`;
-
-        if (category === 'liquids' || category === 'pouches') {
-          if (data[category].length === 0) {
-            html += '<p style="text-align:center;color:#999;">Нет товаров</p>';
-          } else {
-            data[category].forEach((line, index) => {
-              const hasStock = line.flavors.some(f => f.inStock);
-              html += `
-                <div style="margin-bottom:8px;">
-                  <button class="category-btn" data-action="detail" data-category="${category}" data-index="${index}">
-                    <div><strong>${line.name}</strong></div>
-                    <div style="font-size:13px;color:#666;">${line.price}₽ · ${line.flavors.length} вкусов · ${hasStock ? '✅' : '❌'}</div>
-                  </button>
-                  ${isAdminLoggedIn ? `
-                    <div style="display:flex; gap:4px; margin-top:4px;">
-                      <button class="delete-line-btn" data-action="deleteLine" data-category="${category}" data-index="${index}">🗑️ Удалить линейку</button>
-                    </div>
-                  ` : ''}
-                </div>
-              `;
-            });
-          }
-        } else {
-          if (data[category].length === 0) {
-            html += '<p style="text-align:center;color:#999;">Нет товаров</p>';
-          } else {
-            data[category].forEach((item, index) => {
-              html += `
-                <div class="product-row">
-                  <span class="product-name">${item.name}</span>
-                  <span class="product-price">${item.price}₽</span>
-                  <span class="status-badge ${statusClass(item.inStock)}">${statusText(item.inStock)}</span>
-                  ${isAdminLoggedIn ? `
-                    <div class="admin-actions-inline">
-                      <button class="toggle-stock-btn" data-action="toggleStock" data-category="${category}" data-index="${index}">🔄</button>
-                      <button class="delete-item-btn" data-action="deleteItem" data-category="${category}" data-index="${index}">🗑️</button>
-                    </div>
-                  ` : ''}
-                </div>
-              `;
-            });
-          }
-        }
-
-        app.innerHTML = html;
-        attachCategoryListeners(category);
-      }
-
-      function showProductDetail(category, index) {
-        currentView = { type: 'detail', category: category, index: index };
-        const line = data[category][index];
-        
-        let html = `<button class="back-btn" data-action="category" data-category="${category}">← Назад</button>`;
-        html += `<h1 class="shop-title">${line.name}</h1>`;
-        html += `<p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price}₽</p>`;
-        html += `<div class="section-title">Вкусы (${line.flavors.length}):</div>`;
-
-        if (line.flavors.length === 0) {
-          html += '<p style="text-align:center;color:#999;">Нет вкусов</p>';
-        } else {
-          line.flavors.forEach((flavor, flavorIndex) => {
-            html += `
-              <div class="flavor-row">
-                <span>${flavor.name}</span>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="status-badge ${statusClass(flavor.inStock)}">${statusText(flavor.inStock)}</span>
-                  ${isAdminLoggedIn ? `
-                    <button class="toggle-stock-btn" data-action="toggleFlavorStock" data-category="${category}" data-line-index="${index}" data-flavor-index="${flavorIndex}">🔄</button>
-                    <button class="delete-flavor-btn" data-action="deleteFlavor" data-category="${category}" data-line-index="${index}" data-flavor-index="${flavorIndex}">×</button>
-                  ` : ''}
-                </div>
-              </div>
-            `;
-          });
-        }
-
-        app.innerHTML = html;
-        attachDetailListeners(category, index);
-      }
-
-      // Обработчики событий (делегирование)
-      function attachMainListeners() {
-        app.querySelectorAll('[data-action="category"]').forEach(btn => {
-          btn.addEventListener('click', function() {
-            showCategory(this.dataset.category);
-          });
+    function updateDelSelect() {
+      const cat = document.getElementById('del-category').value;
+      const sel = document.getElementById('del-item');
+      sel.innerHTML = '<option value="">-- Выберите --</option>';
+      if (data[cat]) {
+        data[cat].forEach((item, i) => {
+          sel.innerHTML += `<option value="${i}">${item.name}</option>`;
         });
       }
+    }
 
-      function attachCategoryListeners(category) {
-        // Кнопка назад
-        app.querySelector('[data-action="main"]')?.addEventListener('click', showMainMenu);
-        
-        // Переход к деталям линейки
-        app.querySelectorAll('[data-action="detail"]').forEach(btn => {
-          btn.addEventListener('click', function() {
-            showProductDetail(this.dataset.category, parseInt(this.dataset.index));
-          });
-        });
-        
-        // Удаление линейки
-        app.querySelectorAll('[data-action="deleteLine"]').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const cat = this.dataset.category;
-            const idx = parseInt(this.dataset.index);
-            const name = data[cat][idx].name;
-            if (confirm(`Удалить линейку "${name}"?`)) {
-              data[cat].splice(idx, 1);
-              alert('Линейка удалена!');
-              showCategory(cat);
-              updateDeleteSelect();
-            }
-          });
-        });
-        
-        // Переключение наличия для простых товаров
-        app.querySelectorAll('[data-action="toggleStock"]').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const cat = this.dataset.category;
-            const idx = parseInt(this.dataset.index);
-            data[cat][idx].inStock = !data[cat][idx].inStock;
-            showCategory(cat);
-          });
-        });
-        
-        // Удаление простого товара
-        app.querySelectorAll('[data-action="deleteItem"]').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const cat = this.dataset.category;
-            const idx = parseInt(this.dataset.index);
-            const name = data[cat][idx].name;
-            if (confirm(`Удалить "${name}"?`)) {
-              data[cat].splice(idx, 1);
-              alert('Товар удален!');
-              showCategory(cat);
-              updateDeleteSelect();
-            }
-          });
-        });
-      }
+    // ============ ОТОБРАЖЕНИЕ ============
+    function showMain() {
+      currentView = 'main';
+      document.getElementById('app').innerHTML = `
+        <h1 class="shop-title">SWWSHOP</h1>
+        <p style="text-align:center;color:#666;margin-bottom:16px;">Выберите категорию:</p>
+        <button class="category-btn" onclick="showCategory('liquids')">💧 Жидкости</button>
+        <button class="category-btn" onclick="showCategory('pouches')">👄 Шайбы</button>
+        <button class="category-btn" onclick="showCategory('coils')">🔄 Испарители</button>
+        <button class="category-btn" onclick="showCategory('devices')">📱 Устройства</button>
+      `;
+    }
 
-      function attachDetailListeners(category, lineIndex) {
-        // Кнопка назад
-        app.querySelector('[data-action="category"]')?.addEventListener('click', function() {
-          showCategory(this.dataset.category);
-        });
-        
-        // Переключение наличия вкуса
-        app.querySelectorAll('[data-action="toggleFlavorStock"]').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const cat = this.dataset.category;
-            const lIdx = parseInt(this.dataset.lineIndex);
-            const fIdx = parseInt(this.dataset.flavorIndex);
-            data[cat][lIdx].flavors[fIdx].inStock = !data[cat][lIdx].flavors[fIdx].inStock;
-            showProductDetail(cat, lIdx);
-          });
-        });
-        
-        // Удаление вкуса
-        app.querySelectorAll('[data-action="deleteFlavor"]').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const cat = this.dataset.category;
-            const lIdx = parseInt(this.dataset.lineIndex);
-            const fIdx = parseInt(this.dataset.flavorIndex);
-            const flavorName = data[cat][lIdx].flavors[fIdx].name;
-            if (confirm(`Удалить вкус "${flavorName}"?`)) {
-              data[cat][lIdx].flavors.splice(fIdx, 1);
-              alert('Вкус удален!');
-              showProductDetail(cat, lIdx);
-            }
-          });
-        });
-      }
-
-      // Админ-функции
-      function toggleAdminPanel() {
-        adminPanel.classList.toggle('active');
-        if (adminPanel.classList.contains('active')) {
-          updateDeleteSelect();
-        }
-      }
-
-      function adminLogin() {
-        const password = adminPasswordInput.value;
-        if (password === 'SWWADMIN_SWQ35YTF') {
-          isAdminLoggedIn = true;
-          adminLoginArea.style.display = 'none';
-          adminControlsArea.style.display = 'block';
-          adminPasswordInput.value = '';
-          updateAdminUI();
-          updateDeleteSelect();
-          alert('✅ Вы вошли как администратор');
-        } else {
-          alert('❌ Неверный пароль!');
-        }
-      }
-
-      function adminLogout() {
-        isAdminLoggedIn = false;
-        adminLoginArea.style.display = 'block';
-        adminControlsArea.style.display = 'none';
-        adminPanel.classList.remove('active');
-        updateAdminUI();
-      }
-
-      function adminAddLine() {
-        if (!isAdminLoggedIn) return alert('Войдите в админку!');
-        const name = document.getElementById('admin-line-name').value.trim();
-        const price = parseInt(document.getElementById('admin-line-price').value);
-        const category = document.getElementById('admin-line-category').value;
-        const flavorsText = document.getElementById('admin-line-flavors').value.trim();
-
-        if (!name || !price) return alert('Заполните название и цену!');
-        if (!flavorsText) return alert('Добавьте вкусы!');
-
-        const flavors = flavorsText.split('\n').filter(l => l.trim()).map(line => {
-          const parts = line.split(',');
-          return {
-            name: parts[0].trim(),
-            inStock: parts[1] && parts[1].trim() === '✅'
-          };
-        });
-
-        if (flavors.length === 0) return alert('Добавьте хотя бы один вкус!');
-
-        data[category].push({ name, price, flavors });
-        alert(`Линейка "${name}" добавлена!`);
-        
-        document.getElementById('admin-line-name').value = '';
-        document.getElementById('admin-line-price').value = '';
-        document.getElementById('admin-line-flavors').value = '';
-        
-        updateDeleteSelect();
-        showMainMenu();
-        adminPanel.classList.remove('active');
-      }
-
-      function adminAddItem() {
-        if (!isAdminLoggedIn) return alert('Войдите в админку!');
-        const name = document.getElementById('admin-item-name').value.trim();
-        const price = parseInt(document.getElementById('admin-item-price').value);
-        const category = document.getElementById('admin-item-category').value;
-        const qty = parseInt(document.getElementById('admin-item-qty').value) || 0;
-
-        if (!name || !price) return alert('Заполните название и цену!');
-
-        data[category].push({ name, price, inStock: qty > 0 });
-        alert(`Товар "${name}" добавлен!`);
-        
-        document.getElementById('admin-item-name').value = '';
-        document.getElementById('admin-item-price').value = '';
-        document.getElementById('admin-item-qty').value = '';
-        
-        updateDeleteSelect();
-        showMainMenu();
-        adminPanel.classList.remove('active');
-      }
-
-      function adminDeleteItem() {
-        if (!isAdminLoggedIn) return alert('Войдите в админку!');
-        const category = adminDeleteCategory.value;
-        const index = parseInt(adminDeleteItem.value);
-        
-        if (isNaN(index)) return alert('Выберите товар!');
-        
-        const itemName = data[category][index].name;
-        if (confirm(`Удалить "${itemName}"?`)) {
-          data[category].splice(index, 1);
-          alert('Товар удален!');
-          updateDeleteSelect();
-          showMainMenu();
-          adminPanel.classList.remove('active');
-        }
-      }
-
-      function adminDeleteOutOfStock() {
-        if (!isAdminLoggedIn) return alert('Войдите в админку!');
-        if (!confirm('Удалить ВСЕ товары, которых нет в наличии? Это нельзя отменить!')) return;
-        
-        let deleted = 0;
-        
-        ['liquids', 'pouches'].forEach(cat => {
-          const before = data[cat].length;
-          data[cat] = data[cat].filter(line => line.flavors.some(f => f.inStock));
-          deleted += before - data[cat].length;
-        });
-        
-        ['coils', 'devices'].forEach(cat => {
-          const before = data[cat].length;
-          data[cat] = data[cat].filter(item => item.inStock);
-          deleted += before - data[cat].length;
-        });
-        
-        alert(`Удалено товаров: ${deleted}`);
-        updateDeleteSelect();
-        showMainMenu();
-        adminPanel.classList.remove('active');
-      }
-
-      function adminUpdateStock() {
-        if (!isAdminLoggedIn) return alert('Войдите в админку!');
-        const text = document.getElementById('admin-stock-update').value.trim();
-        if (!text) return alert('Введите данные!');
-        
-        const lines = text.split('\n').filter(l => l.trim());
-        let updated = 0;
-        
-        lines.forEach(line => {
-          const parts = line.split('|');
-          if (parts.length >= 3) {
-            const cat = parts[0].trim();
-            const name = parts[1].trim();
-            const qty = parseInt(parts[2].trim());
-            
-            if (data[cat]) {
-              const item = data[cat].find(i => i.name === name);
-              if (item) {
-                if (item.flavors) {
-                  item.flavors.forEach(f => f.inStock = qty > 0);
-                } else {
-                  item.inStock = qty > 0;
-                }
-                updated++;
-              }
-            }
-          }
-        });
-        
-        alert(`Обновлено позиций: ${updated}`);
-        document.getElementById('admin-stock-update').value = '';
-      }
-
-      // Привязка событий к кнопкам админ-панели
-      document.getElementById('adminToggleBtn').addEventListener('click', toggleAdminPanel);
-      document.getElementById('loginBtn').addEventListener('click', adminLogin);
-      document.getElementById('logoutBtn').addEventListener('click', adminLogout);
-      document.getElementById('addLineBtn').addEventListener('click', adminAddLine);
-      document.getElementById('addItemBtn').addEventListener('click', adminAddItem);
-      document.getElementById('deleteItemBtn').addEventListener('click', adminDeleteItem);
-      document.getElementById('deleteOutOfStockBtn').addEventListener('click', adminDeleteOutOfStock);
-      document.getElementById('updateStockBtn').addEventListener('click', adminUpdateStock);
+    function showCategory(cat) {
+      currentView = 'category';
+      currentCategory = cat;
+      const titles = { liquids:'💧 Жидкости', pouches:'👄 Шайбы', coils:'🔄 Испарители', devices:'📱 Устройства' };
       
-      adminDeleteCategory.addEventListener('change', updateDeleteSelect);
+      let h = backBtn('showMain()') + `<h1 class="shop-title">${titles[cat]}</h1>`;
       
-      // Enter для входа
-      adminPasswordInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') adminLogin();
+      if (cat === 'liquids' || cat === 'pouches') {
+        if (data[cat].length === 0) {
+          h += '<p style="text-align:center;color:#999;">Нет товаров</p>';
+        } else {
+          data[cat].forEach((line, i) => {
+            const hasStock = line.flavors.some(f => f.inStock);
+            h += `<div style="margin-bottom:8px;">
+              <button class="category-btn" onclick="showDetail('${cat}',${i})">
+                <div><strong>${line.name}</strong></div>
+                <div style="font-size:13px;color:#666;">${line.price}₽ · ${line.flavors.length} вкусов · ${hasStock?'✅':'❌'}</div>
+              </button>
+              ${isAdmin ? `<button class="btn-delete-line" onclick="deleteLine('${cat}',${i})">🗑️ Удалить линейку</button>` : ''}
+            </div>`;
+          });
+        }
+      } else {
+        if (data[cat].length === 0) {
+          h += '<p style="text-align:center;color:#999;">Нет товаров</p>';
+        } else {
+          data[cat].forEach((item, i) => {
+            h += `<div class="product-row">
+              <span class="product-name">${item.name}</span>
+              <span class="product-price">${item.price}₽</span>
+              <span class="status-badge ${stClass(item.inStock)}">${stText(item.inStock)}</span>
+              ${isAdmin ? `<div class="action-btns">
+                <button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">🔄</button>
+                <button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">🗑️</button>
+              </div>` : ''}
+            </div>`;
+          });
+        }
+      }
+      
+      document.getElementById('app').innerHTML = h;
+    }
+
+    function showDetail(cat, idx) {
+      currentView = 'detail';
+      currentCategory = cat;
+      currentIndex = idx;
+      const line = data[cat][idx];
+      
+      let h = backBtn(`showCategory('${cat}')`) + `
+        <h1 class="shop-title">${line.name}</h1>
+        <p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price}₽</p>
+        <div class="section-title">Вкусы (${line.flavors.length}):</div>`;
+      
+      if (line.flavors.length === 0) {
+        h += '<p style="text-align:center;color:#999;">Нет вкусов</p>';
+      } else {
+        line.flavors.forEach((flavor, fi) => {
+          h += `<div class="flavor-row">
+            <span>${flavor.name}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="status-badge ${stClass(flavor.inStock)}">${stText(flavor.inStock)}</span>
+              ${isAdmin ? `
+                <button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">🔄</button>
+                <button class="btn-delete-flavor" onclick="deleteFlavor('${cat}',${idx},${fi})">×</button>
+              ` : ''}
+            </div>
+          </div>`;
+        });
+      }
+      
+      document.getElementById('app').innerHTML = h;
+    }
+
+    // ============ ДЕЙСТВИЯ (только для админа) ============
+    function deleteLine(cat, idx) {
+      if (!isAdmin) return;
+      const name = data[cat][idx].name;
+      if (confirm(`Удалить линейку "${name}"?`)) {
+        data[cat].splice(idx, 1);
+        alert('Удалено!');
+        updateDelSelect();
+        showCategory(cat);
+      }
+    }
+
+    function deleteItem(cat, idx) {
+      if (!isAdmin) return;
+      const name = data[cat][idx].name;
+      if (confirm(`Удалить "${name}"?`)) {
+        data[cat].splice(idx, 1);
+        alert('Удалено!');
+        updateDelSelect();
+        showCategory(cat);
+      }
+    }
+
+    function deleteFlavor(cat, lineIdx, flIdx) {
+      if (!isAdmin) return;
+      const flavorName = data[cat][lineIdx].flavors[flIdx].name;
+      if (confirm(`Удалить вкус "${flavorName}"?`)) {
+        data[cat][lineIdx].flavors.splice(flIdx, 1);
+        alert('Вкус удалён!');
+        showDetail(cat, lineIdx);
+      }
+    }
+
+    function toggleItem(cat, idx) {
+      if (!isAdmin) return;
+      data[cat][idx].inStock = !data[cat][idx].inStock;
+      showCategory(cat);
+    }
+
+    function toggleFlavor(cat, lineIdx, flIdx) {
+      if (!isAdmin) return;
+      data[cat][lineIdx].flavors[flIdx].inStock = !data[cat][lineIdx].flavors[flIdx].inStock;
+      showDetail(cat, lineIdx);
+    }
+
+    // ============ АДМИН-ПАНЕЛЬ ============
+    function toggleAdminPanel() {
+      const panel = document.getElementById('admin-panel');
+      panel.classList.toggle('active');
+      if (panel.classList.contains('active')) updateDelSelect();
+    }
+
+    function adminLogin() {
+      const pwd = document.getElementById('admin-password').value;
+      if (pwd === 'SWWADMIN_SWQ35YTF') {
+        isAdmin = true;
+        document.getElementById('admin-login-area').style.display = 'none';
+        document.getElementById('admin-controls-area').style.display = 'block';
+        document.getElementById('admin-password').value = '';
+        updateIndicator();
+        updateDelSelect();
+        // Перерисовать текущий вид с кнопками
+        if (currentView === 'main') showMain();
+        else if (currentView === 'category') showCategory(currentCategory);
+        else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
+        alert('✅ Вы вошли как администратор');
+      } else {
+        alert('❌ Неверный пароль!');
+      }
+    }
+
+    function adminLogout() {
+      isAdmin = false;
+      document.getElementById('admin-login-area').style.display = 'block';
+      document.getElementById('admin-controls-area').style.display = 'none';
+      document.getElementById('admin-panel').classList.remove('active');
+      updateIndicator();
+      // Перерисовать без кнопок
+      if (currentView === 'main') showMain();
+      else if (currentView === 'category') showCategory(currentCategory);
+      else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
+    }
+
+    function addLine() {
+      if (!isAdmin) return alert('Войдите в админку!');
+      const name = document.getElementById('line-name').value.trim();
+      const price = parseInt(document.getElementById('line-price').value);
+      const cat = document.getElementById('line-category').value;
+      const flavText = document.getElementById('line-flavors').value.trim();
+      
+      if (!name || !price) return alert('Заполните название и цену!');
+      if (!flavText) return alert('Добавьте вкусы!');
+      
+      const flavors = flavText.split('\n').filter(l => l.trim()).map(line => {
+        const p = line.split(',');
+        return { name: p[0].trim(), inStock: p[1] && p[1].trim() === '✅' };
       });
-
-      // Старт
-      showMainMenu();
-      updateAdminUI();
-      updateDeleteSelect();
       
-    })();
+      if (flavors.length === 0) return alert('Минимум 1 вкус!');
+      
+      data[cat].push({ name, price, flavors });
+      alert(`"${name}" добавлено!`);
+      document.getElementById('line-name').value = '';
+      document.getElementById('line-price').value = '';
+      document.getElementById('line-flavors').value = '';
+      updateDelSelect();
+      showMain();
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+
+    function addItem() {
+      if (!isAdmin) return alert('Войдите в админку!');
+      const name = document.getElementById('item-name').value.trim();
+      const price = parseInt(document.getElementById('item-price').value);
+      const cat = document.getElementById('item-category').value;
+      const qty = parseInt(document.getElementById('item-qty').value) || 0;
+      
+      if (!name || !price) return alert('Заполните название и цену!');
+      
+      data[cat].push({ name, price, inStock: qty > 0 });
+      alert(`"${name}" добавлено!`);
+      document.getElementById('item-name').value = '';
+      document.getElementById('item-price').value = '';
+      document.getElementById('item-qty').value = '';
+      updateDelSelect();
+      showMain();
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+
+    function deleteSelected() {
+      if (!isAdmin) return alert('Войдите в админку!');
+      const cat = document.getElementById('del-category').value;
+      const idx = parseInt(document.getElementById('del-item').value);
+      if (isNaN(idx)) return alert('Выберите товар!');
+      const name = data[cat][idx].name;
+      if (confirm(`Удалить "${name}"?`)) {
+        data[cat].splice(idx, 1);
+        alert('Удалено!');
+        updateDelSelect();
+        showMain();
+        document.getElementById('admin-panel').classList.remove('active');
+      }
+    }
+
+    function deleteAllOutOfStock() {
+      if (!isAdmin) return alert('Войдите в админку!');
+      if (!confirm('Удалить ВСЕ товары, которых нет в наличии?')) return;
+      
+      let del = 0;
+      ['liquids','pouches'].forEach(cat => {
+        const before = data[cat].length;
+        data[cat] = data[cat].filter(line => line.flavors.some(f => f.inStock));
+        del += before - data[cat].length;
+      });
+      ['coils','devices'].forEach(cat => {
+        const before = data[cat].length;
+        data[cat] = data[cat].filter(item => item.inStock);
+        del += before - data[cat].length;
+      });
+      
+      alert(`Удалено: ${del} позиций`);
+      updateDelSelect();
+      showMain();
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+
+    function updateStock() {
+      if (!isAdmin) return alert('Войдите в админку!');
+      const text = document.getElementById('stock-update').value.trim();
+      if (!text) return alert('Введите данные!');
+      
+      let updated = 0;
+      text.split('\n').filter(l => l.trim()).forEach(line => {
+        const parts = line.split('|');
+        if (parts.length >= 3) {
+          const cat = parts[0].trim();
+          const name = parts[1].trim();
+          const qty = parseInt(parts[2].trim());
+          if (data[cat]) {
+            const item = data[cat].find(i => i.name === name);
+            if (item) {
+              if (item.flavors) {
+                item.flavors.forEach(f => f.inStock = qty > 0);
+              } else {
+                item.inStock = qty > 0;
+              }
+              updated++;
+            }
+          }
+        }
+      });
+      
+      alert(`Обновлено: ${updated} позиций`);
+      document.getElementById('stock-update').value = '';
+    }
+
+    // ============ ЗАПУСК ============
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    
+    updateDelSelect();
+    showMain();
   </script>
 </body>
 </html>
