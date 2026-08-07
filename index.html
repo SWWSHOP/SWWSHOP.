@@ -123,7 +123,7 @@
         overflow-y: auto;
         z-index: 1000;
         box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-        display: none; /* скрыто по умолчанию */
+        display: none;
         transform-origin: bottom center;
         animation: fadeIn 0.2s ease;
       }
@@ -360,14 +360,4 @@
         return inStock ? 'status-in-stock' : 'status-out-stock';
       }
 
-      function renderBackButton(callback) {
-        return `<button class="back-btn" onclick="${callback}">← Назад</button>`;
-      }
-
-      function showMainMenu() {
-        const container = document.getElementById('app');
-        container.innerHTML = `
-          <h1 class="shop-title">SWWSHOP</h1>
-          <button class="category-btn" onclick="showCategory('liquids')">🧪 Жидкости</button>
-          <button class="category-btn" onclick="showCategory('pouches')">🎱 Шайбы</button>
-          <button class="category-btn" onclick
+      function render
