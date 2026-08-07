@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>SWWSHOP — Ассортимент</title>
-    <!-- Подключаем Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
       :root {
@@ -111,7 +110,7 @@
         font-size: 15px;
       }
 
-      /* Стили админ-панели */
+      /* Admin panel */
       .admin-panel {
         background: var(--admin-bg);
         padding: 16px;
@@ -124,7 +123,7 @@
         overflow-y: auto;
         z-index: 1000;
         box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-        display: none; /* скрыто по умолчанию */
+        display: none;
         transform-origin: bottom center;
         animation: fadeIn 0.2s ease;
       }
@@ -171,200 +170,3 @@
         font-size: 13px;
         color: #666;
         margin-bottom: 4px;
-        display: block;
-      }
-      .admin-textarea {
-        width: 100%;
-        height: 80px;
-        resize: vertical;
-        padding: 8px;
-        border: 1px solid var(--admin-border);
-        border-radius: 6px;
-        box-sizing: border-box;
-      }
-      .admin-action-btn {
-        width: 100%;
-        padding: 10px;
-        background: #333;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 8px;
-      }
-      .admin-logout-btn {
-        margin-top: 16px;
-        width: 100%;
-        padding: 10px;
-        background: var(--danger);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-      }
-      .admin-note {
-        font-size: 12px;
-        color: #888;
-        margin-bottom: 16px;
-      }
-      .admin-toggle-btn {
-        position: fixed;
-        bottom: 12px;
-        right: 12px;
-        width: 56px;
-        height: 56px;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 50%;
-        color: var(--accent);
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        z-index: 999;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container" id="app"></div>
-
-    <!-- Кнопка ADMIN -->
-    <button class="admin-toggle-btn" onclick="toggleAdminPanel()" title="ADMIN">🔐</button>
-
-    <!-- Панель админа -->
-    <div id="admin-panel" class="admin-panel">
-      <h2 class="shop-title">SWWSHOP: Админ</h2>
-      <div id="admin-login-area">
-        <p class="admin-note">Введите пароль для входа в панель администратора.</p>
-        <form class="admin-login-form" onsubmit="event.preventDefault(); adminLogin(this.password.value);">
-          <input type="password" name="password" class="admin-input" placeholder="Пароль" />
-          <button type="submit" class="admin-btn">Войти</button>
-        </form>
-      </div>
-      <div id="admin-controls-area" style="display:none;">
-        <div class="admin-controls">
-          <!-- Добавление линейки (для жидкостей/шайб) -->
-          <div class="admin-control-group">
-            <span class="admin-label">Добавить линейку (жидкости/шайбы)</span>
-            <input type="text" id="admin-line-name" class="admin-input" placeholder="Название (напр. ALFA VAPE 50MG)" />
-            <input type="number" id="admin-line-price" class="admin-input" placeholder="Цена (₽)" />
-            <select id="admin-line-category" class="admin-input">
-              <option value="liquids">Жидкости</option>
-              <option value="pouches">Шайбы</option>
-            </select>
-            <textarea id="admin-line-flavors" class="admin-textarea" placeholder="Вкусы по строкам: название, ✅ или ❌ (напр: Персик манго,✅)"></textarea>
-            <button class="admin-action-btn" onclick="adminAddLine()">Добавить линейку</button>
-          </div>
-          <!-- Добавление товара (испарители/устройства) -->
-          <div class="admin-control-group">
-            <span class="admin-label">Добавить товар (испарители/устройства)</span>
-            <input type="text" id="admin-item-name" class="admin-input" placeholder="Название" />
-            <input type="number" id="admin-item-price" class="admin-input" placeholder="Цена (₽)" />
-            <select id="admin-item-category" class="admin-input">
-              <option value="coils">Испарители</option>
-              <option value="devices">Устройства</option>
-            </select>
-            <input type="number" id="admin-item-qty" class="admin-input" placeholder="Количество (шт)" />
-            <button class="admin-action-btn" onclick="adminAddItem()">Добавить товар</button>
-          </div>
-        </div>
-        <div class="admin-control-group">
-          <span class="admin-label">Обновить остатки (быстрый ввод)</span>
-          <textarea id="admin-stock-update" class="admin-textarea" placeholder="Формат: категория|название|количество (напр: liquids|ALFA VAPE 50MG|10)"></textarea>
-          <button class="admin-action-btn" onclick="adminUpdateStock()">Обновить остатки</button>
-        </div>
-        <button class="admin-logout-btn" onclick="adminLogout()">Выйти из админки</button>
-      </div>
-    </div>
-
-    <script>
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-
-      // Данные ассортимента
-      const data = {
-        liquids: [
-          {
-            name: 'ALFA VAPE 50MG',
-            price: 350,
-            flavors: [
-              { name: 'Черничный лимонад', inStock: false },
-              { name: 'Персик манго', inStock: true },
-              { name: 'Вишневая кола', inStock: false },
-              { name: 'Манго пинаколада', inStock: true },
-              { name: 'Мармеладные мишки', inStock: true },
-              { name: 'Леденцы лимонные', inStock: true },
-              { name: 'Клубнично-банановая жвачка', inStock: true },
-              { name: 'Энергетик киви яблоко', inStock: true },
-              { name: 'Ананас малина', inStock: true },
-              { name: 'Ягодный микс', inStock: false }
-            ]
-          },
-          {
-            name: 'ISTERIKA CLASSIC 70MG',
-            price: 600,
-            flavors: [
-              { name: 'Ананас ежевика', inStock: true },
-              { name: 'Арбузные леденцы', inStock: true },
-              { name: 'Ежевичный мармелад', inStock: true },
-              { name: 'Зелёный Бёрн', inStock: true },
-              { name: 'Клубника банан дыня', inStock: true },
-              { name: 'Клубника драгонфрут', inStock: true },
-              { name: 'Клубника малиновое варенье', inStock: true },
-              { name: 'Кола чупа чупс', inStock: true },
-              { name: 'Лимонад черника', inStock: true },
-              { name: 'Маракуйя грейпфрут', inStock: true },
-              { name: 'Персик зеленый виноград', inStock: true },
-              { name: 'Фруктовые мармеладные мишки', inStock: true },
-              { name: 'Черная смородина груша', inStock: true },
-              { name: 'Экзотик микс', inStock: true },
-              { name: 'Яблоко лесной микс', inStock: true }
-            ]
-          }
-        ],
-        pouches: [
-          {
-            name: 'GLITCH POUCHES 200MG',
-            price: 500,
-            flavors: [
-              { name: 'Груша', inStock: true },
-              { name: 'Фанта', inStock: true },
-              { name: 'Баблгам', inStock: true }
-            ]
-          },
-          {
-            name: 'ICEBERG EXTREME 150MG',
-            price: 500,
-            flavors: [
-              { name: 'Манго банан', inStock: true }
-            ]
-          }
-        ],
-        coils: [
-          { name: 'XROS 0.6-0.4', price: 330, inStock: true },
-          { name: 'Hero 50-58W', price: 330, inStock: true },
-          { name: 'Pasito K5', price: 330, inStock: true }
-        ],
-        devices: []
-      };
-
-      let isAdminLoggedIn = false;
-
-      function statusText(inStock) {
-        return inStock ? 'имеется' : 'кончилась';
-      }
-
-      function statusClass(inStock) {
-        return inStock ? 'status-in-stock' : 'status-out-stock';
-      }
-
-      function renderBackButton(callback) {
-        return `<button class="back-btn" onclick="${callback}">← Назад</button>`;
-      }
-
-      function showMainMenu() {
-        const container = document.getElementById('app');
-        container.innerHTML
