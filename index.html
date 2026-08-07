@@ -21,7 +21,40 @@
       --warning: #f39c12;
       --admin-bg: #f4f6f8;
       --admin-border: #d1d5db;
+      --card-bg: #f9f9f9;
+      --card-active: #eeeeee;
     }
+    
+    /* Тёмная тема */
+    body.dark {
+      --bg: #1a1a1a;
+      --text: #ffffff;
+      --accent: #4da3ff;
+      --border: #333333;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --admin-bg: #2a2a2a;
+      --admin-border: #444444;
+      --card-bg: #2a2a2a;
+      --card-active: #3a3a3a;
+    }
+    
+    /* Telegram тема (по умолчанию) */
+    body.telegram {
+      --bg: #18222d;
+      --text: #ffffff;
+      --accent: #5ea3d9;
+      --border: #1f2d3d;
+      --success: #4caf84;
+      --danger: #e85d5d;
+      --warning: #e8a840;
+      --admin-bg: #1e2a38;
+      --admin-border: #2a3a4a;
+      --card-bg: #1e2a38;
+      --card-active: #253545;
+    }
+    
     * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -32,6 +65,7 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
+      transition: background-color 0.3s, color 0.3s;
     }
     .container { flex: 1; overflow-y: auto; padding: 12px 12px 80px; }
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
@@ -41,7 +75,7 @@
       padding: 14px;
       border: 1px solid var(--border);
       border-radius: 12px;
-      background: #f9f9f9;
+      background: var(--card-bg);
       text-align: left;
       font-size: 16px;
       color: var(--text);
@@ -49,7 +83,7 @@
       margin-bottom: 8px;
       transition: background 0.2s;
     }
-    .category-btn:active { background: #eee; }
+    .category-btn:active { background: var(--card-active); }
     .product-row {
       display: flex;
       justify-content: space-between;
@@ -141,7 +175,8 @@
       padding: 10px;
       border: 1px solid var(--admin-border);
       border-radius: 8px;
-      background: #fff;
+      background: var(--card-bg);
+      color: var(--text);
       margin-bottom: 8px;
     }
     .admin-btn {
@@ -158,10 +193,10 @@
       border: 1px solid var(--admin-border);
       padding: 12px;
       border-radius: 8px;
-      background: #fff;
+      background: var(--card-bg);
       margin-bottom: 12px;
     }
-    .admin-label { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; display: block; }
+    .admin-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; opacity: 0.8; }
     .admin-textarea {
       width: 100%;
       height: 60px;
@@ -172,6 +207,8 @@
       margin-bottom: 8px;
       font-family: inherit;
       font-size: 13px;
+      background: var(--card-bg);
+      color: var(--text);
     }
     .admin-action-btn {
       width: 100%;
@@ -198,24 +235,62 @@
       cursor: pointer;
       font-weight: 600;
     }
+    
+    /* Кнопка админа - стикер */
     .admin-toggle-btn {
       position: fixed;
-      bottom: 16px;
+      bottom: 80px;
       right: 16px;
-      width: 56px;
-      height: 56px;
-      background: #fff;
-      border: 2px solid var(--border);
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      border: none;
       border-radius: 50%;
-      color: var(--accent);
-      font-size: 20px;
+      color: white;
+      font-size: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       z-index: 999;
+      transition: transform 0.2s;
     }
+    .admin-toggle-btn:active { transform: scale(0.9); }
+    
+    /* Переключатель темы */
+    .theme-switcher {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      display: flex;
+      gap: 8px;
+      z-index: 999;
+      background: var(--card-bg);
+      padding: 8px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .theme-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .theme-btn.active {
+      border-color: var(--accent);
+      background: rgba(0,120,255,0.1);
+    }
+    .theme-btn:hover { opacity: 0.8; }
+    
     .delete-section { border: 2px solid var(--danger) !important; }
     .delete-select {
       width: 100%;
@@ -223,6 +298,8 @@
       border: 1px solid var(--admin-border);
       border-radius: 6px;
       margin-bottom: 8px;
+      background: var(--card-bg);
+      color: var(--text);
     }
     .admin-indicator {
       background: var(--warning);
@@ -239,17 +316,25 @@
     .admin-indicator.active { display: block; }
   </style>
 </head>
-<body>
+<body class="telegram">
   <div class="admin-indicator" id="admin-indicator">АДМИН</div>
   <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-  <button class="admin-toggle-btn" onclick="toggleAdminPanel()">ADM</button>
+  <!-- Переключатель темы -->
+  <div class="theme-switcher">
+    <button class="theme-btn active" onclick="setTheme('telegram')" title="Telegram">🌙</button>
+    <button class="theme-btn" onclick="setTheme('light')" title="Светлая">☀️</button>
+    <button class="theme-btn" onclick="setTheme('dark')" title="Тёмная">🌑</button>
+  </div>
+
+  <!-- Кнопка админа со стикером -->
+  <button class="admin-toggle-btn" onclick="toggleAdminPanel()" title="Админ-панель">🛡️</button>
 
   <div id="admin-panel" class="admin-panel">
     <h2 class="shop-title">Админ-панель</h2>
     
     <div id="admin-login-area">
-      <p style="font-size:12px;color:#888;margin-bottom:16px;">Введите пароль</p>
+      <p style="font-size:12px;color:var(--text);opacity:0.7;margin-bottom:16px;">Введите пароль</p>
       <div class="admin-login-form">
         <input type="password" id="admin-password" class="admin-input" placeholder="Пароль" onkeypress="if(event.key==='Enter')adminLogin()" />
         <button class="admin-btn" onclick="adminLogin()">Войти</button>
@@ -303,7 +388,21 @@
   </div>
 
   <script>
-    // ============ FIREBASE КОНФИГУРАЦИЯ ============
+    // ============ ТЕМА ============
+    function setTheme(theme) {
+      document.body.className = theme;
+      localStorage.setItem('swwshop_theme', theme);
+      
+      // Обновляем активную кнопку
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[onclick="setTheme('${theme}')"]`)?.classList.add('active');
+    }
+    
+    // Загружаем сохранённую тему или используем Telegram тему
+    const savedTheme = localStorage.getItem('swwshop_theme') || 'telegram';
+    setTheme(savedTheme);
+    
+    // ============ FIREBASE ============
     const firebaseConfig = {
       apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
       authDomain: "swwshop.firebaseapp.com",
@@ -331,7 +430,6 @@
         data = val;
         refreshView();
       } else {
-        // Начальные данные
         const init = {
           liquids: [
             {
@@ -411,7 +509,6 @@
       else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
     }
 
-    // ============ ОТОБРАЖЕНИЕ ============
     function stText(s) { return s ? 'В наличии' : 'Нет'; }
     function stClass(s) { return s ? 'status-in-stock' : 'status-out-stock'; }
     
@@ -419,7 +516,7 @@
       currentView = 'main';
       document.getElementById('app').innerHTML = `
         <h1 class="shop-title">SWWSHOP</h1>
-        <p style="text-align:center;color:#666;margin-bottom:16px;">Выберите категорию:</p>
+        <p style="text-align:center;opacity:0.7;margin-bottom:16px;">Выберите категорию:</p>
         <button class="category-btn" onclick="showCategory('liquids')">Жидкости</button>
         <button class="category-btn" onclick="showCategory('pouches')">Шайбы</button>
         <button class="category-btn" onclick="showCategory('coils')">Испарители</button>
@@ -436,14 +533,14 @@
       h += `<h1 class="shop-title">${titles[cat]}</h1>`;
       
       if (!data[cat] || data[cat].length === 0) {
-        h += '<p style="text-align:center;color:#999;">Нет товаров</p>';
+        h += '<p style="text-align:center;opacity:0.5;">Нет товаров</p>';
       } else if (cat === 'liquids' || cat === 'pouches') {
         data[cat].forEach((line, i) => {
           const hasStock = line.flavors && line.flavors.some(f => f.inStock);
           h += `<div style="margin-bottom:8px;">
             <button class="category-btn" onclick="showDetail('${cat}',${i})">
               <div><strong>${line.name}</strong></div>
-              <div style="font-size:13px;color:#666;">${line.price} RUB | ${line.flavors.length} вкусов | ${hasStock ? 'Есть' : 'Нет'}</div>
+              <div style="font-size:13px;opacity:0.7;">${line.price} RUB | ${line.flavors.length} вкусов | ${hasStock ? 'Есть' : 'Нет'}</div>
             </button>
             ${isAdmin ? `<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine('${cat}',${i})">Удалить</button>` : ''}
           </div>`;
@@ -492,7 +589,6 @@
       document.getElementById('app').innerHTML = h;
     }
 
-    // ============ ДЕЙСТВИЯ ============
     function deleteLine(cat, idx) {
       if (!isAdmin) return;
       if (confirm(`Удалить "${data[cat][idx].name}"?`)) {
@@ -536,7 +632,6 @@
       showDetail(cat, lineIdx);
     }
 
-    // ============ АДМИН-ПАНЕЛЬ ============
     function toggleAdminPanel() {
       document.getElementById('admin-panel').classList.toggle('active');
       if (document.getElementById('admin-panel').classList.contains('active')) updateDelSelect();
@@ -663,7 +758,6 @@
       document.getElementById('admin-panel').classList.remove('active');
     }
 
-    // ============ ЗАПУСК ============
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
