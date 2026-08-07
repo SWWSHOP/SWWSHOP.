@@ -27,7 +27,9 @@
     .back-btn { padding: 8px 12px; border: none; background: transparent; color: var(--accent); cursor: pointer; font-size: 14px; }
     .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; margin-left: 8px; }
+    .add-to-cart-btn:disabled { background: #999; cursor: not-allowed; }
     .add-line-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
+    .add-line-to-cart-btn:disabled { background: #999; cursor: not-allowed; }
     .btn-sm { padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; color: white; font-weight: 500; }
     .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); }
     .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 4px; }
@@ -125,7 +127,6 @@
     let activePanel = null;
     let initialized = false;
 
-    // Загрузка данных ОДИН раз
     db.ref('assortment').once('value').then(s => {
       const v = s.val();
       if (v && v.liquids) data = v;
@@ -182,6 +183,13 @@
       return id;
     }
     
+    function findCategoryForItem(name) {
+      for (const cat of ['coils', 'devices']) {
+        if (data[cat]?.some(i => i.name === name)) return cat;
+      }
+      return null;
+    }
+    
     function updateOrdersBadge() {
       const myOrders = orders.filter(o => o.userId === getUserId());
       const b = document.getElementById('orders-badge');
@@ -225,7 +233,7 @@
         const promoCode = 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
         update.promoCode = promoCode;
         db.ref('promos/' + promoCode).set({ discount: 15, used: false, created: Date.now(), auto: true });
-        alert(`Выполнен! Промокод: ${promoCode}`);
+        alert('Выполнен! Промокод: ' + promoCode);
       } else {
         alert('Выполнен! (сумма < 800₽ - без промокода)');
       }
@@ -283,10 +291,29 @@
       el.style.display = c > 0 ? 'flex' : 'none';
       if (c > 0) el.textContent = c;
     }
+    
     function addToCart(name, price, lineName, flavorName) {
+      if (flavorName) {
+        const line = data[currentCategory]?.find(l => l.name === lineName);
+        if (line) {
+          const flavor = line.flavors.find(f => f.name === flavorName);
+          if (flavor && !flavor.inStock) { alert('❌ Этот вкус закончился!'); return; }
+        }
+      } else if (lineName && (currentCategory === 'liquids' || currentCategory === 'pouches')) {
+        const line = data[currentCategory]?.find(l => l.name === lineName);
+        if (line && !line.flavors.some(f => f.inStock)) { alert('❌ Все вкусы этой линейки закончились!'); return; }
+      } else {
+        const cat = findCategoryForItem(name);
+        if (cat) {
+          const item = data[cat]?.find(i => i.name === name);
+          if (item && !item.inStock) { alert('❌ Этого товара нет в наличии!'); return; }
+        }
+      }
       cart.push({ name, price, lineName: lineName || '', flavorName: flavorName || '' });
-      saveCart(); alert('Добавлено!');
+      saveCart(); 
+      alert('✅ Добавлено в корзину!');
     }
+    
     function removeFromCart(i) { cart.splice(i, 1); saveCart(); showCart(); }
 
     function showCart() {
@@ -330,7 +357,6 @@
       const userId = getUserId();
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       
-      // Сохраняем заказ
       await db.ref('orders/' + orderId).set({
         id: orderId, userId, userName: name, userContact: contact,
         userUsername: tgUser?.username || contact,
@@ -338,7 +364,6 @@
         promoApplied: appliedPromo, status: 'pending', date: Date.now(), promoCode: null
       });
       
-      // Отправка в Telegram
       let txt = '🛒 НОВЫЙ ЗАКАЗ #' + orderId + '\n\n👤 ' + name + '\n📱 ' + contact;
       if (tgUser?.username) txt += '\n💬 @' + tgUser.username;
       txt += '\n\n📋 Товары:\n';
@@ -381,11 +406,24 @@
       if (!data[cat]?.length) { h += '<p style="text-align:center;">Нет товаров</p>'; }
       else if (cat === 'liquids' || cat === 'pouches') {
         data[cat].forEach((line, i) => {
-          h += '<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\'' + cat + '\',' + i + ')"><span>' + line.name + '</span><span style="font-size:13px;opacity:0.7;">' + line.price + ' RUB | ' + line.flavors.length + ' вкусов</span></button><button class="add-line-to-cart-btn" onclick="event.stopPropagation(); addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button>' + (isAdmin ? '<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
+          const hasStock = line.flavors.some(f => f.inStock);
+          h += '<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\'' + cat + '\',' + i + ')"><span>' + line.name + '</span><span style="font-size:13px;opacity:0.7;">' + line.price + ' RUB | ' + line.flavors.length + ' вкусов</span></button>';
+          if (hasStock) {
+            h += '<button class="add-line-to-cart-btn" onclick="event.stopPropagation(); addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button>';
+          } else {
+            h += '<button class="add-line-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>❌ Всё закончилось</button>';
+          }
+          h += (isAdmin ? '<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
         });
       } else {
         data[cat].forEach((item, i) => {
-          h += '<div class="product-row"><span class="product-name">' + item.name + '</span><span class="product-price">' + item.price + ' RUB</span><span class="status-badge ' + stClass(item.inStock) + '">' + stText(item.inStock) + '</span><button class="add-to-cart-btn" onclick="addToCart(\'' + item.name + '\',' + item.price + ',\'\',\'\')">🛒</button>' + (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleItem(\'' + cat + '\',' + i + ')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
+          h += '<div class="product-row"><span class="product-name">' + item.name + '</span><span class="product-price">' + item.price + ' RUB</span><span class="status-badge ' + stClass(item.inStock) + '">' + stText(item.inStock) + '</span>';
+          if (item.inStock) {
+            h += '<button class="add-to-cart-btn" onclick="addToCart(\'' + item.name + '\',' + item.price + ',\'\',\'\')">🛒</button>';
+          } else {
+            h += '<button class="add-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>Нет</button>';
+          }
+          h += (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleItem(\'' + cat + '\',' + i + ')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
         });
       }
       document.getElementById('app').innerHTML = h;
@@ -395,9 +433,20 @@
       currentView = 'detail'; currentCategory = cat; currentIndex = idx;
       const line = data[cat][idx];
       let h = '<button class="back-btn" onclick="showCategory(\'' + cat + '\')">← Назад</button><h1 class="shop-title">' + line.name + '</h1><p style="text-align:center;color:var(--accent);font-weight:600;">' + line.price + ' RUB</p>';
-      h += '<button class="add-line-to-cart-btn" onclick="addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button><div class="section-title">Вкусы (' + line.flavors.length + '):</div>';
+      
+      const hasAnyStock = line.flavors.some(f => f.inStock);
+      if (hasAnyStock) {
+        h += '<button class="add-line-to-cart-btn" onclick="addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 Добавить линейку в корзину</button>';
+      } else {
+        h += '<button class="add-line-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>❌ Всё закончилось</button>';
+      }
+      
+      h += '<div class="section-title">Вкусы (' + line.flavors.length + '):</div>';
       line.flavors.forEach((flavor, fi) => {
-        h += '<div class="flavor-row"><span>' + flavor.name + '</span><span class="status-badge ' + stClass(flavor.inStock) + '">' + stText(flavor.inStock) + '</span>' + (flavor.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + line.name + ' - ' + flavor.name + '\',' + line.price + ',\'' + line.name + '\',\'' + flavor.name + '\')">🛒</button>' : '') + (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleFlavor(\'' + cat + '\',' + idx + ',' + fi + ')">Сменить</button>' : '') + '</div>';
+        h += '<div class="flavor-row"><span>' + flavor.name + '</span><span class="status-badge ' + stClass(flavor.inStock) + '">' + stText(flavor.inStock) + '</span>' + 
+          (flavor.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + line.name + ' - ' + flavor.name + '\',' + line.price + ',\'' + line.name + '\',\'' + flavor.name + '\')">🛒</button>' : 
+          '<button class="add-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>Нет</button>') + 
+          (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleFlavor(\'' + cat + '\',' + idx + ',' + fi + ')">Сменить</button>' : '') + '</div>';
       });
       document.getElementById('app').innerHTML = h;
     }
@@ -474,7 +523,6 @@
       alert('Готово!'); showMain();
     }
 
-    // ЗАПУСК
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     updateCartBadge(); updateIndicator();
