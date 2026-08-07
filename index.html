@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>SWWSHOP — Ассортимент</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
   <style>
     :root {
       --bg: #ffffff;
@@ -16,7 +21,6 @@
       --warning: #f39c12;
       --admin-bg: #f4f6f8;
       --admin-border: #d1d5db;
-      --admin-input: #ffffff;
     }
     * { box-sizing: border-box; }
     body {
@@ -29,13 +33,8 @@
       display: flex;
       flex-direction: column;
     }
-    .container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-      padding-bottom: 80px;
-    }
-    h1 { margin: 16px 0 12px 0; font-size: 20px; text-align: center; }
+    .container { flex: 1; overflow-y: auto; padding: 12px 12px 80px; }
+    h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     .category-btn {
       width: 100%;
@@ -50,7 +49,7 @@
       margin-bottom: 8px;
       transition: background 0.2s;
     }
-    .category-btn:active { background: #eeeeee; }
+    .category-btn:active { background: #eee; }
     .product-row {
       display: flex;
       justify-content: space-between;
@@ -60,11 +59,11 @@
       flex-wrap: wrap;
       gap: 4px;
     }
-    .product-name { font-weight: 500; word-break: break-word; max-width: 50%; min-width: 100px; }
+    .product-name { font-weight: 500; max-width: 50%; min-width: 100px; }
     .product-price { font-weight: 600; color: var(--accent); }
     .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
-    .status-in-stock { background: rgba(46, 204, 113, 0.15); color: var(--success); }
-    .status-out-stock { background: rgba(231, 76, 60, 0.15); color: var(--danger); }
+    .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
+    .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
     .back-btn {
       margin-bottom: 8px;
       padding: 8px 12px;
@@ -119,7 +118,6 @@
       align-items: center;
       justify-content: center;
       margin-left: 4px;
-      flex-shrink: 0;
     }
 
     .admin-panel {
@@ -143,7 +141,7 @@
       padding: 10px;
       border: 1px solid var(--admin-border);
       border-radius: 8px;
-      background: var(--admin-input);
+      background: #fff;
       margin-bottom: 8px;
     }
     .admin-btn {
@@ -153,7 +151,6 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      white-space: nowrap;
     }
     .admin-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     @media (max-width: 500px) { .admin-controls { grid-template-columns: 1fr; } }
@@ -161,7 +158,7 @@
       border: 1px solid var(--admin-border);
       padding: 12px;
       border-radius: 8px;
-      background: var(--admin-input);
+      background: #fff;
       margin-bottom: 12px;
     }
     .admin-label { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; display: block; }
@@ -240,37 +237,16 @@
       display: none;
     }
     .admin-indicator.active { display: block; }
-    .sync-indicator {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      z-index: 1001;
-      opacity: 0;
-      transition: opacity 0.3s;
-      color: white;
-    }
-    .sync-indicator.show { opacity: 1; }
-    .sync-success { background: var(--success); }
-    .sync-error { background: var(--danger); }
-    .sync-loading { background: var(--accent); }
   </style>
 </head>
 <body>
   <div class="admin-indicator" id="admin-indicator">АДМИН</div>
-  <div class="sync-indicator" id="sync-indicator"></div>
-  <div class="container" id="app">
-    <div style="text-align:center;padding:40px;">
-      <p>Загрузка...</p>
-    </div>
-  </div>
+  <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-  <button class="admin-toggle-btn" onclick="toggleAdminPanel()" title="ADMIN">ADM</button>
+  <button class="admin-toggle-btn" onclick="toggleAdminPanel()">ADM</button>
 
   <div id="admin-panel" class="admin-panel">
-    <h2 class="shop-title">SWWSHOP: Админ-панель</h2>
+    <h2 class="shop-title">Админ-панель</h2>
     
     <div id="admin-login-area">
       <p style="font-size:12px;color:#888;margin-bottom:16px;">Введите пароль</p>
@@ -285,25 +261,25 @@
         <div class="admin-control-group">
           <span class="admin-label">Добавить линейку</span>
           <input type="text" id="line-name" class="admin-input" placeholder="Название" />
-          <input type="number" id="line-price" class="admin-input" placeholder="Цена (RUB)" />
+          <input type="number" id="line-price" class="admin-input" placeholder="Цена" />
           <select id="line-category" class="admin-input">
             <option value="liquids">Жидкости</option>
             <option value="pouches">Шайбы</option>
           </select>
           <textarea id="line-flavors" class="admin-textarea" placeholder="Вкус,YES&#10;Вкус,NO"></textarea>
-          <button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button>
+          <button class="admin-action-btn btn-dark" onclick="addLine()">Добавить</button>
         </div>
         
         <div class="admin-control-group">
           <span class="admin-label">Добавить товар</span>
           <input type="text" id="item-name" class="admin-input" placeholder="Название" />
-          <input type="number" id="item-price" class="admin-input" placeholder="Цена (RUB)" />
+          <input type="number" id="item-price" class="admin-input" placeholder="Цена" />
           <select id="item-category" class="admin-input">
             <option value="coils">Испарители</option>
             <option value="devices">Устройства</option>
           </select>
-          <input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0 = нет)" />
-          <button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button>
+          <input type="number" id="item-qty" class="admin-input" placeholder="Кол-во" />
+          <button class="admin-action-btn btn-dark" onclick="addItem()">Добавить</button>
         </div>
       </div>
       
@@ -318,14 +294,8 @@
         <select id="del-item" class="delete-select">
           <option value="">-- Выберите --</option>
         </select>
-        <button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить выбранное</button>
+        <button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить</button>
         <button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button>
-      </div>
-      
-      <div class="admin-control-group">
-        <span class="admin-label">Обновить остатки</span>
-        <textarea id="stock-update" class="admin-textarea" placeholder="категория|название|кол-во&#10;liquids|ALFA VAPE 50MG|10"></textarea>
-        <button class="admin-action-btn btn-dark" onclick="updateStock()">Обновить</button>
       </div>
       
       <button class="admin-logout-btn" onclick="adminLogout()">Выйти</button>
@@ -333,163 +303,106 @@
   </div>
 
   <script>
-    // ============ НАСТРОЙКИ ============
-    const BIN_ID = '6a754678f5lgaf5e2915997e';
-    const MASTER_KEY = '$2a$10$12rLH2SjRPD4XF1AWP.Gt.p8.1/UBdnXn1ND/UjB2XZH/cSKa80N2';
-    const ADMIN_PASSWORD = 'SWWADMIN_SWQ35YTF';
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-    
-    // ============ НАЧАЛЬНЫЕ ДАННЫЕ ============
-    const defaultData = {
-      liquids: [
-        {
-          name: 'ALFA VAPE 50MG',
-          price: 350,
-          flavors: [
-            { name: 'Черничный лимонад', inStock: false },
-            { name: 'Персик манго', inStock: true },
-            { name: 'Вишневая кола', inStock: false },
-            { name: 'Манго пинаколада', inStock: true },
-            { name: 'Мармеладные мишки', inStock: true },
-            { name: 'Леденцы лимонные', inStock: true },
-            { name: 'Клубнично-банановая жвачка', inStock: true },
-            { name: 'Энергетик киви яблоко', inStock: true },
-            { name: 'Ананас малина', inStock: true },
-            { name: 'Ягодный микс', inStock: false }
-          ]
-        },
-        {
-          name: 'ISTERIKA CLASSIC 70MG',
-          price: 600,
-          flavors: [
-            { name: 'Ананас ежевика', inStock: true },
-            { name: 'Арбузные леденцы', inStock: true },
-            { name: 'Ежевичный мармелад', inStock: true },
-            { name: 'Зелёный Бёрн', inStock: true },
-            { name: 'Клубника банан дыня', inStock: true }
-          ]
-        }
-      ],
-      pouches: [
-        {
-          name: 'GLITCH POUCHES 200MG',
-          price: 500,
-          flavors: [
-            { name: 'Груша', inStock: true },
-            { name: 'Фанта', inStock: true },
-            { name: 'Баблгам', inStock: true }
-          ]
-        },
-        {
-          name: 'ICEBERG EXTREME 150MG',
-          price: 500,
-          flavors: [
-            { name: 'Манго банан', inStock: true }
-          ]
-        }
-      ],
-      coils: [
-        { name: 'XROS 0.6-0.4', price: 330, inStock: true },
-        { name: 'Hero 50-58W', price: 330, inStock: true },
-        { name: 'Pasito K5', price: 330, inStock: true }
-      ],
-      devices: []
+    // ============ FIREBASE КОНФИГУРАЦИЯ ============
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
+      authDomain: "swwshop.firebaseapp.com",
+      databaseURL: "https://swwshop-default-rtdb.firebaseio.com",
+      projectId: "swwshop",
+      storageBucket: "swwshop.firebasestorage.app",
+      messagingSenderId: "698268675105",
+      appId: "1:698268675105:web:15814d169ee2e74c8e4760"
     };
     
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
     // ============ ДАННЫЕ ============
-    let data = JSON.parse(JSON.stringify(defaultData));
+    let data = { liquids: [], pouches: [], coils: [], devices: [] };
     let isAdmin = false;
     let currentView = 'main';
     let currentCategory = '';
     let currentIndex = 0;
 
-    // ============ СИНХРОНИЗАЦИЯ С JSONBIN ============
-    function showSync(message, type) {
-      const indicator = document.getElementById('sync-indicator');
-      indicator.textContent = message;
-      indicator.className = `sync-indicator show sync-${type}`;
-      clearTimeout(indicator._timeout);
-      indicator._timeout = setTimeout(() => indicator.classList.remove('show'), 2500);
-    }
-
-    async function loadData() {
-      try {
-        showSync('Загрузка...', 'loading');
-        
-        const response = await fetch(API_URL, {
-          headers: { 'X-Master-Key': MASTER_KEY }
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.record && result.record.liquids) {
-            data = result.record;
-            console.log('Данные загружены из JSONBin');
-            showSync('Загружено', 'success');
-            
-            localStorage.setItem('swwshop_data', JSON.stringify(data));
-            localStorage.setItem('swwshop_time', Date.now().toString());
-            
-            refreshView();
-            return;
-          }
-        }
-        
-        // Если данные не загрузились, пробуем кэш
-        const cached = localStorage.getItem('swwshop_data');
-        if (cached) {
-          data = JSON.parse(cached);
-          console.log('Загружено из кэша');
-          showSync('Загружено из кэша', 'success');
-          refreshView();
-        } else {
-          // Используем данные по умолчанию
-          data = JSON.parse(JSON.stringify(defaultData));
-          console.log('Использую данные по умолчанию');
-          showSync('Локальные данные', 'success');
-          refreshView();
-        }
-      } catch (error) {
-        console.error('Ошибка:', error);
-        
-        const cached = localStorage.getItem('swwshop_data');
-        if (cached) {
-          data = JSON.parse(cached);
-          showSync('Офлайн-режим', 'error');
-        } else {
-          data = JSON.parse(JSON.stringify(defaultData));
-          showSync('Локальные данные', 'error');
-        }
+    // Слушаем изменения в реальном времени
+    db.ref('assortment').on('value', (snap) => {
+      const val = snap.val();
+      if (val && val.liquids) {
+        data = val;
         refreshView();
+      } else {
+        // Начальные данные
+        const init = {
+          liquids: [
+            {
+              name: 'ALFA VAPE 50MG',
+              price: 350,
+              flavors: [
+                { name: 'Черничный лимонад', inStock: false },
+                { name: 'Персик манго', inStock: true },
+                { name: 'Вишневая кола', inStock: false },
+                { name: 'Манго пинаколада', inStock: true },
+                { name: 'Мармеладные мишки', inStock: true },
+                { name: 'Леденцы лимонные', inStock: true },
+                { name: 'Клубнично-банановая жвачка', inStock: true },
+                { name: 'Энергетик киви яблоко', inStock: true },
+                { name: 'Ананас малина', inStock: true },
+                { name: 'Ягодный микс', inStock: false }
+              ]
+            },
+            {
+              name: 'ISTERIKA CLASSIC 70MG',
+              price: 600,
+              flavors: [
+                { name: 'Ананас ежевика', inStock: true },
+                { name: 'Арбузные леденцы', inStock: true },
+                { name: 'Ежевичный мармелад', inStock: true },
+                { name: 'Зелёный Бёрн', inStock: true },
+                { name: 'Клубника банан дыня', inStock: true },
+                { name: 'Клубника драгонфрут', inStock: true },
+                { name: 'Клубника малиновое варенье', inStock: true },
+                { name: 'Кола чупа чупс', inStock: true },
+                { name: 'Лимонад черника', inStock: true },
+                { name: 'Маракуйя грейпфрут', inStock: true },
+                { name: 'Персик зеленый виноград', inStock: true },
+                { name: 'Фруктовые мармеладные мишки', inStock: true },
+                { name: 'Черная смородина груша', inStock: true },
+                { name: 'Экзотик микс', inStock: true },
+                { name: 'Яблоко лесной микс', inStock: true }
+              ]
+            }
+          ],
+          pouches: [
+            {
+              name: 'GLITCH POUCHES 200MG',
+              price: 500,
+              flavors: [
+                { name: 'Груша', inStock: true },
+                { name: 'Фанта', inStock: true },
+                { name: 'Баблгам', inStock: true }
+              ]
+            },
+            {
+              name: 'ICEBERG EXTREME 150MG',
+              price: 500,
+              flavors: [
+                { name: 'Манго банан', inStock: true }
+              ]
+            }
+          ],
+          coils: [
+            { name: 'XROS 0.6-0.4', price: 330, inStock: true },
+            { name: 'Hero 50-58W', price: 330, inStock: true },
+            { name: 'Pasito K5', price: 330, inStock: true }
+          ],
+          devices: []
+        };
+        db.ref('assortment').set(init);
       }
-    }
+    });
 
-    async function saveData() {
-      try {
-        showSync('Сохранение...', 'loading');
-        
-        const response = await fetch(API_URL, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': MASTER_KEY
-          },
-          body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) throw new Error('Ошибка сохранения');
-        
-        console.log('Сохранено в JSONBin');
-        showSync('Сохранено!', 'success');
-        
-        localStorage.setItem('swwshop_data', JSON.stringify(data));
-        localStorage.setItem('swwshop_time', Date.now().toString());
-        
-      } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        showSync('Сохранено локально', 'error');
-        localStorage.setItem('swwshop_data', JSON.stringify(data));
-      }
+    function saveToDB() {
+      db.ref('assortment').set(data);
     }
 
     function refreshView() {
@@ -505,15 +418,12 @@
     function showMain() {
       currentView = 'main';
       document.getElementById('app').innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h1 class="shop-title">SWWSHOP</h1>
-          <button class="back-btn" onclick="loadData()" title="Обновить">Обновить</button>
-        </div>
+        <h1 class="shop-title">SWWSHOP</h1>
         <p style="text-align:center;color:#666;margin-bottom:16px;">Выберите категорию:</p>
-        <button class="category-btn" onclick="showCategory('liquids')">Жидкости (${data.liquids ? data.liquids.length : 0})</button>
-        <button class="category-btn" onclick="showCategory('pouches')">Шайбы (${data.pouches ? data.pouches.length : 0})</button>
-        <button class="category-btn" onclick="showCategory('coils')">Испарители (${data.coils ? data.coils.length : 0})</button>
-        <button class="category-btn" onclick="showCategory('devices')">Устройства (${data.devices ? data.devices.length : 0})</button>
+        <button class="category-btn" onclick="showCategory('liquids')">Жидкости</button>
+        <button class="category-btn" onclick="showCategory('pouches')">Шайбы</button>
+        <button class="category-btn" onclick="showCategory('coils')">Испарители</button>
+        <button class="category-btn" onclick="showCategory('devices')">Устройства</button>
       `;
     }
 
@@ -533,9 +443,9 @@
           h += `<div style="margin-bottom:8px;">
             <button class="category-btn" onclick="showDetail('${cat}',${i})">
               <div><strong>${line.name}</strong></div>
-              <div style="font-size:13px;color:#666;">${line.price} RUB | ${line.flavors ? line.flavors.length : 0} вкусов | ${hasStock ? 'Есть' : 'Нет'}</div>
+              <div style="font-size:13px;color:#666;">${line.price} RUB | ${line.flavors.length} вкусов | ${hasStock ? 'Есть' : 'Нет'}</div>
             </button>
-            ${isAdmin ? `<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine('${cat}',${i})">Удалить линейку</button>` : ''}
+            ${isAdmin ? `<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine('${cat}',${i})">Удалить</button>` : ''}
           </div>`;
         });
       } else {
@@ -559,87 +469,77 @@
       currentView = 'detail';
       currentCategory = cat;
       currentIndex = idx;
-      
-      if (!data[cat] || !data[cat][idx]) {
-        showCategory(cat);
-        return;
-      }
-      
       const line = data[cat][idx];
       
       let h = `<button class="back-btn" onclick="showCategory('${cat}')">Назад</button>`;
       h += `<h1 class="shop-title">${line.name}</h1>`;
       h += `<p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>`;
+      h += `<div class="section-title">Вкусы (${line.flavors.length}):</div>`;
       
-      if (line.flavors && line.flavors.length > 0) {
-        h += `<div class="section-title">Вкусы (${line.flavors.length}):</div>`;
-        line.flavors.forEach((flavor, fi) => {
-          h += `<div class="flavor-row">
-            <span>${flavor.name}</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="status-badge ${stClass(flavor.inStock)}">${stText(flavor.inStock)}</span>
-              ${isAdmin ? `
-                <button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>
-                <button class="btn-delete-flavor" onclick="deleteFlavor('${cat}',${idx},${fi})">X</button>
-              ` : ''}
-            </div>
-          </div>`;
-        });
-      }
+      line.flavors.forEach((flavor, fi) => {
+        h += `<div class="flavor-row">
+          <span>${flavor.name}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="status-badge ${stClass(flavor.inStock)}">${stText(flavor.inStock)}</span>
+            ${isAdmin ? `
+              <button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>
+              <button class="btn-delete-flavor" onclick="deleteFlavor('${cat}',${idx},${fi})">X</button>
+            ` : ''}
+          </div>
+        </div>`;
+      });
       
       document.getElementById('app').innerHTML = h;
     }
 
     // ============ ДЕЙСТВИЯ ============
-    async function deleteLine(cat, idx) {
-      if (!isAdmin) return;
-      if (confirm(`Удалить линейку "${data[cat][idx].name}"?`)) {
-        data[cat].splice(idx, 1);
-        await saveData();
-        updateDelSelect();
-        showCategory(cat);
-      }
-    }
-
-    async function deleteItem(cat, idx) {
+    function deleteLine(cat, idx) {
       if (!isAdmin) return;
       if (confirm(`Удалить "${data[cat][idx].name}"?`)) {
         data[cat].splice(idx, 1);
-        await saveData();
+        saveToDB();
         updateDelSelect();
         showCategory(cat);
       }
     }
 
-    async function deleteFlavor(cat, lineIdx, flIdx) {
+    function deleteItem(cat, idx) {
+      if (!isAdmin) return;
+      if (confirm(`Удалить "${data[cat][idx].name}"?`)) {
+        data[cat].splice(idx, 1);
+        saveToDB();
+        updateDelSelect();
+        showCategory(cat);
+      }
+    }
+
+    function deleteFlavor(cat, lineIdx, flIdx) {
       if (!isAdmin) return;
       if (confirm(`Удалить вкус?`)) {
         data[cat][lineIdx].flavors.splice(flIdx, 1);
-        await saveData();
+        saveToDB();
         showDetail(cat, lineIdx);
       }
     }
 
-    async function toggleItem(cat, idx) {
+    function toggleItem(cat, idx) {
       if (!isAdmin) return;
       data[cat][idx].inStock = !data[cat][idx].inStock;
-      await saveData();
+      saveToDB();
       showCategory(cat);
     }
 
-    async function toggleFlavor(cat, lineIdx, flIdx) {
+    function toggleFlavor(cat, lineIdx, flIdx) {
       if (!isAdmin) return;
       data[cat][lineIdx].flavors[flIdx].inStock = !data[cat][lineIdx].flavors[flIdx].inStock;
-      await saveData();
+      saveToDB();
       showDetail(cat, lineIdx);
     }
 
     // ============ АДМИН-ПАНЕЛЬ ============
     function toggleAdminPanel() {
       document.getElementById('admin-panel').classList.toggle('active');
-      if (document.getElementById('admin-panel').classList.contains('active')) {
-        updateDelSelect();
-      }
+      if (document.getElementById('admin-panel').classList.contains('active')) updateDelSelect();
     }
 
     function updateIndicator() {
@@ -658,14 +558,14 @@
     }
 
     function adminLogin() {
-      if (document.getElementById('admin-password').value === ADMIN_PASSWORD) {
+      if (document.getElementById('admin-password').value === 'SWWADMIN_SWQ35YTF') {
         isAdmin = true;
         document.getElementById('admin-login-area').style.display = 'none';
         document.getElementById('admin-controls-area').style.display = 'block';
         document.getElementById('admin-password').value = '';
         updateIndicator();
         updateDelSelect();
-        refreshView();
+        showMain();
       } else {
         alert('Неверный пароль!');
       }
@@ -677,17 +577,17 @@
       document.getElementById('admin-controls-area').style.display = 'none';
       document.getElementById('admin-panel').classList.remove('active');
       updateIndicator();
-      refreshView();
+      showMain();
     }
 
-    async function addLine() {
-      if (!isAdmin) return alert('Войдите в админку!');
+    function addLine() {
+      if (!isAdmin) return;
       const name = document.getElementById('line-name').value.trim();
       const price = parseInt(document.getElementById('line-price').value);
       const cat = document.getElementById('line-category').value;
       const flavText = document.getElementById('line-flavors').value.trim();
       
-      if (!name || !price) return alert('Заполните название и цену!');
+      if (!name || !price) return alert('Заполните всё!');
       if (!flavText) return alert('Добавьте вкусы!');
       
       const flavors = flavText.split('\n').filter(l => l.trim()).map(line => {
@@ -698,7 +598,7 @@
       if (flavors.length === 0) return alert('Минимум 1 вкус!');
       
       data[cat].push({ name, price, flavors });
-      await saveData();
+      saveToDB();
       alert(`"${name}" добавлено!`);
       document.getElementById('line-name').value = '';
       document.getElementById('line-price').value = '';
@@ -708,17 +608,17 @@
       document.getElementById('admin-panel').classList.remove('active');
     }
 
-    async function addItem() {
-      if (!isAdmin) return alert('Войдите в админку!');
+    function addItem() {
+      if (!isAdmin) return;
       const name = document.getElementById('item-name').value.trim();
       const price = parseInt(document.getElementById('item-price').value);
       const cat = document.getElementById('item-category').value;
       const qty = parseInt(document.getElementById('item-qty').value) || 0;
       
-      if (!name || !price) return alert('Заполните название и цену!');
+      if (!name || !price) return alert('Заполните всё!');
       
       data[cat].push({ name, price, inStock: qty > 0 });
-      await saveData();
+      saveToDB();
       alert(`"${name}" добавлено!`);
       document.getElementById('item-name').value = '';
       document.getElementById('item-price').value = '';
@@ -728,24 +628,23 @@
       document.getElementById('admin-panel').classList.remove('active');
     }
 
-    async function deleteSelected() {
-      if (!isAdmin) return alert('Войдите в админку!');
+    function deleteSelected() {
+      if (!isAdmin) return;
       const cat = document.getElementById('del-category').value;
       const idx = parseInt(document.getElementById('del-item').value);
       if (isNaN(idx)) return alert('Выберите товар!');
       if (confirm(`Удалить "${data[cat][idx].name}"?`)) {
         data[cat].splice(idx, 1);
-        await saveData();
+        saveToDB();
         updateDelSelect();
         showMain();
         document.getElementById('admin-panel').classList.remove('active');
       }
     }
 
-    async function deleteAllOutOfStock() {
-      if (!isAdmin) return alert('Войдите в админку!');
-      if (!confirm('Удалить ВСЕ товары, которых нет в наличии?')) return;
-      
+    function deleteAllOutOfStock() {
+      if (!isAdmin) return;
+      if (!confirm('Удалить ВСЁ что закончилось?')) return;
       let del = 0;
       ['liquids','pouches'].forEach(cat => {
         const before = data[cat].length;
@@ -757,60 +656,20 @@
         data[cat] = data[cat].filter(item => item.inStock);
         del += before - data[cat].length;
       });
-      
-      await saveData();
-      alert(`Удалено: ${del} позиций`);
+      saveToDB();
+      alert(`Удалено: ${del}`);
       updateDelSelect();
       showMain();
       document.getElementById('admin-panel').classList.remove('active');
-    }
-
-    async function updateStock() {
-      if (!isAdmin) return alert('Войдите в админку!');
-      const text = document.getElementById('stock-update').value.trim();
-      if (!text) return alert('Введите данные!');
-      
-      let updated = 0;
-      text.split('\n').filter(l => l.trim()).forEach(line => {
-        const parts = line.split('|');
-        if (parts.length >= 3) {
-          const cat = parts[0].trim();
-          const name = parts[1].trim();
-          const qty = parseInt(parts[2].trim());
-          if (data[cat]) {
-            const item = data[cat].find(i => i.name === name);
-            if (item) {
-              if (item.flavors) {
-                item.flavors.forEach(f => f.inStock = qty > 0);
-              } else {
-                item.inStock = qty > 0;
-              }
-              updated++;
-            }
-          }
-        }
-      });
-      
-      await saveData();
-      alert(`Обновлено: ${updated} позиций`);
-      document.getElementById('stock-update').value = '';
     }
 
     // ============ ЗАПУСК ============
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
-    
     updateDelSelect();
-    
-    // Сначала показываем главное меню с данными по умолчанию
+    updateIndicator();
     showMain();
-    
-    // Потом пытаемся загрузить данные из JSONBin
-    loadData();
-    
-    // Автообновление каждые 30 секунд
-    setInterval(loadData, 30000);
   </script>
 </body>
 </html>
