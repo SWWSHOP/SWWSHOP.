@@ -63,15 +63,6 @@
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     
-    /* Иконки категорий */
-    .cat-icon {
-      display: inline-block;
-      width: 32px;
-      height: 32px;
-      margin-right: 10px;
-      vertical-align: middle;
-    }
-    
     .category-btn {
       width: 100%;
       padding: 14px;
@@ -242,7 +233,6 @@
       font-weight: 600;
     }
     
-    /* Кнопка админа с SVG замком */
     .admin-toggle-btn {
       position: fixed;
       bottom: 80px;
@@ -264,7 +254,6 @@
     .admin-toggle-btn:active { transform: scale(0.9); box-shadow: 0 2px 8px rgba(255,170,0,0.3); }
     .admin-toggle-btn svg { width: 28px; height: 28px; }
     
-    /* Переключатель темы */
     .theme-switcher {
       position: fixed;
       bottom: 16px;
@@ -328,7 +317,7 @@
   <div class="admin-indicator" id="admin-indicator">АДМИН</div>
   <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-  <!-- Переключатель темы с SVG иконками -->
+  <!-- Переключатель темы -->
   <div class="theme-switcher">
     <button class="theme-btn active" onclick="setTheme('telegram')" title="Telegram">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
@@ -341,14 +330,12 @@
     </button>
   </div>
 
-  <!-- Кнопка админа - ЗАМОК С КЛЮЧОМ -->
+  <!-- Кнопка админа -->
   <button class="admin-toggle-btn" onclick="toggleAdminPanel()" title="Админ-панель">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Замок -->
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="#333" stroke="#333"/>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="11" width="18" height="11" rx="2" fill="#333" stroke="#333"/>
       <path d="M7 11V7a5 5 0 0110 0v4" stroke="#333"/>
       <circle cx="12" cy="16" r="1" fill="#ffd700" stroke="#ffd700"/>
-      <!-- Ключ -->
       <circle cx="18" cy="5" r="2" fill="#ffd700" stroke="#ffd700"/>
       <path d="M18 7v4l-3 3" stroke="#ffd700"/>
       <path d="M15 14l-1 1" stroke="#ffd700"/>
@@ -418,40 +405,42 @@
       document.body.className = theme;
       localStorage.setItem('swwshop_theme', theme);
       document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`[onclick="setTheme('${theme}')"]`)?.classList.add('active');
+      const activeBtn = document.querySelector(`[onclick="setTheme('${theme}')"]`);
+      if (activeBtn) activeBtn.classList.add('active');
     }
     
     const savedTheme = localStorage.getItem('swwshop_theme') || 'telegram';
     setTheme(savedTheme);
     
-    // ============ SVG ИКОНКИ КАТЕГОРИЙ ============
+    // ============ SVG ИКОНКИ ============
     const categoryIcons = {
-      liquids: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M12 2L8 8h8l-4-6z" fill="rgba(0,150,255,0.2)" stroke="#0096ff"/>
-        <path d="M8 8v12a2 2 0 002 2h4a2 2 0 002-2V8" stroke="currentColor"/>
-        <path d="M10 12v4M14 12v4" stroke="#0096ff" stroke-width="1"/>
-        <circle cx="12" cy="5" r="1.5" fill="#0096ff"/>
+      liquids: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5ea3d9" stroke-width="1.5">
+        <path d="M10 2h4l2 6H8l2-6z" fill="rgba(94,163,217,0.2)"/>
+        <rect x="8" y="8" width="8" height="12" rx="2" stroke="currentColor"/>
+        <line x1="10" y1="12" x2="14" y2="12" stroke="currentColor"/>
+        <line x1="10" y1="15" x2="14" y2="15" stroke="currentColor"/>
       </svg>`,
       
-      pouches: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="10" r="6" fill="rgba(255,150,0,0.2)" stroke="#ff9600"/>
+      pouches: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff9600" stroke-width="1.5">
+        <circle cx="12" cy="10" r="6" fill="rgba(255,150,0,0.2)"/>
         <circle cx="12" cy="10" r="2" fill="#ff9600"/>
         <path d="M9 7c-1-3 1-5 3-5s4 2 3 5" stroke="currentColor"/>
-        <path d="M7 16h10l-1 6H8l-1-6z" fill="rgba(255,150,0,0.1)" stroke="#ff9600"/>
+        <path d="M7 16h10l-1 6H8l-1-6z" stroke="currentColor"/>
       </svg>`,
       
-      coils: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="9" fill="rgba(150,150,150,0.2)" stroke="#969696"/>
-        <circle cx="12" cy="12" r="5" stroke="#666"/>
-        <circle cx="12" cy="12" r="1" fill="#666"/>
-        <path d="M12 3v2M12 19v2M3 12h2M19 12h2" stroke="currentColor"/>
+      coils: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5">
+        <circle cx="12" cy="12" r="9" fill="rgba(170,170,170,0.15)"/>
+        <path d="M12 3a9 9 0 0 1 0 18" stroke="currentColor"/>
+        <path d="M12 3a9 9 0 0 0 0 18" stroke="currentColor"/>
+        <circle cx="12" cy="12" r="3" fill="rgba(170,170,170,0.3)"/>
+        <circle cx="12" cy="12" r="1" fill="#aaa"/>
       </svg>`,
       
-      devices: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="4" y="2" width="16" height="13" rx="2" fill="rgba(100,200,100,0.2)" stroke="#64c864"/>
-        <rect x="6" y="4" width="12" height="9" rx="1" stroke="currentColor"/>
-        <path d="M9 17h6l1 3H8l1-3z" stroke="currentColor"/>
-        <circle cx="12" cy="19.5" r="1.5" fill="#64c864"/>
+      devices: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#64c864" stroke-width="1.5">
+        <rect x="3" y="2" width="18" height="14" rx="3" fill="rgba(100,200,100,0.2)"/>
+        <rect x="6" y="5" width="12" height="8" rx="1" stroke="currentColor"/>
+        <path d="M8 19h8l1 3H7l1-3z" stroke="currentColor"/>
+        <line x1="12" y1="17" x2="12" y2="19" stroke="currentColor"/>
       </svg>`
     };
     
@@ -466,91 +455,134 @@
       appId: "1:698268675105:web:15814d169ee2e74c8e4760"
     };
     
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    // Начальные данные (если Firebase не ответит)
+    const defaultData = {
+      liquids: [
+        {
+          name: 'ALFA VAPE 50MG',
+          price: 350,
+          flavors: [
+            { name: 'Черничный лимонад', inStock: false },
+            { name: 'Персик манго', inStock: true },
+            { name: 'Вишневая кола', inStock: false },
+            { name: 'Манго пинаколада', inStock: true },
+            { name: 'Мармеладные мишки', inStock: true },
+            { name: 'Леденцы лимонные', inStock: true },
+            { name: 'Клубнично-банановая жвачка', inStock: true },
+            { name: 'Энергетик киви яблоко', inStock: true },
+            { name: 'Ананас малина', inStock: true },
+            { name: 'Ягодный микс', inStock: false }
+          ]
+        },
+        {
+          name: 'ISTERIKA CLASSIC 70MG',
+          price: 600,
+          flavors: [
+            { name: 'Ананас ежевика', inStock: true },
+            { name: 'Арбузные леденцы', inStock: true },
+            { name: 'Ежевичный мармелад', inStock: true },
+            { name: 'Зелёный Бёрн', inStock: true },
+            { name: 'Клубника банан дыня', inStock: true },
+            { name: 'Клубника драгонфрут', inStock: true },
+            { name: 'Клубника малиновое варенье', inStock: true },
+            { name: 'Кола чупа чупс', inStock: true },
+            { name: 'Лимонад черника', inStock: true },
+            { name: 'Маракуйя грейпфрут', inStock: true },
+            { name: 'Персик зеленый виноград', inStock: true },
+            { name: 'Фруктовые мармеладные мишки', inStock: true },
+            { name: 'Черная смородина груша', inStock: true },
+            { name: 'Экзотик микс', inStock: true },
+            { name: 'Яблоко лесной микс', inStock: true }
+          ]
+        }
+      ],
+      pouches: [
+        {
+          name: 'GLITCH POUCHES 200MG',
+          price: 500,
+          flavors: [
+            { name: 'Груша', inStock: true },
+            { name: 'Фанта', inStock: true },
+            { name: 'Баблгам', inStock: true }
+          ]
+        },
+        {
+          name: 'ICEBERG EXTREME 150MG',
+          price: 500,
+          flavors: [
+            { name: 'Манго банан', inStock: true }
+          ]
+        }
+      ],
+      coils: [
+        { name: 'XROS 0.6-0.4', price: 330, inStock: true },
+        { name: 'Hero 50-58W', price: 330, inStock: true },
+        { name: 'Pasito K5', price: 330, inStock: true }
+      ],
+      devices: []
+    };
     
-    let data = { liquids: [], pouches: [], coils: [], devices: [] };
+    let data = JSON.parse(JSON.stringify(defaultData));
     let isAdmin = false;
     let currentView = 'main';
     let currentCategory = '';
     let currentIndex = 0;
+    let firebaseReady = false;
 
-    db.ref('assortment').on('value', (snap) => {
-      const val = snap.val();
-      if (val && val.liquids) {
-        data = val;
+    // Показываем главное меню СРАЗУ с данными по умолчанию
+    showMain();
+
+    // Подключаем Firebase
+    try {
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      
+      // Таймаут: если Firebase не ответит за 5 секунд, работаем офлайн
+      const timeout = setTimeout(() => {
+        if (!firebaseReady) {
+          console.log('Firebase не ответил, работаю офлайн');
+          document.getElementById('app').innerHTML = document.getElementById('app').innerHTML;
+        }
+      }, 5000);
+      
+      db.ref('assortment').on('value', (snap) => {
+        clearTimeout(timeout);
+        firebaseReady = true;
+        const val = snap.val();
+        if (val && val.liquids) {
+          data = val;
+        } else {
+          // Если база пустая, создаем начальные данные
+          db.ref('assortment').set(JSON.parse(JSON.stringify(defaultData)));
+        }
         refreshView();
-      } else {
-        const init = {
-          liquids: [
-            {
-              name: 'ALFA VAPE 50MG',
-              price: 350,
-              flavors: [
-                { name: 'Черничный лимонад', inStock: false },
-                { name: 'Персик манго', inStock: true },
-                { name: 'Вишневая кола', inStock: false },
-                { name: 'Манго пинаколада', inStock: true },
-                { name: 'Мармеладные мишки', inStock: true },
-                { name: 'Леденцы лимонные', inStock: true },
-                { name: 'Клубнично-банановая жвачка', inStock: true },
-                { name: 'Энергетик киви яблоко', inStock: true },
-                { name: 'Ананас малина', inStock: true },
-                { name: 'Ягодный микс', inStock: false }
-              ]
-            },
-            {
-              name: 'ISTERIKA CLASSIC 70MG',
-              price: 600,
-              flavors: [
-                { name: 'Ананас ежевика', inStock: true },
-                { name: 'Арбузные леденцы', inStock: true },
-                { name: 'Ежевичный мармелад', inStock: true },
-                { name: 'Зелёный Бёрн', inStock: true },
-                { name: 'Клубника банан дыня', inStock: true },
-                { name: 'Клубника драгонфрут', inStock: true },
-                { name: 'Клубника малиновое варенье', inStock: true },
-                { name: 'Кола чупа чупс', inStock: true },
-                { name: 'Лимонад черника', inStock: true },
-                { name: 'Маракуйя грейпфрут', inStock: true },
-                { name: 'Персик зеленый виноград', inStock: true },
-                { name: 'Фруктовые мармеладные мишки', inStock: true },
-                { name: 'Черная смородина груша', inStock: true },
-                { name: 'Экзотик микс', inStock: true },
-                { name: 'Яблоко лесной микс', inStock: true }
-              ]
-            }
-          ],
-          pouches: [
-            {
-              name: 'GLITCH POUCHES 200MG',
-              price: 500,
-              flavors: [
-                { name: 'Груша', inStock: true },
-                { name: 'Фанта', inStock: true },
-                { name: 'Баблгам', inStock: true }
-              ]
-            },
-            {
-              name: 'ICEBERG EXTREME 150MG',
-              price: 500,
-              flavors: [
-                { name: 'Манго банан', inStock: true }
-              ]
-            }
-          ],
-          coils: [
-            { name: 'XROS 0.6-0.4', price: 330, inStock: true },
-            { name: 'Hero 50-58W', price: 330, inStock: true },
-            { name: 'Pasito K5', price: 330, inStock: true }
-          ],
-          devices: []
-        };
-        db.ref('assortment').set(init);
+      });
+      
+      // Функция сохранения
+      window._saveToDB = function() {
+        if (firebaseReady) {
+          db.ref('assortment').set(data);
+        }
+        // Всегда сохраняем локально
+        localStorage.setItem('swwshop_local', JSON.stringify(data));
+      };
+      
+    } catch(e) {
+      console.log('Firebase не доступен, работаю офлайн');
+      // Загружаем локальные данные если есть
+      const local = localStorage.getItem('swwshop_local');
+      if (local) {
+        try { data = JSON.parse(local); } catch(e) {}
       }
-    });
+      window._saveToDB = function() {
+        localStorage.setItem('swwshop_local', JSON.stringify(data));
+      };
+      refreshView();
+    }
 
-    function saveToDB() { db.ref('assortment').set(data); }
+    function saveToDB() {
+      if (window._saveToDB) window._saveToDB();
+    }
 
     function refreshView() {
       if (currentView === 'main') showMain();
@@ -648,7 +680,7 @@
 
     function deleteLine(cat, idx) {
       if (!isAdmin) return;
-      if (confirm(`Удалить "${data[cat][idx].name}"?`)) {
+      if (confirm('Удалить линейку?')) {
         data[cat].splice(idx, 1);
         saveToDB();
         updateDelSelect();
@@ -658,7 +690,7 @@
 
     function deleteItem(cat, idx) {
       if (!isAdmin) return;
-      if (confirm(`Удалить "${data[cat][idx].name}"?`)) {
+      if (confirm('Удалить товар?')) {
         data[cat].splice(idx, 1);
         saveToDB();
         updateDelSelect();
@@ -668,7 +700,7 @@
 
     function deleteFlavor(cat, lineIdx, flIdx) {
       if (!isAdmin) return;
-      if (confirm(`Удалить вкус?`)) {
+      if (confirm('Удалить вкус?')) {
         data[cat][lineIdx].flavors.splice(flIdx, 1);
         saveToDB();
         showDetail(cat, lineIdx);
@@ -704,4 +736,122 @@
       sel.innerHTML = '<option value="">-- Выберите --</option>';
       if (data[cat]) {
         data[cat].forEach((item, i) => {
-          sel.innerHTML += `<option value="${i}">${
+          sel.innerHTML += `<option value="${i}">${item.name}</option>`;
+        });
+      }
+    }
+
+    function adminLogin() {
+      if (document.getElementById('admin-password').value === 'SWWADMIN_SWQ35YTF') {
+        isAdmin = true;
+        document.getElementById('admin-login-area').style.display = 'none';
+        document.getElementById('admin-controls-area').style.display = 'block';
+        document.getElementById('admin-password').value = '';
+        updateIndicator();
+        updateDelSelect();
+        showMain();
+      } else {
+        alert('Неверный пароль!');
+      }
+    }
+
+    function adminLogout() {
+      isAdmin = false;
+      document.getElementById('admin-login-area').style.display = 'block';
+      document.getElementById('admin-controls-area').style.display = 'none';
+      document.getElementById('admin-panel').classList.remove('active');
+      updateIndicator();
+      showMain();
+    }
+
+    function addLine() {
+      if (!isAdmin) return;
+      const name = document.getElementById('line-name').value.trim();
+      const price = parseInt(document.getElementById('line-price').value);
+      const cat = document.getElementById('line-category').value;
+      const flavText = document.getElementById('line-flavors').value.trim();
+      
+      if (!name || !price) return alert('Заполните всё!');
+      if (!flavText) return alert('Добавьте вкусы!');
+      
+      const flavors = flavText.split('\n').filter(l => l.trim()).map(line => {
+        const p = line.split(',');
+        return { name: p[0].trim(), inStock: p[1] && p[1].trim().toUpperCase() === 'YES' };
+      });
+      
+      if (flavors.length === 0) return alert('Минимум 1 вкус!');
+      
+      data[cat].push({ name, price, flavors });
+      saveToDB();
+      alert('Добавлено!');
+      document.getElementById('line-name').value = '';
+      document.getElementById('line-price').value = '';
+      document.getElementById('line-flavors').value = '';
+      updateDelSelect();
+      showMain();
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+
+    function addItem() {
+      if (!isAdmin) return;
+      const name = document.getElementById('item-name').value.trim();
+      const price = parseInt(document.getElementById('item-price').value);
+      const cat = document.getElementById('item-category').value;
+      const qty = parseInt(document.getElementById('item-qty').value) || 0;
+      
+      if (!name || !price) return alert('Заполните всё!');
+      
+      data[cat].push({ name, price, inStock: qty > 0 });
+      saveToDB();
+      alert('Добавлено!');
+      document.getElementById('item-name').value = '';
+      document.getElementById('item-price').value = '';
+      document.getElementById('item-qty').value = '';
+      updateDelSelect();
+      showMain();
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+
+    function deleteSelected() {
+      if (!isAdmin) return;
+      const cat = document.getElementById('del-category').value;
+      const idx = parseInt(document.getElementById('del-item').value);
+      if (isNaN(idx)) return alert('Выберите товар!');
+      if (confirm('Удалить?')) {
+        data[cat].splice(idx, 1);
+        saveToDB();
+        updateDelSelect();
+        showMain();
+        document.getElementById('admin-panel').classList.remove('active');
+      }
+    }
+
+    function deleteAllOutOfStock() {
+      if (!isAdmin) return;
+      if (!confirm('Удалить всё что закончилось?')) return;
+      let del = 0;
+      ['liquids','pouches'].forEach(cat => {
+        const before = data[cat].length;
+        data[cat] = data[cat].filter(line => line.flavors && line.flavors.some(f => f.inStock));
+        del += before - data[cat].length;
+      });
+      ['coils','devices'].forEach(cat => {
+        const before = data[cat].length;
+        data[cat] = data[cat].filter(item => item.inStock);
+        del += before - data[cat].length;
+      });
+      saveToDB();
+      alert('Удалено: ' + del);
+      updateDelSelect();
+      showMain();
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    updateDelSelect();
+    updateIndicator();
+  </script>
+</body>
+</html>
