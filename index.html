@@ -37,7 +37,7 @@
 
     .header-icons { position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 100; flex-wrap: wrap; justify-content: flex-end; }
     .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .cart-btn { background: var(--success); color: white; } .orders-btn { background: var(--accent); color: white; } .console-btn { background: #8b5cf6; color: white; }
+    .cart-btn { background: var(--success); color: white; } .orders-btn { background: var(--accent); color: white; } .console-btn { background: #8b5cf6; color: white; } .users-btn { background: #06b6d4; color: white; }
     .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
     .overlay-panel { background: var(--admin-bg); padding: 16px; border-radius: 12px; position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
@@ -67,10 +67,17 @@
     .admin-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; }
     .admin-btn { padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
     .admin-action-btn { width: 100%; padding: 10px; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; font-weight: 600; }
-    .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); } .btn-purple { background: #8b5cf6; }
+    .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); } .btn-purple { background: #8b5cf6; } .btn-cyan { background: #06b6d4; }
     .delete-select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--card-bg); color: var(--text); }
     .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 101; display: none; }
     .admin-indicator.active { display: block; }
+    .user-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .stat-card { background: var(--card-bg); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+    .stat-number { font-size: 24px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 11px; opacity: 0.7; }
+    .user-status { font-size: 11px; padding: 3px 6px; border-radius: 4px; }
+    .user-online { background: rgba(46,204,113,0.2); color: #2ecc71; }
+    .user-offline { background: rgba(150,150,150,0.2); color: #999; }
   </style>
 </head>
 <body class="telegram">
@@ -79,54 +86,51 @@
   <div class="header-icons">
     <button class="icon-btn orders-btn" onclick="openPanel('orders')">📋<span class="badge" id="orders-badge" style="display:none;">0</span></button>
     <button class="icon-btn cart-btn" onclick="openPanel('cart')">🛒<span class="badge" id="cart-count" style="display:none;">0</span></button>
+    <button class="icon-btn users-btn" id="users-icon" style="display:none;" onclick="openPanel('users')" title="Пользователи">👥</button>
     <button class="icon-btn console-btn" id="console-icon" style="display:none;" onclick="openPanel('console')" title="Консоль">💬</button>
   </div>
   
   <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-  <!-- Панели -->
   <div id="orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div><div id="orders-list"></div></div>
   <div id="all-orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div><div id="all-orders-list"></div></div>
   <div id="promos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Промокоды</h2><button class="panel-close-btn" onclick="closePanel('promos')">✕</button></div><div id="promos-list"></div></div>
+  
+  <!-- Панель пользователей -->
+  <div id="users-panel" class="overlay-panel">
+    <div class="panel-header"><h2 class="shop-title" style="margin:0;">👥 Пользователи</h2><button class="panel-close-btn" onclick="closePanel('users')">✕</button></div>
+    <div class="user-stats" id="user-stats"></div>
+    <div id="users-list"></div>
+  </div>
+  
   <div id="cart-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title" style="margin:0;">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div><div id="cart-items"></div><div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div><div id="promo-message"></div><div class="cart-discount" id="cart-discount"></div><div class="cart-total" id="cart-total"></div><div class="order-form" id="order-form" style="display:none;"><input type="text" id="customer-name" placeholder="Ваше имя *" /><input type="text" id="customer-contact" placeholder="Телефон или @username *" /><button class="order-btn" onclick="sendOrder()">Оформить заказ</button></div><div class="order-success" id="order-success" style="display:none;"></div></div>
   
-  <!-- Консоль -->
   <div id="console-panel" class="overlay-panel">
     <div class="panel-header"><h2 class="shop-title" style="margin:0;">💬 Консоль уведомлений</h2><button class="panel-close-btn" onclick="closePanel('console')">✕</button></div>
-    
     <div style="margin-bottom:16px;">
       <strong>Отправить сообщение пользователю:</strong>
-      <select id="console-user" class="admin-input" style="margin-top:8px;">
-        <option value="">-- Выберите пользователя --</option>
-      </select>
+      <select id="console-user" class="admin-input" style="margin-top:8px;"><option value="">-- Выберите пользователя --</option></select>
       <textarea id="console-message" class="console-textarea" placeholder="Текст сообщения..."></textarea>
-      <button class="admin-action-btn btn-purple" onclick="sendMessageToUser()">📨 Отправить пользователю</button>
+      <button class="admin-action-btn btn-purple" onclick="sendMessageToUser()">📨 Отправить</button>
     </div>
-    
     <div style="border-top:2px solid var(--border);padding-top:16px;">
       <strong>Массовая рассылка:</strong>
-      <p style="font-size:12px;opacity:0.7;">Отправить сообщение всем пользователям, у которых есть заказы</p>
-      <textarea id="console-broadcast" class="console-textarea" placeholder="Текст для массовой рассылки..."></textarea>
+      <textarea id="console-broadcast" class="console-textarea" placeholder="Текст для всех..."></textarea>
       <button class="admin-action-btn btn-orange" onclick="sendBroadcast()">📢 Отправить всем</button>
-    </div>
-    
-    <div style="border-top:2px solid var(--border);padding-top:16px;margin-top:16px;">
-      <strong>История отправленных сообщений:</strong>
-      <div id="console-history" style="margin-top:8px;font-size:13px;opacity:0.7;">Нет отправленных сообщений</div>
     </div>
   </div>
 
   <button class="admin-toggle-btn" onclick="toggleAdminPanel()">🔑</button>
   <div class="theme-switcher"><button class="theme-btn active" onclick="setTheme('telegram')">🌙</button><button class="theme-btn" onclick="setTheme('light')">☀️</button><button class="theme-btn" onclick="setTheme('dark')">🌑</button></div>
 
-  <!-- Админ-панель -->
   <div id="admin-panel" class="overlay-panel" style="top:auto;bottom:0;max-height:60vh;border-radius:12px 12px 0 0;">
     <div class="panel-header"><h2 class="shop-title" style="margin:0;">Админ-панель</h2><button class="panel-close-btn" onclick="closePanel('admin')">✕</button></div>
     <div id="admin-login-area"><div style="display:flex;gap:8px;"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div></div>
     <div id="admin-controls-area" style="display:none;">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
         <button class="admin-action-btn btn-green" onclick="openPanel('all-orders')">📋 Заказы</button>
         <button class="admin-action-btn btn-orange" onclick="openPanel('promos')">🎫 Промо</button>
+        <button class="admin-action-btn btn-cyan" onclick="openPanel('users')">👥 Люди</button>
         <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬 Консоль</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -152,6 +156,7 @@
     let data = { liquids: [], pouches: [], coils: [], devices: [] };
     let orders = [];
     let promos = {};
+    let users = {};
     let isAdmin = false;
     let currentView = 'main';
     let currentCategory = '';
@@ -160,7 +165,40 @@
     let appliedPromo = null;
     let activePanel = null;
     let initialized = false;
-    let messageHistory = [];
+
+    // Регистрируем пользователя при загрузке
+    function registerUser() {
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      const userId = getUserId();
+      const userData = {
+        id: userId,
+        firstSeen: Date.now(),
+        lastSeen: Date.now(),
+        visitCount: 1
+      };
+      
+      if (tgUser) {
+        userData.telegramId = tgUser.id;
+        userData.firstName = tgUser.first_name;
+        userData.lastName = tgUser.last_name || '';
+        userData.username = tgUser.username || '';
+      }
+      
+      // Обновляем или создаем пользователя
+      db.ref('users/' + userId).once('value').then(snap => {
+        const existing = snap.val();
+        if (existing) {
+          db.ref('users/' + userId).update({
+            lastSeen: Date.now(),
+            visitCount: (existing.visitCount || 1) + 1,
+            firstName: tgUser?.first_name || existing.firstName,
+            username: tgUser?.username || existing.username
+          });
+        } else {
+          db.ref('users/' + userId).set(userData);
+        }
+      });
+    }
 
     db.ref('assortment').once('value').then(s => {
       const v = s.val();
@@ -171,7 +209,7 @@
     
     db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
     db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
-    db.ref('messages').on('value', s => { messageHistory = s.val() ? Object.values(s.val()) : []; if (activePanel === 'console') showConsole(); });
+    db.ref('users').on('value', s => { users = s.val() || {}; updateUI(); });
 
     function refreshView() {
       if (currentView === 'main') showMain();
@@ -184,6 +222,8 @@
       if (activePanel === 'orders') showOrders();
       if (activePanel === 'all-orders') showAllOrders();
       if (activePanel === 'promos') showPromos();
+      if (activePanel === 'users') showUsers();
+      if (activePanel === 'console') updateConsoleUsers();
     }
 
     function openPanel(name) {
@@ -194,7 +234,8 @@
       if (name === 'all-orders') showAllOrders();
       if (name === 'promos') showPromos();
       if (name === 'cart') showCart();
-      if (name === 'console') showConsole();
+      if (name === 'users') showUsers();
+      if (name === 'console') { updateConsoleUsers(); }
     }
     
     function closePanel(name) {
@@ -212,6 +253,7 @@
     function updateAdminUI() {
       document.getElementById('admin-indicator').className = isAdmin ? 'admin-indicator active' : 'admin-indicator';
       document.getElementById('console-icon').style.display = isAdmin ? 'flex' : 'none';
+      document.getElementById('users-icon').style.display = isAdmin ? 'flex' : 'none';
     }
 
     function stText(s) { return s ? 'В наличии' : 'Нет'; }
@@ -219,9 +261,9 @@
     
     function getUserId() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (tgUser) return tgUser.id.toString();
+      if (tgUser) return 'tg_' + tgUser.id;
       let id = localStorage.getItem('swwshop_userId');
-      if (!id) { id = 'user_' + Date.now(); localStorage.setItem('swwshop_userId', id); }
+      if (!id) { id = 'web_' + Date.now(); localStorage.setItem('swwshop_userId', id); }
       return id;
     }
     
@@ -237,84 +279,80 @@
       if (myOrders.length) b.textContent = myOrders.length;
     }
 
-    // ============ КОНСОЛЬ ============
-    function showConsole() {
+    // ============ ПОЛЬЗОВАТЕЛИ ============
+    function showUsers() {
       if (!isAdmin) return;
+      const usersList = Object.values(users);
       
-      // Обновляем список пользователей
-      const users = {};
-      orders.forEach(o => {
-        if (!users[o.userId]) users[o.userId] = { id: o.userId, name: o.userName, contact: o.userContact, username: o.userUsername };
-      });
+      // Статистика
+      const totalUsers = usersList.length;
+      const telegramUsers = usersList.filter(u => u.username).length;
+      const activeToday = usersList.filter(u => (Date.now() - u.lastSeen) < 86400000).length;
       
+      document.getElementById('user-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-number">${totalUsers}</div><div class="stat-label">Всего</div></div>
+        <div class="stat-card"><div class="stat-number">${telegramUsers}</div><div class="stat-label">Telegram</div></div>
+        <div class="stat-card"><div class="stat-number">${activeToday}</div><div class="stat-label">За 24ч</div></div>
+      `;
+      
+      const el = document.getElementById('users-list');
+      if (!usersList.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет пользователей</p>'; return; }
+      
+      el.innerHTML = usersList.sort((a, b) => b.lastSeen - a.lastSeen).map(u => {
+        const isOnline = (Date.now() - u.lastSeen) < 300000; // 5 минут
+        const userOrders = orders.filter(o => o.userId === u.id);
+        const totalSpent = userOrders.reduce((s, o) => s + (o.status === 'completed' ? o.total : 0), 0);
+        
+        return `
+          <div class="user-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong>${u.firstName || 'Пользователь'} ${u.lastName || ''}</strong>
+                ${u.username ? `<span style="color:var(--accent);">@${u.username}</span>` : ''}
+                <span class="user-status ${isOnline ? 'user-online' : 'user-offline'}">${isOnline ? 'Онлайн' : 'Был(а) ' + new Date(u.lastSeen).toLocaleString()}</span>
+              </div>
+            </div>
+            <div style="font-size:12px;opacity:0.7;margin-top:4px;">
+              🆔 ${u.id} | 👁 ${u.visitCount || 1} визитов | 📋 ${userOrders.length} заказов | 💰 ${totalSpent} RUB
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============ КОНСОЛЬ ============
+    function updateConsoleUsers() {
+      if (!isAdmin) return;
       const sel = document.getElementById('console-user');
       sel.innerHTML = '<option value="">-- Выберите пользователя --</option>';
       Object.values(users).forEach(u => {
-        sel.innerHTML += `<option value="${u.id}">${u.name} | ${u.contact}${u.username ? ' | @' + u.username : ''}</option>`;
+        sel.innerHTML += `<option value="${u.id}">${u.firstName || 'Пользователь'} ${u.username ? '@' + u.username : ''} | ${u.id}</option>`;
       });
-      
-      // История сообщений
-      const hist = document.getElementById('console-history');
-      if (!messageHistory.length) {
-        hist.innerHTML = 'Нет отправленных сообщений';
-      } else {
-        hist.innerHTML = messageHistory.reverse().slice(0, 20).map(m => `
-          <div style="margin-bottom:6px;padding:6px;background:var(--card-bg);border-radius:6px;">
-            <strong>${new Date(m.date).toLocaleString()}</strong><br>
-            Кому: ${m.to}<br>
-            ${m.text.substring(0, 100)}${m.text.length > 100 ? '...' : ''}
-          </div>
-        `).join('');
-      }
     }
     
     async function sendMessageToUser() {
       if (!isAdmin) return;
       const userId = document.getElementById('console-user').value;
       const message = document.getElementById('console-message').value.trim();
-      
       if (!userId) return alert('Выберите пользователя!');
       if (!message) return alert('Введите сообщение!');
       
-      // Находим пользователя
-      const userOrders = orders.filter(o => o.userId === userId);
-      if (!userOrders.length) return alert('Пользователь не найден!');
-      
-      const user = userOrders[0];
-      const chatId = user.userId;
+      const user = users[userId];
+      if (!user) return alert('Пользователь не найден!');
       
       try {
-        // Пытаемся отправить через Telegram (если пользователь из Telegram)
-        if (user.userUsername && !user.userUsername.startsWith('@')) {
+        if (user.telegramId) {
           await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: '📨 Сообщение от SWWSHOP:\n\n' + message })
+            body: JSON.stringify({ chat_id: user.telegramId, text: '📨 SWWSHOP:\n\n' + message })
           });
+          alert('✅ Отправлено!');
+        } else {
+          alert('⚠️ Пользователь не из Telegram');
         }
-        
-        // Сохраняем в историю
-        db.ref('messages').push({
-          to: `${user.userName} | ${user.userContact}`,
-          userId: userId,
-          text: message,
-          date: Date.now()
-        });
-        
-        alert('✅ Сообщение отправлено!');
         document.getElementById('console-message').value = '';
-        showConsole();
       } catch(e) {
-        // Если не получилось отправить в Telegram, сохраняем для истории
-        db.ref('messages').push({
-          to: `${user.userName} | ${user.userContact}`,
-          userId: userId,
-          text: message,
-          date: Date.now(),
-          note: 'Не отправлено в Telegram (пользователь не из Telegram)'
-        });
-        alert('⚠️ Сообщение сохранено. Пользователь не из Telegram, отправка невозможна.');
-        document.getElementById('console-message').value = '';
-        showConsole();
+        alert('❌ Ошибка отправки');
       }
     }
     
@@ -322,44 +360,29 @@
       if (!isAdmin) return;
       const message = document.getElementById('console-broadcast').value.trim();
       if (!message) return alert('Введите сообщение!');
-      if (!confirm('Отправить сообщение ВСЕМ пользователям?')) return;
-      
-      // Собираем уникальных пользователей
-      const users = {};
-      orders.forEach(o => {
-        if (!users[o.userId] && o.userUsername && !o.userUsername.startsWith('@')) {
-          users[o.userId] = o;
-        }
-      });
+      if (!confirm('Отправить всем пользователям Telegram?')) return;
       
       let sent = 0;
       for (const [id, user] of Object.entries(users)) {
-        try {
-          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: id, text: '📢 Рассылка от SWWSHOP:\n\n' + message })
-          });
-          sent++;
-        } catch(e) {}
+        if (user.telegramId) {
+          try {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: user.telegramId, text: '📢 SWWSHOP:\n\n' + message })
+            });
+            sent++;
+          } catch(e) {}
+        }
       }
-      
-      db.ref('messages').push({
-        to: `ВСЕМ (${sent} чел.)`,
-        text: message,
-        date: Date.now(),
-        type: 'broadcast'
-      });
-      
       alert(`✅ Отправлено ${sent} пользователям!`);
       document.getElementById('console-broadcast').value = '';
-      showConsole();
     }
 
     // ============ ЗАКАЗЫ ============
     function showOrders() {
       const myOrders = orders.filter(o => o.userId === getUserId());
       const el = document.getElementById('orders-list');
-      if (!myOrders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">У вас пока нет заказов</p>'; return; }
+      if (!myOrders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">У вас пока нет заказов</p>'; return; }
       el.innerHTML = myOrders.reverse().map(o => `
         <div class="order-card">
           <div><strong>Заказ #${o.id}</strong></div>
@@ -373,12 +396,11 @@
     function showAllOrders() {
       if (!isAdmin) return;
       const el = document.getElementById('all-orders-list');
-      if (!orders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет заказов</p>'; return; }
+      if (!orders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет заказов</p>'; return; }
       el.innerHTML = orders.reverse().map(o => `
         <div class="order-card">
           <div><strong>#${o.id}</strong> | ${o.userName} | ${o.userContact}</div>
           <div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB</div>
-          <div style="font-size:12px;">${o.items.map(i => i.name+(i.flavorName?' - '+i.flavorName:'')).join(', ')}</div>
           <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
           ${o.status==='pending' ? `<div style="margin-top:8px;"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button> <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button></div>` : ''}
         </div>
@@ -386,19 +408,19 @@
     }
     
     function completeOrder(orderId, subtotal) {
-      if (!isAdmin || !confirm('Подтвердить выполнение?')) return;
+      if (!isAdmin || !confirm('Подтвердить?')) return;
       const update = { status: 'completed' };
       if (subtotal >= 800) {
         const promoCode = 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
         update.promoCode = promoCode;
         db.ref('promos/' + promoCode).set({ discount: 15, used: false, created: Date.now(), auto: true });
         alert('Выполнен! Промокод: ' + promoCode);
-      } else { alert('Выполнен! (сумма < 800₽ - без промокода)'); }
+      } else { alert('Выполнен!'); }
       db.ref('orders/' + orderId).update(update);
     }
     
     function cancelOrder(orderId) {
-      if (!isAdmin || !confirm('Отменить заказ?')) return;
+      if (!isAdmin || !confirm('Отменить?')) return;
       db.ref('orders/' + orderId).update({ status: 'cancelled' });
     }
     
@@ -406,22 +428,21 @@
       if (!isAdmin) return;
       const el = document.getElementById('promos-list');
       const codes = Object.entries(promos);
-      if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет промокодов</p>'; return; }
+      if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
       el.innerHTML = codes.reverse().map(([code, p]) => `
-        <div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="promo-card" style="display:flex;justify-content:space-between;">
           <div><strong>${code}</strong> - ${p.discount}%<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
           <button class="btn-sm btn-delete" onclick="deletePromo('${code}')">Удалить</button>
         </div>
       `).join('');
     }
     
-    function deletePromo(code) { if (!isAdmin || !confirm('Удалить ' + code + '?')) return; db.ref('promos/' + code).remove(); }
+    function deletePromo(code) { if (!isAdmin || !confirm('Удалить?')) return; db.ref('promos/' + code).remove(); }
     function createPromo() {
       if (!isAdmin) return;
       const code = document.getElementById('promo-code').value.trim() || 'SWW' + Math.random().toString(36).substring(2, 7).toUpperCase();
-      const discount = parseInt(document.getElementById('promo-discount').value) || 15;
-      db.ref('promos/' + code).set({ discount, used: false, created: Date.now(), auto: false });
-      alert('Промокод ' + code + ' создан!');
+      db.ref('promos/' + code).set({ discount: parseInt(document.getElementById('promo-discount').value) || 15, used: false, created: Date.now() });
+      alert('Создан!');
       document.getElementById('promo-code').value = '';
     }
 
@@ -448,68 +469,65 @@
     function addToCart(name, price, lineName, flavorName) {
       if (flavorName) {
         const line = data[currentCategory]?.find(l => l.name === lineName);
-        if (line) { const flavor = line.flavors.find(f => f.name === flavorName); if (flavor && !flavor.inStock) { alert('❌ Этот вкус закончился!'); return; } }
-      } else if (lineName && (currentCategory === 'liquids' || currentCategory === 'pouches')) {
+        if (line) { const flavor = line.flavors.find(f => f.name === flavorName); if (flavor && !flavor.inStock) { alert('❌ Закончился!'); return; } }
+      } else if (lineName) {
         const line = data[currentCategory]?.find(l => l.name === lineName);
-        if (line && !line.flavors.some(f => f.inStock)) { alert('❌ Все вкусы этой линейки закончились!'); return; }
+        if (line && !line.flavors.some(f => f.inStock)) { alert('❌ Всё закончилось!'); return; }
       } else {
         const cat = findCategoryForItem(name);
-        if (cat) { const item = data[cat]?.find(i => i.name === name); if (item && !item.inStock) { alert('❌ Этого товара нет в наличии!'); return; } }
+        if (cat) { const item = data[cat]?.find(i => i.name === name); if (item && !item.inStock) { alert('❌ Нет в наличии!'); return; } }
       }
       cart.push({ name, price, lineName: lineName || '', flavorName: flavorName || '' });
-      saveCart(); alert('✅ Добавлено в корзину!');
+      saveCart(); alert('✅ Добавлено!');
     }
     
     function removeFromCart(i) { cart.splice(i, 1); saveCart(); showCart(); }
 
     function showCart() {
       if (!cart.length) {
-        document.getElementById('cart-items').innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Корзина пуста</p>';
+        document.getElementById('cart-items').innerHTML = '<p style="text-align:center;opacity:0.5;">Корзина пуста</p>';
         document.getElementById('cart-total').textContent = ''; document.getElementById('cart-discount').textContent = '';
         document.getElementById('order-form').style.display = 'none'; return;
       }
       let subtotal = cart.reduce((s, i) => s + i.price, 0);
       let discount = appliedPromo ? Math.round(subtotal * appliedPromo.discount / 100) : 0;
       document.getElementById('cart-items').innerHTML = cart.map((item, i) => `
-        <div class="cart-item"><div><strong>${item.name}</strong>${item.flavorName?`<br><small>Вкус: ${item.flavorName}</small>`:''}</div><span>${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>
+        <div class="cart-item"><div><strong>${item.name}</strong>${item.flavorName?`<br><small>${item.flavorName}</small>`:''}</div><span>${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>
       `).join('');
       document.getElementById('cart-discount').textContent = discount > 0 ? 'Скидка: -' + discount + ' RUB' : '';
       document.getElementById('cart-total').textContent = 'Итого: ' + (subtotal - discount) + ' RUB';
-      document.getElementById('order-form').style.display = 'block'; document.getElementById('order-success').style.display = 'none';
+      document.getElementById('order-form').style.display = 'block';
     }
 
     async function sendOrder() {
       const name = document.getElementById('customer-name').value.trim();
       const contact = document.getElementById('customer-contact').value.trim();
-      if (!name || !contact) return alert('Заполните все поля!');
+      if (!name || !contact) return alert('Заполните!');
       let subtotal = cart.reduce((s, i) => s + i.price, 0);
       let discount = 0;
       if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
         discount = Math.round(subtotal * appliedPromo.discount / 100);
-        db.ref('promos/' + appliedPromo.code).update({ used: true, usedBy: name, usedAt: Date.now() });
+        db.ref('promos/' + appliedPromo.code).update({ used: true });
       }
-      const total = subtotal - discount;
       const orderId = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
       const userId = getUserId();
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       await db.ref('orders/' + orderId).set({
         id: orderId, userId, userName: name, userContact: contact,
-        userUsername: tgUser?.username || contact, items: [...cart], subtotal, discount, total,
-        promoApplied: appliedPromo, status: 'pending', date: Date.now(), promoCode: null
+        userUsername: tgUser?.username || contact, items: [...cart], subtotal, discount, total: subtotal - discount,
+        status: 'pending', date: Date.now(), promoCode: null
       });
-      let txt = '🛒 НОВЫЙ ЗАКАЗ #' + orderId + '\n\n👤 ' + name + '\n📱 ' + contact;
+      let txt = '🛒 ЗАКАЗ #' + orderId + '\n\n👤 ' + name + '\n📱 ' + contact;
       if (tgUser?.username) txt += '\n💬 @' + tgUser.username;
       txt += '\n\n📋 Товары:\n';
       cart.forEach((item, i) => { txt += (i+1) + '. ' + item.name + (item.flavorName ? ' - ' + item.flavorName : '') + ' - ' + item.price + '₽\n'; });
-      if (discount > 0) txt += '\n🎫 Промокод: ' + appliedPromo.code + ' (-' + discount + '₽)';
-      txt += '\n💰 Итого: ' + total + '₽';
+      txt += '\n💰 Итого: ' + (subtotal - discount) + '₽';
       await fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: CHAT_ID, text: txt }) });
       cart = []; appliedPromo = null; saveCart();
       document.getElementById('cart-items').innerHTML = ''; document.getElementById('cart-total').textContent = '';
-      document.getElementById('cart-discount').textContent = ''; document.getElementById('order-form').style.display = 'none';
+      document.getElementById('order-form').style.display = 'none';
       document.getElementById('order-success').style.display = 'block';
       document.getElementById('order-success').innerHTML = '✅ Заказ #' + orderId + ' оформлен!';
-      document.getElementById('promo-message').innerHTML = ''; document.getElementById('promo-input').value = '';
     }
 
     function showMain() {
@@ -532,13 +550,13 @@
         data[cat].forEach((line, i) => {
           const hasStock = line.flavors.some(f => f.inStock);
           h += '<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\'' + cat + '\',' + i + ')"><span>' + line.name + '</span><span style="font-size:13px;opacity:0.7;">' + line.price + ' RUB | ' + line.flavors.length + ' вкусов</span></button>';
-          h += hasStock ? '<button class="add-line-to-cart-btn" onclick="event.stopPropagation(); addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button>' : '<button class="add-line-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>❌ Всё закончилось</button>';
+          h += hasStock ? '<button class="add-line-to-cart-btn" onclick="event.stopPropagation(); addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button>' : '<button class="add-line-to-cart-btn" style="background:#999;" disabled>❌ Закончилось</button>';
           h += (isAdmin ? '<button class="btn-delete-line" onclick="event.stopPropagation(); deleteLine(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
         });
       } else {
         data[cat].forEach((item, i) => {
           h += '<div class="product-row"><span class="product-name">' + item.name + '</span><span class="product-price">' + item.price + ' RUB</span><span class="status-badge ' + stClass(item.inStock) + '">' + stText(item.inStock) + '</span>';
-          h += item.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + item.name + '\',' + item.price + ',\'\',\'\')">🛒</button>' : '<button class="add-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>Нет</button>';
+          h += item.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + item.name + '\',' + item.price + ',\'\',\'\')">🛒</button>' : '<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';
           h += (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleItem(\'' + cat + '\',' + i + ')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\'' + cat + '\',' + i + ')">Удалить</button>' : '') + '</div>';
         });
       }
@@ -548,12 +566,11 @@
     function showDetail(cat, idx) {
       currentView = 'detail'; currentCategory = cat; currentIndex = idx;
       const line = data[cat][idx];
-      let h = '<button class="back-btn" onclick="showCategory(\'' + cat + '\')">← Назад</button><h1 class="shop-title">' + line.name + '</h1><p style="text-align:center;color:var(--accent);font-weight:600;">' + line.price + ' RUB</p>';
-      const hasStock = line.flavors.some(f => f.inStock);
-      h += hasStock ? '<button class="add-line-to-cart-btn" onclick="addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 Добавить линейку в корзину</button>' : '<button class="add-line-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>❌ Всё закончилось</button>';
+      let h = '<button class="back-btn" onclick="showCategory(\'' + cat + '\')">← Назад</button><h1 class="shop-title">' + line.name + '</h1><p style="text-align:center;color:var(--accent);">' + line.price + ' RUB</p>';
+      h += line.flavors.some(f => f.inStock) ? '<button class="add-line-to-cart-btn" onclick="addToCart(\'' + line.name + '\',' + line.price + ',\'' + line.name + '\',\'\')">🛒 В корзину</button>' : '<button class="add-line-to-cart-btn" style="background:#999;" disabled>❌ Закончилось</button>';
       h += '<div class="section-title">Вкусы (' + line.flavors.length + '):</div>';
       line.flavors.forEach((flavor, fi) => {
-        h += '<div class="flavor-row"><span>' + flavor.name + '</span><span class="status-badge ' + stClass(flavor.inStock) + '">' + stText(flavor.inStock) + '</span>' + (flavor.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + line.name + ' - ' + flavor.name + '\',' + line.price + ',\'' + line.name + '\',\'' + flavor.name + '\')">🛒</button>' : '<button class="add-to-cart-btn" style="background:#999;cursor:not-allowed;" disabled>Нет</button>') + (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleFlavor(\'' + cat + '\',' + idx + ',' + fi + ')">Сменить</button>' : '') + '</div>';
+        h += '<div class="flavor-row"><span>' + flavor.name + '</span><span class="status-badge ' + stClass(flavor.inStock) + '">' + stText(flavor.inStock) + '</span>' + (flavor.inStock ? '<button class="add-to-cart-btn" onclick="addToCart(\'' + line.name + ' - ' + flavor.name + '\',' + line.price + ',\'' + line.name + '\',\'' + flavor.name + '\')">🛒</button>' : '<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>') + (isAdmin ? '<button class="btn-sm btn-toggle" onclick="toggleFlavor(\'' + cat + '\',' + idx + ',' + fi + ')">Сменить</button>' : '') + '</div>';
       });
       document.getElementById('app').innerHTML = h;
     }
@@ -590,14 +607,14 @@
     
     function addLine() {
       if (!isAdmin) return;
-      const name = document.getElementById('line-name').value.trim();
-      const price = parseInt(document.getElementById('line-price').value);
-      const cat = document.getElementById('line-category').value;
+      const n = document.getElementById('line-name').value.trim();
+      const p = parseInt(document.getElementById('line-price').value);
+      const c = document.getElementById('line-category').value;
       const ft = document.getElementById('line-flavors').value.trim();
-      if (!name || !price || !ft) return alert('Заполните всё!');
-      const flavors = ft.split('\n').filter(l => l.trim()).map(l => { const p = l.split(','); return { name: p[0].trim(), inStock: p[1]?.trim().toUpperCase() === 'YES' }; });
-      if (!flavors.length) return alert('Минимум 1 вкус!');
-      data[cat].push({ name, price, flavors }); db.ref('assortment').set(data);
+      if (!n || !p || !ft) return alert('Заполните!');
+      const fl = ft.split('\n').filter(l => l.trim()).map(l => { const a = l.split(','); return { name: a[0].trim(), inStock: a[1]?.trim().toUpperCase() === 'YES' }; });
+      if (!fl.length) return alert('Минимум 1 вкус!');
+      data[c].push({ name: n, price: p, flavors: fl }); db.ref('assortment').set(data);
       alert('Добавлено!');
       document.getElementById('line-name').value = ''; document.getElementById('line-price').value = ''; document.getElementById('line-flavors').value = '';
       showMain();
@@ -605,12 +622,12 @@
     
     function addItem() {
       if (!isAdmin) return;
-      const name = document.getElementById('item-name').value.trim();
-      const price = parseInt(document.getElementById('item-price').value);
-      const cat = document.getElementById('item-category').value;
-      const qty = parseInt(document.getElementById('item-qty').value) || 0;
-      if (!name || !price) return alert('Заполните всё!');
-      data[cat].push({ name, price, inStock: qty > 0 }); db.ref('assortment').set(data);
+      const n = document.getElementById('item-name').value.trim();
+      const p = parseInt(document.getElementById('item-price').value);
+      const c = document.getElementById('item-category').value;
+      const q = parseInt(document.getElementById('item-qty').value) || 0;
+      if (!n || !p) return alert('Заполните!');
+      data[c].push({ name: n, price: p, inStock: q > 0 }); db.ref('assortment').set(data);
       alert('Добавлено!');
       document.getElementById('item-name').value = ''; document.getElementById('item-price').value = ''; document.getElementById('item-qty').value = '';
       showMain();
@@ -618,14 +635,14 @@
     
     function deleteSelected() {
       if (!isAdmin) return;
-      const cat = document.getElementById('del-category').value;
-      const idx = parseInt(document.getElementById('del-item').value);
-      if (isNaN(idx)) return alert('Выберите товар!');
-      if (confirm('Удалить?')) { data[cat].splice(idx, 1); db.ref('assortment').set(data); showMain(); }
+      const c = document.getElementById('del-category').value;
+      const i = parseInt(document.getElementById('del-item').value);
+      if (isNaN(i)) return alert('Выберите!');
+      if (confirm('Удалить?')) { data[c].splice(i, 1); db.ref('assortment').set(data); showMain(); }
     }
     
     function deleteAllOutOfStock() {
-      if (!isAdmin || !confirm('Удалить всё что закончилось?')) return;
+      if (!isAdmin || !confirm('Удалить всё?')) return;
       ['liquids','pouches'].forEach(c => { data[c] = data[c].filter(l => l.flavors?.some(f => f.inStock)); });
       ['coils','devices'].forEach(c => { data[c] = data[c].filter(i => i.inStock); });
       db.ref('assortment').set(data); alert('Готово!'); showMain();
@@ -633,6 +650,7 @@
 
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
+    registerUser(); // Регистрируем пользователя при загрузке
     updateCartBadge(); updateAdminUI();
     if (!initialized) showMain();
   </script>
