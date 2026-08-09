@@ -7,7 +7,6 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  
   <style>
     :root { --bg: #ffffff; --text: #1a1a1a; --accent: #0078ff; --border: #e0e0e0; --success: #2ecc71; --danger: #e74c3c; --warning: #f39c12; --admin-bg: #f4f6f8; --card-bg: #f9f9f9; }
     body.dark { --bg: #1a1a1a; --text: #ffffff; --accent: #4da3ff; --border: #333; --admin-bg: #2a2a2a; --card-bg: #2a2a2a; }
@@ -16,30 +15,21 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
     .container { flex: 1; overflow-y: auto; padding: 12px 12px 100px; }
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
-    h2 { margin: 10px 0; font-size: 17px; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
-    
-    /* SVG стикеры */
     .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
-    
     .category-btn { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; }
-    
     .earnings-display { text-align: center; margin: 8px auto 16px; padding: 10px 16px; background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(94,163,217,0.15)); border-radius: 16px; display: inline-block; }
     .earnings-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
     .earnings-amount { font-size: 22px; font-weight: 800; color: var(--success); }
-    
     .users-counter { text-align: center; padding: 8px 16px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(94,163,217,0.2), rgba(46,204,113,0.2)); border-radius: 20px; display: inline-block; font-size: 14px; font-weight: 600; color: var(--accent); }
     .users-counter span { background: var(--accent); color: white; padding: 2px 10px; border-radius: 12px; margin: 0 4px; }
-    
     .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: nowrap; }
     .flavor-name { flex: 1; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .flavor-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    
     .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 8px; flex-wrap: nowrap; }
     .product-name { font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .product-price { font-weight: 600; color: var(--accent); white-space: nowrap; }
     .product-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    
     .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
     .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
     .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
@@ -49,81 +39,60 @@
     .btn-sm { padding: 6px 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; color: white; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
     .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); }
     .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
-    
     .header-icons { position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 100; flex-wrap: wrap; justify-content: flex-end; }
     .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     .cart-btn { background: var(--success); color: white; } .orders-btn { background: var(--accent); color: white; } .console-btn { background: #8b5cf6; color: white; } .users-btn { background: #06b6d4; color: white; } .flea-btn { background: #e83e8c; color: white; }
     .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    
     .overlay-panel { background: var(--admin-bg); padding: 16px; border-radius: 12px; position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
     .overlay-panel.active { display: block; }
     .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .panel-close-btn { background: rgba(128,128,128,0.3); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    
     .cart-item, .order-card, .promo-card, .user-card, .listing-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
     .cart-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .cart-item-info { flex: 1; min-width: 0; }
     .cart-item-name { font-weight: 500; font-size: 14px; }
     .cart-total { font-size: 18px; font-weight: 700; text-align: right; margin: 12px 0; color: var(--accent); }
     .cart-discount { font-size: 14px; text-align: right; color: var(--success); }
-    
     .order-status { font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block; }
     .status-pending { background: rgba(255,193,7,0.2); color: #ffc107; }
     .status-completed { background: rgba(46,204,113,0.2); color: #2ecc71; }
     .status-cancelled { background: rgba(231,76,60,0.2); color: #e74c3c; }
-    
     .promo-code-display { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #333; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 16px; margin: 10px 0; word-break: break-all; }
     .promo-section { background: rgba(255,193,7,0.1); border: 1px solid #ffc107; border-radius: 8px; padding: 10px; margin: 8px 0; display: flex; gap: 8px; }
     .promo-section input { flex: 1; padding: 8px; border: 1px solid #ffc107; border-radius: 6px; background: var(--card-bg); color: var(--text); }
     .promo-apply-btn { background: var(--warning); color: #333; border: none; border-radius: 6px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
-    
-    .order-form input, .order-form select, .listing-form input, .listing-form textarea, .listing-form select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; font-size: 14px; }
+    .order-form input, .order-form select, .listing-form input, .listing-form textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; font-size: 14px; }
     .listing-form textarea { height: 80px; resize: vertical; }
     .console-textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; resize: vertical; font-family: inherit; }
     .order-btn { width: 100%; padding: 14px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
-    
     .admin-toggle-btn { position: fixed; bottom: 80px; right: 16px; width: 52px; height: 52px; background: linear-gradient(135deg, #ffd700, #ffaa00); border: none; border-radius: 50%; color: #333; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(255,170,0,0.4); z-index: 99; font-size: 24px; }
     .theme-switcher { position: fixed; bottom: 16px; left: 16px; display: flex; gap: 6px; z-index: 99; background: var(--card-bg); padding: 6px; border-radius: 20px; border: 1px solid var(--border); }
     .theme-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text); }
     .theme-btn.active { border-color: var(--accent); }
-    
     .admin-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; }
     .admin-btn { padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
     .admin-action-btn { width: 100%; padding: 10px; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; font-weight: 600; font-size: 13px; }
     .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); } .btn-purple { background: #8b5cf6; } .btn-cyan { background: #06b6d4; } .btn-pink { background: #e83e8c; }
     .delete-select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--card-bg); color: var(--text); font-family: inherit; }
-    
     .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 101; display: none; }
     .admin-indicator.active { display: block; }
-    
     .user-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .stat-card { background: var(--card-bg); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
     .stat-number { font-size: 24px; font-weight: 700; color: var(--accent); }
     .stat-label { font-size: 11px; opacity: 0.7; }
-    
     .earnings-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
     .earning-card { background: linear-gradient(135deg, rgba(46,204,113,0.1), rgba(94,163,217,0.1)); padding: 10px 6px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
     .earning-amount { font-size: 16px; font-weight: 700; color: var(--success); }
     .earning-label { font-size: 10px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; }
-    
     .stars { display: flex; gap: 4px; margin: 4px 0; }
     .star { font-size: 20px; cursor: pointer; color: #444; transition: color 0.2s; }
     .star.active { color: #ffd700; }
-    
     .listing-photo { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; margin: 8px 0; background: var(--card-bg); }
     .listing-detail { padding: 8px 0; }
     .listing-meta { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.7; margin: 4px 0; }
-    
-    #verify-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0a0e17; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    #verify-overlay .bg-animation { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; }
-    #verify-overlay .bg-circle { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12; animation: vFloat 20s infinite ease-in-out; }
-    #verify-overlay .bg-circle:nth-child(1) { width: 400px; height: 400px; background: #5ea3d9; top: -100px; left: -100px; }
-    #verify-overlay .bg-circle:nth-child(2) { width: 300px; height: 300px; background: #8b5cf6; bottom: -50px; right: -50px; animation-delay: -7s; }
-    @keyframes vFloat { 0%,100%{transform:translate(0,0)scale(1)} 50%{transform:translate(30px,-30px)scale(1.1)} }
-    #verify-overlay .verify-card { position: relative; z-index: 1; background: #111827; border: 1px solid #1e293b; border-radius: 20px; padding: 28px 22px; max-width: 400px; width: 100%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); text-align: center; color: #fff; animation: vSlideUp 0.5s ease-out; }
-    @keyframes vSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-    #verify-overlay .v-logo { width: 56px; height: 56px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 10px; }
-    #verify-overlay .v-title { font-size: 24px; font-weight: 800; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    #verify-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0a0e17; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #verify-overlay .verify-card { background: #111827; border: 1px solid #1e293b; border-radius: 20px; padding: 28px 22px; max-width: 400px; width: 100%; text-align: center; color: #fff; }
+    #verify-overlay .v-title { font-size: 24px; font-weight: 800; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     #verify-overlay .v-code-display { background: #1a2235; border: 2px dashed #5ea3d9; border-radius: 12px; padding: 14px; margin: 14px 0; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #5ea3d9; cursor: pointer; font-family: 'Courier New', monospace; }
     #verify-overlay .v-input { width: 100%; padding: 12px; background: #1a2235; border: 2px solid #1e293b; border-radius: 12px; color: #fff; font-size: 18px; text-align: center; letter-spacing: 6px; font-family: 'Courier New', monospace; outline: none; margin-bottom: 14px; }
     #verify-overlay .v-btn { width: 100%; padding: 13px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
@@ -136,15 +105,14 @@
     #verify-overlay .v-resend.disabled { opacity: 0.4; pointer-events: none; }
   </style>
 </head>
-<body class="telegram" id="main-body">
+<body class="telegram">
   <div id="verify-overlay">
-    <div class="bg-animation"><div class="bg-circle"></div><div class="bg-circle"></div></div>
     <div class="verify-card">
-      <div class="v-logo">🛡️</div>
+      <div style="font-size:28px;margin-bottom:10px;">🛡️</div>
       <div class="v-title">SWWSHOP</div>
-      <div class="v-subtitle" style="font-size:11px;color:#94a3b8;margin-bottom:16px;">ПОДТВЕРЖДЕНИЕ ВХОДА</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:16px;">ПОДТВЕРЖДЕНИЕ ВХОДА</div>
       <div class="v-code-display" id="code-display" onclick="copyVerifyCode()">------</div>
-      <input type="text" class="v-input" id="v-input" placeholder="Вставьте код" maxlength="6" inputmode="numeric" />
+      <input type="text" class="v-input" id="v-input" placeholder="Вставьте код" maxlength="6" />
       <button class="v-btn" id="v-btn" onclick="verifyCode()">Подтвердить и войти</button>
       <div class="v-msg" id="v-msg"></div>
       <div class="v-timer">Код: <span id="v-countdown">05:00</span><br><a class="v-resend disabled" id="v-resend" onclick="resendVerifyCode()">Новый код</a></div>
@@ -154,9 +122,7 @@
   <div id="main-app">
     <div class="admin-indicator" id="admin-indicator">АДМИН</div>
     <div class="header-icons">
-      <button class="icon-btn flea-btn" onclick="openPanel('flea')" title="Барахолка">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg>
-      </button>
+      <button class="icon-btn flea-btn" onclick="openPanel('flea')" title="Барахолка">💎</button>
       <button class="icon-btn orders-btn" onclick="openPanel('orders')">📋<span class="badge" id="orders-badge" style="display:none;">0</span></button>
       <button class="icon-btn cart-btn" onclick="openPanel('cart')">🛒<span class="badge" id="cart-count" style="display:none;">0</span></button>
       <button class="icon-btn users-btn" id="users-icon" style="display:none;" onclick="openPanel('users')">👥</button>
@@ -178,9 +144,7 @@
     
     <div id="console-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Консоль</h2><button class="panel-close-btn" onclick="closePanel('console')">✕</button></div><div><strong>Отправить:</strong><select id="console-user" class="admin-input" style="margin-top:8px;"><option value="">-- Выберите --</option></select><textarea id="console-message" class="console-textarea" placeholder="Текст..."></textarea><button class="admin-action-btn btn-purple" onclick="sendMessageToUser()">📨 Отправить</button></div><div style="border-top:2px solid var(--border);padding-top:16px;margin-top:16px;"><strong>Рассылка:</strong><textarea id="console-broadcast" class="console-textarea" placeholder="Текст..."></textarea><button class="admin-action-btn btn-orange" onclick="sendBroadcast()">📢 Отправить всем</button></div></div>
 
-    <button class="admin-toggle-btn" onclick="toggleAdminPanel()" title="Админ-панель">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1" fill="#ffd700"/></svg>
-    </button>
+    <button class="admin-toggle-btn" onclick="toggleAdminPanel()">🔑</button>
     <div class="theme-switcher"><button class="theme-btn active" onclick="setTheme('telegram')">🌙</button><button class="theme-btn" onclick="setTheme('light')">☀️</button><button class="theme-btn" onclick="setTheme('dark')">🌑</button></div>
 
     <div id="admin-panel" class="overlay-panel" style="top:auto;bottom:0;max-height:65vh;border-radius:12px 12px 0 0;">
@@ -196,296 +160,144 @@
           <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить линейку</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button></div>
-          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0=нет)" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button></div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Линейка</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить</button></div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить</button></div>
         </div>
-        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Создать промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать промокод</button></div>
-        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление товаров</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить выбранный</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
-        <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">Выйти из админки</button>
+        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать</button></div>
+        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
+        <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">Выйти</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // ============ ВЕРИФИКАЦИЯ ============
-    let verifyCodeValue = '', verifyTimer, verifyTimeLeft = 300;
-    localStorage.removeItem('swwshop_verified'); localStorage.removeItem('swwshop_verified_time');
-    const verified = localStorage.getItem('swwshop_verified'), verifiedTime = localStorage.getItem('swwshop_verified_time');
-    
-    if (verified === 'true' && verifiedTime && (Date.now() - parseInt(verifiedTime)) < 3600000) {
-      document.getElementById('verify-overlay').style.display = 'none';
-      document.getElementById('main-app').style.display = 'block';
-      initShop();
-    } else {
-      document.getElementById('verify-overlay').style.display = 'flex';
-      document.getElementById('main-app').style.display = 'none';
-      generateVerifyCode(); startVerifyTimer();
-    }
-    
-    function generateVerifyCode() { verifyCodeValue = Math.floor(100000 + Math.random() * 900000).toString(); document.getElementById('code-display').textContent = verifyCodeValue; }
-    function copyVerifyCode() { navigator.clipboard.writeText(verifyCodeValue).then(() => { const d = document.getElementById('code-display'); d.textContent = '✓ СКОПИРОВАНО'; d.style.color = '#10b981'; d.style.borderColor = '#10b981'; setTimeout(() => { d.textContent = verifyCodeValue; d.style.color = ''; d.style.borderColor = ''; }, 1500); }).catch(() => { const d = document.getElementById('code-display'); const r = document.createRange(); r.selectNode(d); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }); }
-    function startVerifyTimer() { verifyTimeLeft = 300; updateVerifyTimer(); clearInterval(verifyTimer); verifyTimer = setInterval(() => { verifyTimeLeft--; updateVerifyTimer(); if (verifyTimeLeft <= 0) { clearInterval(verifyTimer); document.getElementById('v-resend').classList.remove('disabled'); } }, 1000); }
-    function updateVerifyTimer() { const m = Math.floor(verifyTimeLeft/60), s = verifyTimeLeft%60; document.getElementById('v-countdown').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
-    function showVerifyMsg(text, type) { const msg = document.getElementById('v-msg'); msg.textContent = text; msg.className = 'v-msg show '+type; setTimeout(() => msg.className = 'v-msg', 4000); }
-    function verifyCode() { const input = document.getElementById('v-input').value.trim(), btn = document.getElementById('v-btn'); if (input.length !== 6) { showVerifyMsg('Введите 6 цифр', 'error'); return; } btn.disabled = true; btn.textContent = 'Проверка...'; setTimeout(() => { if (input === verifyCodeValue) { clearInterval(verifyTimer); localStorage.setItem('swwshop_verified', 'true'); localStorage.setItem('swwshop_verified_time', Date.now().toString()); btn.innerHTML = '✅ Доступ разрешён'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)'; showVerifyMsg('Верификация пройдена!', 'success'); setTimeout(() => { document.getElementById('verify-overlay').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initShop(); }, 500); } else { showVerifyMsg('Неверный код', 'error'); document.getElementById('v-input').value = ''; btn.disabled = false; btn.textContent = 'Подтвердить и войти'; } }, 800); }
-    function resendVerifyCode() { if (verifyTimeLeft > 0) return; generateVerifyCode(); startVerifyTimer(); document.getElementById('v-resend').classList.add('disabled'); document.getElementById('v-input').value = ''; }
-    document.getElementById('v-input').addEventListener('input', function(e) { this.value = this.value.replace(/[^0-9]/g, ''); if (this.value.length === 6) setTimeout(verifyCode, 400); });
-    document.getElementById('v-input').addEventListener('keypress', function(e) { if (e.key==='Enter') verifyCode(); });
-    
-    // ============ МАГАЗИН ============
-    function initShop() {
-      const BOT_TOKEN = '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY', CHAT_ID = '5993502384';
-      firebase.initializeApp({ apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ", authDomain: "swwshop.firebaseapp.com", databaseURL: "https://swwshop-default-rtdb.firebaseio.com", projectId: "swwshop", storageBucket: "swwshop.firebasestorage.app", messagingSenderId: "698268675105", appId: "1:698268675105:web:15814d169ee2e74c8e4760" });
-      const db = firebase.database();
-      
-      let lastUpdateId = 0;
-      async function checkBot() { try { const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`); const data = await resp.json(); if (data.ok && data.result.length) { for (const u of data.result) { lastUpdateId = u.update_id; if (u.message?.text) { const m = u.message, chatId = m.chat.id, text = m.text; let response = ''; if (text === '/start') response = `🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n\n🎁 Заказ от 800₽ = промокод 15%\n💎 Барахолка — продажа б/у\n\n/s — статистика`; else if (text === '/s') { const uSnap = await db.ref('users').once('value'), oSnap = await db.ref('orders').once('value'); const users = uSnap.val()||{}, orders = oSnap.val()||{}, oList = Object.values(orders); response = `📊 *Статистика*\n\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${oList.length}*\n✅ Выполнено: *${oList.filter(o=>o.status==='completed').length}*`; } if (response) await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:chatId, text:response, parse_mode:'Markdown'}) }); } } } } catch(e) {} setTimeout(checkBot, 2000); }
-      checkBot();
-      
-      window.setTheme = function(t) { document.body.className = t; localStorage.setItem('swwshop_theme', t); };
-      setTheme(localStorage.getItem('swwshop_theme') || 'telegram');
-      
-      let data = { liquids:[], pouches:[], coils:[], devices:[] }, orders = [], promos = {}, users = {}, listings = [];
-      let isAdmin = false, currentView = 'main', currentCategory = '', currentIndex = 0;
-      let cart = JSON.parse(localStorage.getItem('swwshop_cart') || '[]'), appliedPromo = null, activePanel = null, initialized = false;
+<script>
+// ============ ВЕРИФИКАЦИЯ ============
+let verifyCodeValue='',verifyTimer,verifyTimeLeft=300;
+localStorage.removeItem('swwshop_verified');localStorage.removeItem('swwshop_verified_time');
+const verified=localStorage.getItem('swwshop_verified'),verifiedTime=localStorage.getItem('swwshop_verified_time');
+if(verified==='true'&&verifiedTime&&(Date.now()-parseInt(verifiedTime))<3600000){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
+else{document.getElementById('verify-overlay').style.display='flex';document.getElementById('main-app').style.display='none';generateVerifyCode();startVerifyTimer();}
+function generateVerifyCode(){verifyCodeValue=Math.floor(100000+Math.random()*900000).toString();document.getElementById('code-display').textContent=verifyCodeValue;}
+function copyVerifyCode(){navigator.clipboard.writeText(verifyCodeValue).then(()=>{const d=document.getElementById('code-display');d.textContent='✓ СКОПИРОВАНО';d.style.color='#10b981';d.style.borderColor='#10b981';setTimeout(()=>{d.textContent=verifyCodeValue;d.style.color='';d.style.borderColor='';},1500);}).catch(()=>{const d=document.getElementById('code-display');const r=document.createRange();r.selectNode(d);window.getSelection().removeAllRanges();window.getSelection().addRange(r);});}
+function startVerifyTimer(){verifyTimeLeft=300;updateVerifyTimer();clearInterval(verifyTimer);verifyTimer=setInterval(()=>{verifyTimeLeft--;updateVerifyTimer();if(verifyTimeLeft<=0){clearInterval(verifyTimer);document.getElementById('v-resend').classList.remove('disabled');}},1000);}
+function updateVerifyTimer(){const m=Math.floor(verifyTimeLeft/60),s=verifyTimeLeft%60;document.getElementById('v-countdown').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
+function showVerifyMsg(text,type){const msg=document.getElementById('v-msg');msg.textContent=text;msg.className='v-msg show '+type;setTimeout(()=>msg.className='v-msg',4000);}
+function verifyCode(){const input=document.getElementById('v-input').value.trim(),btn=document.getElementById('v-btn');if(input.length!==6){showVerifyMsg('Введите 6 цифр','error');return;}btn.disabled=true;btn.textContent='Проверка...';setTimeout(()=>{if(input===verifyCodeValue){clearInterval(verifyTimer);localStorage.setItem('swwshop_verified','true');localStorage.setItem('swwshop_verified_time',Date.now().toString());btn.innerHTML='✅ Доступ разрешён';btn.style.background='linear-gradient(135deg, #10b981, #059669)';showVerifyMsg('Верификация пройдена!','success');setTimeout(()=>{document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();},500);}else{showVerifyMsg('Неверный код','error');document.getElementById('v-input').value='';btn.disabled=false;btn.textContent='Подтвердить и войти';}},800);}
+function resendVerifyCode(){if(verifyTimeLeft>0)return;generateVerifyCode();startVerifyTimer();document.getElementById('v-resend').classList.add('disabled');document.getElementById('v-input').value='';}
+document.getElementById('v-input').addEventListener('input',function(e){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)setTimeout(verifyCode,400);});
+document.getElementById('v-input').addEventListener('keypress',function(e){if(e.key==='Enter')verifyCode();});
 
-      function getEarnings() {
-        const dayStart = new Date(); dayStart.setHours(0,0,0,0);
-        const weekStart = new Date(); weekStart.setDate(weekStart.getDate()-weekStart.getDay()); weekStart.setHours(0,0,0,0);
-        const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-        const yearStart = new Date(); yearStart.setMonth(0,1); yearStart.setHours(0,0,0,0);
-        const completed = orders.filter(o => o.status === 'completed');
-        return { day: completed.filter(o => o.completedAt >= dayStart.getTime()).reduce((s,o)=>s+o.total,0), week: completed.filter(o => o.completedAt >= weekStart.getTime()).reduce((s,o)=>s+o.total,0), month: completed.filter(o => o.completedAt >= monthStart.getTime()).reduce((s,o)=>s+o.total,0), year: completed.filter(o => o.completedAt >= yearStart.getTime()).reduce((s,o)=>s+o.total,0) };
-      }
+// ============ МАГАЗИН ============
+function initShop(){
+const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',CHAT_ID='5993502384';
+firebase.initializeApp({apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",authDomain:"swwshop.firebaseapp.com",databaseURL:"https://swwshop-default-rtdb.firebaseio.com",projectId:"swwshop",storageBucket:"swwshop.firebasestorage.app",messagingSenderId:"698268675105",appId:"1:698268675105:web:15814d169ee2e74c8e4760"});
+const db=firebase.database();
 
-      function registerUser() { const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user; const userId = getUserId(); const userData = { id: userId, firstSeen: Date.now(), lastSeen: Date.now(), visitCount: 1 }; if (tgUser) { userData.telegramId = tgUser.id; userData.firstName = tgUser.first_name; userData.username = tgUser.username || ''; } db.ref('users/'+userId).once('value').then(snap => { const ex = snap.val(); if (ex) db.ref('users/'+userId).update({ lastSeen: Date.now(), visitCount: (ex.visitCount||1)+1 }); else db.ref('users/'+userId).set(userData); }); }
+let lastUpdateId=0;
+async function checkBot(){try{const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);const data=await resp.json();if(data.ok&&data.result.length){for(const u of data.result){lastUpdateId=u.update_id;if(u.message?.text){const m=u.message,chatId=m.chat.id,text=m.text;let response='';if(text==='/start')response=`🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n🎁 Заказ от 800₽ = промокод 15%\n💎 Барахолка\n\n/s — статистика`;else if(text==='/s'){const uSnap=await db.ref('users').once('value'),oSnap=await db.ref('orders').once('value');const users=uSnap.val()||{},orders=oSnap.val()||{},oList=Object.values(orders);response=`📊 *Статистика*\n\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${oList.length}*\n✅ Выполнено: *${oList.filter(o=>o.status==='completed').length}*`;}if(response)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:response,parse_mode:'Markdown'})});}}}}catch(e){}setTimeout(checkBot,2000);}
+checkBot();
 
-      db.ref('assortment').once('value').then(s => { const v = s.val(); if (v?.liquids) data = v; else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]}); if (!initialized) { initialized=true; showMain(); } });
-      db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
-      db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
-      db.ref('users').on('value', s => { users = s.val() || {}; updateUI(); });
-      db.ref('listings').on('value', s => { listings = s.val() ? Object.values(s.val()) : []; updateUI(); });
+window.setTheme=function(t){document.body.className=t;localStorage.setItem('swwshop_theme',t);};
+setTheme(localStorage.getItem('swwshop_theme')||'telegram');
 
-      function refreshView() { if (currentView==='main') showMain(); else if (currentView==='category') showCategory(currentCategory); else if (currentView==='detail') showDetail(currentCategory,currentIndex); }
-      function updateUI() { updateOrdersBadge(); if (activePanel==='orders') showOrders(); if (activePanel==='all-orders') showAllOrders(); if (activePanel==='promos') showPromos(); if (activePanel==='users') showUsers(); if (activePanel==='console') updateConsoleUsers(); if (currentView==='main') showMain(); if (isAdmin) updateAdminEarnings(); }
-      
-      function updateAdminEarnings() { const earnings = getEarnings(); const el = document.getElementById('admin-earnings'); if (el) el.innerHTML = `<div class="earning-card"><div class="earning-amount">${earnings.day} ₽</div><div class="earning-label">Сегодня</div></div><div class="earning-card"><div class="earning-amount">${earnings.week} ₽</div><div class="earning-label">Неделя</div></div><div class="earning-card"><div class="earning-amount">${earnings.month} ₽</div><div class="earning-label">Месяц</div></div><div class="earning-card"><div class="earning-amount">${earnings.year} ₽</div><div class="earning-label">Год</div></div>`; }
-      
-      window.openPanel = function(name) { document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active')); const p = document.getElementById(name+'-panel'); if (p) { p.classList.add('active'); activePanel = name; } if (name==='orders') showOrders(); if (name==='all-orders') showAllOrders(); if (name==='promos') showPromos(); if (name==='cart') showCart(); if (name==='users') showUsers(); if (name==='console') updateConsoleUsers(); if (name==='flea') showFleaListings(); };
-      window.closePanel = function(name) { const p = document.getElementById(name+'-panel'); if (p) p.classList.remove('active'); activePanel = null; };
-      window.toggleAdminPanel = function() { const p = document.getElementById('admin-panel'); if (p.classList.contains('active')) { p.classList.remove('active'); activePanel = null; } else { document.querySelectorAll('.overlay-panel').forEach(x => x.classList.remove('active')); p.classList.add('active'); activePanel = 'admin'; updateAdminEarnings(); } };
-      
-      function updateAdminUI() { document.getElementById('admin-indicator').className = isAdmin?'admin-indicator active':'admin-indicator'; document.getElementById('console-icon').style.display = isAdmin?'flex':'none'; document.getElementById('users-icon').style.display = isAdmin?'flex':'none'; }
-      function stText(s) { return s?'В наличии':'Нет'; } function stClass(s) { return s?'status-in-stock':'status-out-stock'; }
-      function getUserId() { const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user; if (tgUser) return 'tg_'+tgUser.id; let id = localStorage.getItem('swwshop_userId'); if (!id) { id = 'web_'+Date.now(); localStorage.setItem('swwshop_userId', id); } return id; }
-      function getTotalUsers() { return Object.keys(users).length; }
-      function updateOrdersBadge() { const my = orders.filter(o => o.userId===getUserId()); const b = document.getElementById('orders-badge'); b.style.display = my.length?'flex':'none'; if (my.length) b.textContent = my.length; }
-            // ============ БАРАХОЛКА ============
-      window.showFleaListings = function() {
-        const el = document.getElementById('flea-content');
-        if (!listings.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет объявлений</p>'; return; }
-        el.innerHTML = '<h3 style="margin-bottom:12px;">Все объявления</h3>' + listings.sort((a,b) => b.date - a.date).map(l => `
-          <div class="listing-card" onclick="showFleaDetail('${l.id}')" style="cursor:pointer;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              ${l.photo ? `<img src="${l.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;" onerror="this.style.display='none'" />` : '<div style="width:50px;height:50px;background:var(--card-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>'}
-              <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
-                <div style="font-size:12px;opacity:0.7;">${l.price} ₽ | ⭐${l.condition}/10 | 🔧${l.functionality}/10</div>
-                <div style="font-size:11px;opacity:0.5;">@${l.username} | ${new Date(l.date).toLocaleDateString()}</div>
-              </div>
-              ${(isAdmin || l.userId === getUserId()) ? `<button class="btn-sm btn-delete" onclick="event.stopPropagation();deleteListing('${l.id}')" style="flex-shrink:0;">✕</button>` : ''}
-            </div>
-          </div>
-        `).join('');
-      };
-      
-      window.showFleaDetail = function(id) {
-        const listing = listings.find(l => l.id === id);
-        if (!listing) return;
-        const el = document.getElementById('flea-content');
-        el.innerHTML = `
-          <button class="back-btn" onclick="showFleaListings()">← Назад к объявлениям</button>
-          <h3 style="margin-top:8px;">${listing.title}</h3>
-          ${listing.photo ? `<img src="${listing.photo}" class="listing-photo" onerror="this.style.display='none'" />` : '<div class="listing-photo" style="display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;">📷 Нет фото</div>'}
-          <p style="margin:12px 0;line-height:1.5;">${listing.description}</p>
-          <div class="listing-detail">
-            <div class="listing-meta"><span>⭐ Внешний вид:</span><span><strong>${listing.condition}/10</strong></span></div>
-            <div class="listing-meta"><span>🔧 Работоспособность:</span><span><strong>${listing.functionality}/10</strong></span></div>
-            <div class="listing-meta"><span>💰 Цена:</span><span style="color:var(--accent);font-weight:700;font-size:16px;">${listing.price} ₽</span></div>
-            <div class="listing-meta"><span>👤 Продавец:</span><span style="color:var(--accent);">@${listing.username}</span></div>
-            <div class="listing-meta"><span>📅 Опубликовано:</span><span>${new Date(listing.date).toLocaleString()}</span></div>
-          </div>
-          ${(isAdmin || listing.userId === getUserId()) ? `<button class="admin-action-btn btn-red" onclick="deleteListing('${listing.id}');showFleaListings();" style="margin-top:12px;">🗑️ Удалить объявление</button>` : ''}
-        `;
-      };
-      
-      window.showFleaCreate = function() {
-        const userId = getUserId();
-        const lastListing = listings.filter(l => l.userId === userId).sort((a,b) => b.date - a.date)[0];
-        if (lastListing && (Date.now() - lastListing.date) < 86400000) {
-          const remaining = Math.ceil((86400000 - (Date.now() - lastListing.date)) / 3600000);
-          document.getElementById('flea-content').innerHTML = `<div style="text-align:center;padding:40px;"><p style="font-size:18px;color:var(--warning);">⏳ Следующее объявление через ${remaining} ч.</p><p style="font-size:13px;opacity:0.7;">Можно создавать одно объявление в 24 часа</p></div>`;
-          return;
-        }
-        
-        const el = document.getElementById('flea-content');
-        el.innerHTML = `
-          <h3 style="margin-bottom:12px;">Создать объявление</h3>
-          <div class="listing-form">
-            <label style="font-size:13px;opacity:0.7;">Фото товара</label>
-            <input type="file" id="flea-photo" accept="image/*" onchange="previewFleaPhoto()" style="margin-bottom:12px;" />
-            <img id="flea-photo-preview" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin:8px 0;display:none;" />
-            <input type="text" id="flea-title" placeholder="Название товара *" />
-            <textarea id="flea-desc" placeholder="Описание товара *"></textarea>
-            <label style="font-size:13px;opacity:0.7;">⭐ Внешний вид (1-10)</label>
-            <div class="stars" id="stars-condition"></div>
-            <input type="hidden" id="flea-condition" value="5" />
-            <label style="font-size:13px;opacity:0.7;">🔧 Работоспособность (1-10)</label>
-            <div class="stars" id="stars-functionality"></div>
-            <input type="hidden" id="flea-functionality" value="5" />
-            <input type="number" id="flea-price" placeholder="Цена в ₽ *" />
-            <input type="text" id="flea-username" placeholder="Ваш @username *" />
-            <button class="order-btn" onclick="createListing()" style="margin-top:8px;">📢 Опубликовать объявление</button>
-          </div>
-        `;
-        
-        function createStars(containerId, inputId) {
-          const container = document.getElementById(containerId);
-          if (!container) return;
-          for (let i = 1; i <= 10; i++) {
-            const star = document.createElement('span');
-            star.className = 'star' + (i <= 5 ? ' active' : '');
-            star.textContent = '★';
-            star.onclick = function() {
-              document.getElementById(inputId).value = i;
-              container.querySelectorAll('.star').forEach((s, idx) => s.className = 'star' + (idx < i ? ' active' : ''));
-            };
-            container.appendChild(star);
-          }
-        }
-        createStars('stars-condition', 'flea-condition');
-        createStars('stars-functionality', 'flea-functionality');
-      };
-      
-      window.previewFleaPhoto = function() {
-        const file = document.getElementById('flea-photo').files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const img = document.getElementById('flea-photo-preview');
-            img.src = e.target.result;
-            img.style.display = 'block';
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-      
-      window.createListing = async function() {
-        const title = document.getElementById('flea-title')?.value.trim();
-        const desc = document.getElementById('flea-desc')?.value.trim();
-        const condition = parseInt(document.getElementById('flea-condition')?.value || 5);
-        const functionality = parseInt(document.getElementById('flea-functionality')?.value || 5);
-        const price = parseInt(document.getElementById('flea-price')?.value);
-        const username = document.getElementById('flea-username')?.value.trim();
-        const photoFile = document.getElementById('flea-photo')?.files[0];
-        
-        if (!title || !desc || !price || !username) return alert('Заполните все поля!');
-        if (!username.startsWith('@')) return alert('Username должен начинаться с @');
-        
-        let photoData = '';
-        if (photoFile) {
-          photoData = await new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.readAsDataURL(photoFile);
-          });
-        }
-        
-        const userId = getUserId();
-        const listingId = 'FL-' + Date.now().toString(36).toUpperCase();
-        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        
-        await db.ref('listings/' + listingId).set({
-          id: listingId, userId, title, description: desc, condition, functionality, price, username, photo: photoData, date: Date.now()
-        });
-        
-        if (tgUser?.id) {
-          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:tgUser.id, text:'💎 *Объявление создано!*\n\n📋 ' + title + '\n💰 ' + price + '₽\n⭐ Состояние: ' + condition + '/10\n🔧 Работоспособность: ' + functionality + '/10\n\nОбъявление опубликовано в барахолке.', parse_mode:'Markdown'}) });
-        }
-        
-        alert('✅ Объявление опубликовано!');
-        showFleaListings();
-      };
-      
-      window.deleteListing = function(id) {
-        if (!confirm('Удалить объявление?')) return;
-        db.ref('listings/' + id).remove();
-        alert('Удалено!');
-        if (activePanel === 'flea') showFleaListings();
-      };
+let data={liquids:[],pouches:[],coils:[],devices:[]},orders=[],promos={},users={},listings=[];
+let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
+let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
 
-      // ============ ЗАКАЗЫ ============
-      function showUsers() { if (!isAdmin) return; const ul = Object.values(users); document.getElementById('user-stats').innerHTML = `<div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>`; const el = document.getElementById('users-list'); if (!ul.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет</p>'; return; } el.innerHTML = ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u => `<div class="user-card"><div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div><div style="font-size:12px;opacity:0.7;">ID: ${u.id} | 👁 ${u.visitCount||1} | 📋 ${orders.filter(o=>o.userId===u.id).length}</div></div>`).join(''); }
-      function updateConsoleUsers() { if (!isAdmin) return; const sel = document.getElementById('console-user'); sel.innerHTML = '<option value="">-- Выберите --</option>'; Object.values(users).forEach(u => { sel.innerHTML += `<option value="${u.id}">${u.firstName||'Пользователь'} ${u.username?'@'+u.username:''}</option>`; }); }
-      
-      window.sendMessageToUser = async function() { if (!isAdmin) return; const uid = document.getElementById('console-user').value, msg = document.getElementById('console-message').value.trim(); if (!uid||!msg) return alert('Заполните!'); const user = users[uid]; if (!user?.telegramId) return alert('Не в Telegram'); await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:user.telegramId, text:'📨 SWWSHOP:\n\n'+msg}) }); alert('✅'); document.getElementById('console-message').value = ''; };
-      window.sendBroadcast = async function() { if (!isAdmin) return; const msg = document.getElementById('console-broadcast').value.trim(); if (!msg||!confirm('Всем?')) return; let sent = 0; for (const u of Object.values(users)) { if (u.telegramId) { try { await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:u.telegramId, text:'📢 SWWSHOP:\n\n'+msg}) }); sent++; } catch(e) {} } } alert(`✅ ${sent} чел.`); document.getElementById('console-broadcast').value = ''; };
+function getEarnings(){const dayStart=new Date();dayStart.setHours(0,0,0,0);const weekStart=new Date();weekStart.setDate(weekStart.getDate()-weekStart.getDay());weekStart.setHours(0,0,0,0);const monthStart=new Date();monthStart.setDate(1);monthStart.setHours(0,0,0,0);const yearStart=new Date();yearStart.setMonth(0,1);yearStart.setHours(0,0,0,0);const completed=orders.filter(o=>o.status==='completed');return{day:completed.filter(o=>o.completedAt>=dayStart.getTime()).reduce((s,o)=>s+o.total,0),week:completed.filter(o=>o.completedAt>=weekStart.getTime()).reduce((s,o)=>s+o.total,0),month:completed.filter(o=>o.completedAt>=monthStart.getTime()).reduce((s,o)=>s+o.total,0),year:completed.filter(o=>o.completedAt>=yearStart.getTime()).reduce((s,o)=>s+o.total,0)};}
 
-      function showOrders() { const my = orders.filter(o=>o.userId===getUserId()); const el = document.getElementById('orders-list'); if (!my.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет заказов</p>'; return; } el.innerHTML = my.reverse().map(o => `<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>${o.status==='completed'&&o.promoCode?`<div class="promo-code-display">🎁 ${o.promoCode}</div>`:''}</div>`).join(''); }
-      function showAllOrders() { if (!isAdmin) return; const el = document.getElementById('all-orders-list'); if (!orders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет заказов</p>'; return; } el.innerHTML = orders.reverse().map(o => `<div class="order-card"><div><strong>#${o.id}</strong> | ${o.userName} | ${o.userContact}</div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>${o.status==='pending'?`<div style="margin-top:8px;"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button> <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌ Отменить</button></div>`:''}</div>`).join(''); }
-      
-      window.completeOrder = async function(orderId, subtotal) { if (!isAdmin||!confirm('Выполнить?')) return; const update = { status:'completed', completedAt:Date.now() }; let promo = null; if (subtotal >= 800) { promo = 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase(); update.promoCode = promo; db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),auto:true}); } await db.ref('orders/'+orderId).update(update); const order = (await db.ref('orders/'+orderId).once('value')).val(); if (order) { const user = (await db.ref('users/'+order.userId).once('value')).val(); if (user?.telegramId) { let txt = '🎉 *Заказ #'+orderId+' выполнен!*\n\nСпасибо за покупку!'; if (promo) txt += '\n\n🎁 *Промокод 15%:* `'+promo+'`'; try { await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:user.telegramId, text:txt, parse_mode:'Markdown'}) }); } catch(e) {} } } alert('✅'+(promo?' Промокод: '+promo:'')); showAllOrders(); updateAdminEarnings(); };
-      window.cancelOrder = function(orderId) { if (!isAdmin||!confirm('Отменить?')) return; db.ref('orders/'+orderId).update({status:'cancelled'}); };
-      
-      function showPromos() { if (!isAdmin) return; const el = document.getElementById('promos-list'); const codes = Object.entries(promos); if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет</p>'; return; } el.innerHTML = codes.reverse().map(([c,p]) => `<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌ Исп.':'✅ Доступен'}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">Удалить</button></div>`).join(''); }
-      window.deletePromo = function(code) { if (!isAdmin||!confirm('Удалить?')) return; db.ref('promos/'+code).remove(); };
-      window.createPromo = function() { if (!isAdmin) return; const c = document.getElementById('promo-code').value.trim()||'SWW'+Math.random().toString(36).substring(2,7).toUpperCase(); db.ref('promos/'+c).set({discount:parseInt(document.getElementById('promo-discount').value)||15,used:false,created:Date.now()}); alert('✅'); document.getElementById('promo-code').value = ''; };
-      
-      window.applyPromo = function() { const input = document.getElementById('promo-input').value.trim().toUpperCase(); if (!input) return; if (promos[input]) { if (promos[input].used) { document.getElementById('promo-message').innerHTML = '<span style="color:var(--danger);">Исп.</span>'; return; } appliedPromo = { code:input, discount:promos[input].discount }; document.getElementById('promo-message').innerHTML = '<span style="color:var(--success);">-'+promos[input].discount+'%</span>'; showCart(); } else { document.getElementById('promo-message').innerHTML = '<span style="color:var(--danger);">Нет</span>'; appliedPromo = null; } };
+function registerUser(){const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;const userId=getUserId();const userData={id:userId,firstSeen:Date.now(),lastSeen:Date.now(),visitCount:1};if(tgUser){userData.telegramId=tgUser.id;userData.firstName=tgUser.first_name;userData.username=tgUser.username||'';}db.ref('users/'+userId).once('value').then(snap=>{const ex=snap.val();if(ex)db.ref('users/'+userId).update({lastSeen:Date.now(),visitCount:(ex.visitCount||1)+1});else db.ref('users/'+userId).set(userData);});}
 
-      function saveCart() { localStorage.setItem('swwshop_cart', JSON.stringify(cart)); updateCartBadge(); }
-      function updateCartBadge() { const c = cart.reduce((s,i)=>s+(i.quantity||1),0); const el = document.getElementById('cart-count'); el.style.display = c>0?'flex':'none'; if (c>0) el.textContent = c; }
-      
-      window.addToCart = function(name, price, lineName, flavorName) { if (!flavorName) { alert('❌ Выберите конкретный вкус!'); return; } const line = data[currentCategory]?.find(l => l.name === lineName); if (line) { const f = line.flavors.find(f => f.name === flavorName); if (f && !f.inStock) { alert('❌ Нет в наличии!'); return; } } cart.push({ name: flavorName+' ('+lineName+')', price, lineName, flavorName }); saveCart(); alert('✅ Добавлено!'); };
-      window.addToCartSimple = function(name, price) { const item = data[currentCategory]?.find(i => i.name === name); if (item && !item.inStock) { alert('❌ Нет в наличии!'); return; } cart.push({ name, price, lineName:'', flavorName:'' }); saveCart(); alert('✅ Добавлено!'); };
-      window.removeFromCart = function(i) { cart.splice(i,1); saveCart(); showCart(); };
-      
-      function showCart() { if (!cart.length) { document.getElementById('cart-items').innerHTML = '<p style="text-align:center;opacity:0.5;">Пусто</p>'; document.getElementById('cart-total').textContent = ''; document.getElementById('cart-discount').textContent = ''; document.getElementById('order-form').style.display = 'none'; return; } let sub = cart.reduce((s,i)=>s+i.price,0); let disc = appliedPromo?Math.round(sub*appliedPromo.discount/100):0; document.getElementById('cart-items').innerHTML = cart.map((item,i) => `<div class="cart-item"><div class="cart-item-info"><div class="cart-item-name">${item.name}</div></div><span style="white-space:nowrap;">${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>`).join(''); document.getElementById('cart-discount').textContent = disc>0?'Скидка: -'+disc+' RUB':''; document.getElementById('cart-total').textContent = 'Итого: '+(sub-disc)+' RUB'; document.getElementById('order-form').style.display = 'block'; }
+db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();}});
+db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];updateUI();});
+db.ref('promos').on('value',s=>{promos=s.val()||{};updateUI();});
+db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
+db.ref('listings').on('value',s=>{listings=s.val()?Object.values(s.val()):[];updateUI();});
 
-      window.sendOrder = async function() { const name = document.getElementById('customer-name').value.trim(); const contact = document.getElementById('customer-contact').value.trim(); const payment = document.getElementById('payment-method').value; if (!name||!contact||!payment) return alert('Заполните все поля!'); let sub = cart.reduce((s,i)=>s+i.price,0), disc = 0; if (appliedPromo&&promos[appliedPromo.code]&&!promos[appliedPromo.code].used) { disc = Math.round(sub*appliedPromo.discount/100); db.ref('promos/'+appliedPromo.code).update({used:true,usedBy:name,usedAt:Date.now()}); } const total = sub-disc, orderId = 'SWW-'+Date.now().toString(36).toUpperCase().slice(-6), userId = getUserId(), tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user; await db.ref('orders/'+orderId).set({id:orderId,userId,userName:name,userContact:contact,userUsername:tgUser?.username||contact,items:[...cart],subtotal:sub,discount:disc,total,payment,promoApplied:appliedPromo,status:'pending',date:Date.now(),promoCode:null}); let atxt = '🛒 НОВЫЙ ЗАКАЗ #'+orderId+'\n\n👤 Имя: '+name+'\n📱 Контакты: '+contact+'\n💳 Оплата: '+payment; if (tgUser?.username) atxt += '\n💬 Telegram: @'+tgUser.username; atxt += '\n\n📋 Товары:\n'; cart.forEach((item,i) => { atxt += (i+1)+'. '+item.name+' - '+item.price+'₽\n'; }); if (disc>0) atxt += '\n🎫 Промокод: '+appliedPromo.code+' (-'+disc+'₽)'; atxt += '\n💰 Итого: '+total+'₽\n📅 '+new Date().toLocaleString(); await fetch('https://api.telegram.org/bot'+BOT_TOKEN+'/sendMessage', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:CHAT_ID, text:atxt}) }); if (tgUser?.id) { let utxt = '✅ *Заказ #'+orderId+' оформлен!*\n\n💳 Оплата: '+payment+'\n\n📋 Ваши товары:\n'; cart.forEach((item,i) => { utxt += (i+1)+'. '+item.name+' - '+item.price+'₽\n'; }); if (disc>0) utxt += '\n🎫 Промокод: '+appliedPromo.code+' (-'+disc+'₽)'; utxt += '\n💰 *Итого: '+total+'₽*\n\n⏳ Ожидайте выполнения!'; try { await fetch('https://api.telegram.org/bot'+BOT_TOKEN+'/sendMessage', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:tgUser.id, text:utxt, parse_mode:'Markdown'}) }); } catch(e) {} } cart = []; appliedPromo = null; saveCart(); document.getElementById('cart-items').innerHTML = ''; document.getElementById('cart-total').textContent = ''; document.getElementById('cart-discount').textContent = ''; document.getElementById('order-form').style.display = 'none'; document.getElementById('order-success').style.display = 'block'; document.getElementById('order-success').innerHTML = '✅ Заказ #'+orderId+' оформлен!<br>Проверьте уведомления в боте'; document.getElementById('promo-message').innerHTML = ''; document.getElementById('promo-input').value = ''; };
+function refreshView(){if(currentView==='main')showMain();else if(currentView==='category')showCategory(currentCategory);else if(currentView==='detail')showDetail(currentCategory,currentIndex);}
+function updateUI(){updateOrdersBadge();if(activePanel==='orders')showOrders();if(activePanel==='all-orders')showAllOrders();if(activePanel==='promos')showPromos();if(activePanel==='users')showUsers();if(activePanel==='console')updateConsoleUsers();if(currentView==='main')showMain();if(isAdmin)updateAdminEarnings();}
 
-      // SVG иконки для категорий
-      const categoryIcons = {
-        liquids: `<svg class="section-icon" viewBox="0 0 40 40" fill="none"><rect x="8" y="4" width="24" height="32" rx="6" fill="url(#lg1)" stroke="#0096ff" stroke-width="1.5"/><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0096ff" stop-opacity="0.3"/><stop offset="100%" stop-color="#0056b3" stop-opacity="0.5"/></linearGradient></defs></svg>`,
-        pouches: `<svg class="section-icon" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="16" r="10" fill="url(#pg1)" stroke="#ff9600" stroke-width="1.5"/><circle cx="20" cy="16" r="3" fill="#ff9600"/><path d="M15 12c-2-5 2-8 5-8s7 3 5 8" stroke="#ff9600" stroke-width="1.5"/><defs><linearGradient id="pg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff9600" stop-opacity="0.2"/><stop offset="100%" stop-color="#cc7a00" stop-opacity="0.4"/></linearGradient></defs></svg>`,
-        coils: `<svg class="section-icon" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" fill="url(#cg1)" stroke="#888" stroke-width="1.5"/><circle cx="20" cy="20" r="8" stroke="#666" stroke-width="1"/><circle cx="20" cy="20" r="2" fill="#666"/><defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#aaa" stop-opacity="0.2"/><stop offset="100%" stop-color="#555" stop-opacity="0.4"/></linearGradient></defs></svg>`,
-        devices: `<svg class="section-icon" viewBox="0 0 40 40" fill="none"><rect x="6" y="4" width="28" height="22" rx="4" fill="url(#dg1)" stroke="#64c864" stroke-width="1.5"/><rect x="10" y="8" width="20" height="14" rx="2" stroke="#64c864" stroke-width="1"/><path d="M14 30h12l2 4H12l2-4z" stroke="#64c864" stroke-width="1.5"/><defs><linearGradient id="dg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#64c864" stop-opacity="0.2"/><stop offset="100%" stop-color="#3a8a3a" stop-opacity="0.4"/></linearGradient></defs></svg>`
-      };
+function updateAdminEarnings(){const earnings=getEarnings();const el=document.getElementById('admin-earnings');if(el)el.innerHTML=`<div class="earning-card"><div class="earning-amount">${earnings.day} ₽</div><div class="earning-label">Сегодня</div></div><div class="earning-card"><div class="earning-amount">${earnings.week} ₽</div><div class="earning-label">Неделя</div></div><div class="earning-card"><div class="earning-amount">${earnings.month} ₽</div><div class="earning-label">Месяц</div></div><div class="earning-card"><div class="earning-amount">${earnings.year} ₽</div><div class="earning-label">Год</div></div>`;}
 
-      window.showMain = function() { currentView = 'main'; const earnings = getEarnings(); document.getElementById('app').innerHTML = `<h1 class="shop-title">SWWSHOP</h1><div style="text-align:center;"><div class="users-counter">👥 Пользователей: <span>${getTotalUsers()}</span></div></div>${isAdmin ? `<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${earnings.day} ₽</div></div></div>` : ''}<p style="text-align:center;opacity:0.7;">Выберите категорию:</p><button class="category-btn" onclick="showCategory('liquids')">${categoryIcons.liquids} Жидкости</button><button class="category-btn" onclick="showCategory('pouches')">${categoryIcons.pouches} Шайбы</button><button class="category-btn" onclick="showCategory('coils')">${categoryIcons.coils} Испарители</button><button class="category-btn" onclick="showCategory('devices')">${categoryIcons.devices} Устройства</button>`; };
-      
-      window.showCategory = function(cat) { currentView = 'category'; currentCategory = cat; const t = { liquids:'Жидкости', pouches:'Шайбы', coils:'Испарители', devices:'Устройства' }; let h = '<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">'+t[cat]+'</h1>'; if (!data[cat]?.length) { h += '<p style="text-align:center;">Нет товаров</p>'; } else if (cat==='liquids'||cat==='pouches') { data[cat].forEach((line,i) => { h += '<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+line.name+'</span><span style="font-size:13px;opacity:0.7;">'+line.price+' RUB | '+line.flavors.length+' вкусов</span></button>'; if (isAdmin) h += '<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine(\''+cat+'\','+i+')">Удалить</button>'; h += '</div>'; }); } else { data[cat].forEach((item,i) => { h += '<div class="product-row"><span class="product-name">'+item.name+'</span><span class="product-price">'+item.price+' RUB</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span><div class="product-actions">'; h += item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>'; if (isAdmin) h += '<button class="btn-sm btn-toggle" onclick="toggleItem(\''+cat+'\','+i+')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\''+cat+'\','+i+')">Удалить</button>'; h += '</div></div>'; }); } document.getElementById('app').innerHTML = h; };
-      
-      window.showDetail = function(cat, idx) { currentView = 'detail'; currentCategory = cat; currentIndex = idx; const line = data[cat][idx]; let h = '<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1 class="shop-title">'+line.name+'</h1><p style="text-align:center;color:var(--accent);font-weight:600;">'+line.price+' RUB</p>'; h += '<div class="section-title">Выберите вкус ('+line.flavors.length+'):</div>'; line.flavors.forEach((flavor,fi) => { h += '<div class="flavor-row"><span class="flavor-name">'+flavor.name+'</span><div class="flavor-actions"><span class="status-badge '+stClass(flavor.inStock)+'">'+stText(flavor.inStock)+'</span>'; h += flavor.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+flavor.name+'\')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>'; if (isAdmin) h += '<button class="btn-sm btn-toggle" onclick="toggleFlavor(\''+cat+'\','+idx+','+fi+')">Сменить</button>'; h += '</div></div>'; }); document.getElementById('app').innerHTML = h; };
-      
-      window.deleteLine = function(cat,idx) { if (!isAdmin) return; if (confirm('Удалить?')) { data[cat].splice(idx,1); db.ref('assortment').set(data); showCategory(cat); } };
-      window.deleteItem = function(cat,idx) { if (!isAdmin) return; if (confirm('Удалить?')) { data[cat].splice(idx,1); db.ref('assortment').set(data); showCategory(cat); } };
-      window.toggleItem = function(cat,idx) { if (!isAdmin) return; data[cat][idx].inStock = !data[cat][idx].inStock; db.ref('assortment').set(data); showCategory(cat); };
-      window.toggleFlavor = function(cat,l,f) { if (!isAdmin) return; data[cat][l].flavors[f].inStock = !data[cat][l].flavors[f].inStock; db.ref('assortment').set(data); showDetail(cat,l); };
-      
-      window.updateDelSelect = function() { const cat = document.getElementById('del-category')?.value; const sel = document.getElementById('del-item'); if (!sel||!data[cat]) return; sel.innerHTML = '<option value="">-- Выберите --</option>'; data[cat].forEach((item,i) => { sel.innerHTML += '<option value="'+i+'">'+item.name+'</option>'; }); };
-      
-      window.adminLogin = function() { if (document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF') { isAdmin = true; document.getElementById('admin-login-area').style.display = 'none'; document.getElementById('admin-controls-area').style.display = 'block'; updateAdminUI(); updateAdminEarnings(); showMain(); } else alert('Неверный пароль!'); };
-      window.adminLogout = function() { isAdmin = false; document.getElementById('admin-login-area').style.display = 'block'; document.getElementById('admin-controls-area').style.display = 'none'; document.getElementById('admin-panel').classList.remove('active'); activePanel = null; updateAdminUI(); showMain(); };
-      window.addLine = function() { if (!isAdmin) return; const n = document.getElementById('line-name').value.trim(), p = parseInt(document.getElementById('line-price').value), c = document.getElementById('line-category').value, ft = document.getElementById('line-flavors').value.trim(); if (!n||!p||!ft) return alert('Заполните!'); const fl = ft.split('\n').filter(l=>l.trim()).map(l=>{const a=l.split(',');return{name:a[0].trim(),inStock:a[1]?.trim().toUpperCase()==='YES'};}); if (!fl.length) return alert('Минимум 1 вкус!'); data[c].push({name:n,price:p,flavors:fl}); db.ref('assortment').set(data); alert('✅'); document.getElementById('line-name').value='';document.getElementById('line-price').value='';document.getElementById('line-flavors').value=''; showMain(); };
-      window.addItem = function() { if (!isAdmin) return; const n = document.getElementById('item-name').value.trim(), p = parseInt(document.getElementById('item-price').value), c = document.getElementById('item-category').value, q = parseInt(document.getElementById('item-qty').value)||0; if (!n||!p) return alert('Заполните!'); data[c].push({name:n,price:p,inStock:q>0}); db.ref('assortment').set(data); alert('✅'); document.getElementById('item-name').value='';document.getElementById('item-price').value='';document.getElementById('item-qty').value=''; showMain(); };
-      window.deleteSelected = function() { if (!isAdmin) return; const c = document.getElementById('del-category').value, i = parseInt(document.getElementById('del-item').value); if (isNaN(i)) return alert('Выберите!'); if (confirm('Удалить?')) { data[c].splice(i,1); db.ref('assortment').set(data); showMain(); } };
-      window.deleteAllOutOfStock = function() { if (!isAdmin||!confirm('Удалить всё?')) return; ['liquids','pouches'].forEach(c=>{data[c]=data[c].filter(l=>l.flavors?.some(f=>f.inStock));}); ['coils','devices'].forEach(c=>{data[c]=data[c].filter(i=>i.inStock);}); db.ref('assortment').set(data); alert('✅'); showMain(); };
+window.openPanel=function(name){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(name+'-panel');if(p){p.classList.add('active');activePanel=name;}if(name==='orders')showOrders();if(name==='all-orders')showAllOrders();if(name==='promos')showPromos();if(name==='cart')showCart();if(name==='users')showUsers();if(name==='console')updateConsoleUsers();if(name==='flea')showFleaListings();};
+window.closePanel=function(name){const p=document.getElementById(name+'-panel');if(p)p.classList.remove('active');activePanel=null;};
+window.toggleAdminPanel=function(){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}};
 
-      const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
-      registerUser(); updateCartBadge(); updateAdminUI();
-      if (!initialized) showMain();
-    }
-  </script>
+function updateAdminUI(){document.getElementById('admin-indicator').className=isAdmin?'admin-indicator active':'admin-indicator';document.getElementById('console-icon').style.display=isAdmin?'flex':'none';document.getElementById('users-icon').style.display=isAdmin?'flex':'none';}
+function stText(s){return s?'В наличии':'Нет';}function stClass(s){return s?'status-in-stock':'status-out-stock';}
+function getUserId(){const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgUser)return'tg_'+tgUser.id;let id=localStorage.getItem('swwshop_userId');if(!id){id='web_'+Date.now();localStorage.setItem('swwshop_userId',id);}return id;}
+function getTotalUsers(){return Object.keys(users).length;}
+function updateOrdersBadge(){const my=orders.filter(o=>o.userId===getUserId());const b=document.getElementById('orders-badge');b.style.display=my.length?'flex':'none';if(my.length)b.textContent=my.length;}
+
+// ============ БАРАХОЛКА ============
+window.showFleaListings=function(){const el=document.getElementById('flea-content');if(!listings.length){el.innerHTML='<p style="text-align:center;opacity:0.5;padding:20px;">Нет объявлений</p>';return;}el.innerHTML='<h3>Все объявления</h3>'+listings.sort((a,b)=>b.date-a.date).map(l=>`<div class="listing-card" onclick="showFleaDetail('${l.id}')" style="cursor:pointer;"><div style="display:flex;align-items:center;gap:10px;">${l.photo?`<img src="${l.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">`:'<div style="width:50px;height:50px;background:var(--card-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>'}<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">${l.title}</div><div style="font-size:12px;opacity:0.7;">${l.price} ₽ | ⭐${l.condition}/10 | 🔧${l.functionality}/10</div><div style="font-size:11px;opacity:0.5;">@${l.username} | ${new Date(l.date).toLocaleDateString()}</div></div>${(isAdmin||l.userId===getUserId())?`<button class="btn-sm btn-delete" onclick="event.stopPropagation();deleteListing('${l.id}')">✕</button>`:''}</div></div>`).join('');};
+
+window.showFleaDetail=function(id){const listing=listings.find(l=>l.id===id);if(!listing)return;const el=document.getElementById('flea-content');el.innerHTML=`<button class="back-btn" onclick="showFleaListings()">← Назад</button><h3>${listing.title}</h3>${listing.photo?`<img src="${listing.photo}" class="listing-photo">`:'<div class="listing-photo" style="display:flex;align-items:center;justify-content:center;color:#666;">📷 Нет фото</div>'}<p style="margin:12px 0;">${listing.description}</p><div class="listing-detail"><div class="listing-meta"><span>⭐ Внешний вид:</span><span><strong>${listing.condition}/10</strong></span></div><div class="listing-meta"><span>🔧 Работоспособность:</span><span><strong>${listing.functionality}/10</strong></span></div><div class="listing-meta"><span>💰 Цена:</span><span style="color:var(--accent);font-weight:700;font-size:16px;">${listing.price} ₽</span></div><div class="listing-meta"><span>👤 Продавец:</span><span style="color:var(--accent);">@${listing.username}</span></div></div>${(isAdmin||listing.userId===getUserId())?`<button class="admin-action-btn btn-red" onclick="deleteListing('${listing.id}');showFleaListings();" style="margin-top:12px;">🗑️ Удалить</button>`:''}`;};
+
+window.showFleaCreate=function(){const userId=getUserId();const userListings=listings.filter(l=>l.userId===userId);const lastListing=userListings.sort((a,b)=>b.date-a.date)[0];if(lastListing){const timeSince=Date.now()-lastListing.date;const twentyFourHours=86400000;if(timeSince<twentyFourHours){const remainingMs=twentyFourHours-timeSince;const rh=Math.floor(remainingMs/3600000);const rm=Math.floor((remainingMs%3600000)/60000);document.getElementById('flea-content').innerHTML=`<div style="text-align:center;padding:40px;"><p style="font-size:48px;">⏳</p><p style="font-size:18px;color:var(--warning);">Следующее объявление через</p><p style="font-size:28px;font-weight:700;">${rh} ч ${rm} мин</p><p style="font-size:13px;opacity:0.7;">Одно объявление в 24 часа</p><p style="font-size:12px;opacity:0.5;">Последнее: ${new Date(lastListing.date).toLocaleString()}</p><button class="admin-action-btn btn-dark" onclick="showFleaListings()">← К объявлениям</button></div>`;return;}}const el=document.getElementById('flea-content');el.innerHTML=`<h3>Создать объявление</h3><div class="listing-form"><input type="file" id="flea-photo" accept="image/*" onchange="previewFleaPhoto()" /><img id="flea-photo-preview" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin:8px 0;display:none;"><input type="text" id="flea-title" placeholder="Название *"><textarea id="flea-desc" placeholder="Описание *"></textarea><label>⭐ Внешний вид (1-10)</label><div class="stars" id="stars-condition"></div><input type="hidden" id="flea-condition" value="5"><label>🔧 Работоспособность (1-10)</label><div class="stars" id="stars-functionality"></div><input type="hidden" id="flea-functionality" value="5"><input type="number" id="flea-price" placeholder="Цена в ₽ *"><input type="text" id="flea-username" placeholder="Ваш @username *"><p style="font-size:11px;opacity:0.5;">⚠️ Следующее объявление через 24 часа</p><button class="order-btn" onclick="createListing()">📢 Опубликовать</button></div>`;function cs(cid,iid){const c=document.getElementById(cid);if(!c)return;c.innerHTML='';for(let i=1;i<=10;i++){const s=document.createElement('span');s.className='star'+(i<=5?' active':'');s.textContent='★';s.onclick=function(){document.getElementById(iid).value=i;c.querySelectorAll('.star').forEach((st,idx)=>st.className='star'+(idx<i?' active':''));};c.appendChild(s);}}cs('stars-condition','flea-condition');cs('stars-functionality','flea-functionality');};
+
+window.previewFleaPhoto=function(){const file=document.getElementById('flea-photo').files[0];if(file){const reader=new FileReader();reader.onload=function(e){const img=document.getElementById('flea-photo-preview');img.src=e.target.result;img.style.display='block';};reader.readAsDataURL(file);}};
+
+window.createListing=async function(){const title=document.getElementById('flea-title')?.value.trim();const desc=document.getElementById('flea-desc')?.value.trim();const condition=parseInt(document.getElementById('flea-condition')?.value||5);const functionality=parseInt(document.getElementById('flea-functionality')?.value||5);const price=parseInt(document.getElementById('flea-price')?.value);const username=document.getElementById('flea-username')?.value.trim();const photoFile=document.getElementById('flea-photo')?.files[0];if(!title||!desc||!price||!username)return alert('Заполните все поля!');if(!username.startsWith('@'))return alert('Username должен начинаться с @');const userId=getUserId();const userListings=listings.filter(l=>l.userId===userId);const lastListing=userListings.sort((a,b)=>b.date-a.date)[0];if(lastListing&&(Date.now()-lastListing.date)<86400000){alert('❌ Вы уже создавали объявление за последние 24 часа!');showFleaCreate();return;}let photoData='';if(photoFile){if(photoFile.size>5242880){alert('❌ Фото слишком большое! Максимум 5 МБ');return;}photoData=await new Promise(resolve=>{const reader=new FileReader();reader.onload=e=>resolve(e.target.result);reader.readAsDataURL(photoFile);});}const listingId='FL-'+Date.now().toString(36).toUpperCase();const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;await db.ref('listings/'+listingId).set({id:listingId,userId,title,description:desc,condition,functionality,price,username,photo:photoData,date:Date.now()});if(tgUser?.id){await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:'💎 *Объявление создано!*\n\n📋 '+title+'\n💰 '+price+'₽\n⭐ Состояние: '+condition+'/10\n🔧 Работоспособность: '+functionality+'/10\n\n⏳ Следующее через 24 часа.',parse_mode:'Markdown'})});}alert('✅ Объявление опубликовано!');showFleaListings();};
+
+window.deleteListing=function(id){if(!confirm('Удалить объявление?'))return;db.ref('listings/'+id).remove();alert('Удалено!');if(activePanel==='flea')showFleaListings();};
+
+// Остальные функции
+function showUsers(){if(!isAdmin)return;const ul=Object.values(users);document.getElementById('user-stats').innerHTML=`<div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>`;const el=document.getElementById('users-list');if(!ul.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет</p>';return;}el.innerHTML=ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`<div class="user-card"><div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div><div style="font-size:12px;opacity:0.7;">ID: ${u.id} | 👁 ${u.visitCount||1} | 📋 ${orders.filter(o=>o.userId===u.id).length}</div></div>`).join('');}
+function updateConsoleUsers(){if(!isAdmin)return;const sel=document.getElementById('console-user');sel.innerHTML='<option value="">-- Выберите --</option>';Object.values(users).forEach(u=>{sel.innerHTML+=`<option value="${u.id}">${u.firstName||'Пользователь'} ${u.username?'@'+u.username:''}</option>`;});}
+
+window.sendMessageToUser=async function(){if(!isAdmin)return;const uid=document.getElementById('console-user').value,msg=document.getElementById('console-message').value.trim();if(!uid||!msg)return alert('Заполните!');const user=users[uid];if(!user?.telegramId)return alert('Не в Telegram');await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:'📨 SWWSHOP:\n\n'+msg})});alert('✅');document.getElementById('console-message').value='';};
+window.sendBroadcast=async function(){if(!isAdmin)return;const msg=document.getElementById('console-broadcast').value.trim();if(!msg||!confirm('Всем?'))return;let sent=0;for(const u of Object.values(users)){if(u.telegramId){try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:u.telegramId,text:'📢 SWWSHOP:\n\n'+msg})});sent++;}catch(e){}}}alert(`✅ ${sent} чел.`);document.getElementById('console-broadcast').value='';};
+
+function showOrders(){const my=orders.filter(o=>o.userId===getUserId());const el=document.getElementById('orders-list');if(!my.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет заказов</p>';return;}el.innerHTML=my.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>${o.status==='completed'&&o.promoCode?`<div class="promo-code-display">🎁 ${o.promoCode}</div>`:''}</div>`).join('');}
+function showAllOrders(){if(!isAdmin)return;const el=document.getElementById('all-orders-list');if(!orders.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет заказов</p>';return;}el.innerHTML=orders.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong> | ${o.userName} | ${o.userContact}</div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>${o.status==='pending'?`<div style="margin-top:8px;"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌</button></div>`:''}</div>`).join('');}
+
+window.completeOrder=async function(orderId,subtotal){if(!isAdmin||!confirm('Выполнить?'))return;const update={status:'completed',completedAt:Date.now()};let promo=null;if(subtotal>=800){promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();update.promoCode=promo;db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),auto:true});}await db.ref('orders/'+orderId).update(update);const order=(await db.ref('orders/'+orderId).once('value')).val();if(order){const user=(await db.ref('users/'+order.userId).once('value')).val();if(user?.telegramId){let txt='🎉 *Заказ #'+orderId+' выполнен!*\n\nСпасибо за покупку!';if(promo)txt+='\n\n🎁 *Промокод 15%:* `'+promo+'`';try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:txt,parse_mode:'Markdown'})});}catch(e){}}}alert('✅'+(promo?' Промокод: '+promo:''));showAllOrders();updateAdminEarnings();};
+window.cancelOrder=function(orderId){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+orderId).update({status:'cancelled'});};
+
+function showPromos(){if(!isAdmin)return;const el=document.getElementById('promos-list');const codes=Object.entries(promos);if(!codes.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет</p>';return;}el.innerHTML=codes.reverse().map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌ Исп.':'✅ Доступен'}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">Удалить</button></div>`).join('');}
+window.deletePromo=function(code){if(!isAdmin||!confirm('Удалить?'))return;db.ref('promos/'+code).remove();};
+window.createPromo=function(){if(!isAdmin)return;const c=document.getElementById('promo-code').value.trim()||'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();db.ref('promos/'+c).set({discount:parseInt(document.getElementById('promo-discount').value)||15,used:false,created:Date.now()});alert('✅');document.getElementById('promo-code').value='';};
+
+window.applyPromo=function(){const input=document.getElementById('promo-input').value.trim().toUpperCase();if(!input)return;if(promos[input]){if(promos[input].used){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Исп.</span>';return;}appliedPromo={code:input,discount:promos[input].discount};document.getElementById('promo-message').innerHTML='<span style="color:var(--success);">-'+promos[input].discount+'%</span>';showCart();}else{document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Нет</span>';appliedPromo=null;}};
+
+function saveCart(){localStorage.setItem('swwshop_cart',JSON.stringify(cart));updateCartBadge();}
+function updateCartBadge(){const c=cart.reduce((s,i)=>s+(i.quantity||1),0);const el=document.getElementById('cart-count');el.style.display=c>0?'flex':'none';if(c>0)el.textContent=c;}
+
+window.addToCart=function(name,price,lineName,flavorName){if(!flavorName){alert('❌ Выберите конкретный вкус!');return;}const line=data[currentCategory]?.find(l=>l.name===lineName);if(line){const f=line.flavors.find(f=>f.name===flavorName);if(f&&!f.inStock){alert('❌ Нет в наличии!');return;}}cart.push({name:flavorName+' ('+lineName+')',price,lineName,flavorName});saveCart();alert('✅ Добавлено!');};
+window.addToCartSimple=function(name,price){const item=data[currentCategory]?.find(i=>i.name===name);if(item&&!item.inStock){alert('❌ Нет в наличии!');return;}cart.push({name,price,lineName:'',flavorName:''});saveCart();alert('✅ Добавлено!');};
+window.removeFromCart=function(i){cart.splice(i,1);saveCart();showCart();};
+
+function showCart(){if(!cart.length){document.getElementById('cart-items').innerHTML='<p style="text-align:center;opacity:0.5;">Пусто</p>';document.getElementById('cart-total').textContent='';document.getElementById('cart-discount').textContent='';document.getElementById('order-form').style.display='none';return;}let sub=cart.reduce((s,i)=>s+i.price,0);let disc=appliedPromo?Math.round(sub*appliedPromo.discount/100):0;document.getElementById('cart-items').innerHTML=cart.map((item,i)=>`<div class="cart-item"><div class="cart-item-info"><div class="cart-item-name">${item.name}</div></div><span>${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>`).join('');document.getElementById('cart-discount').textContent=disc>0?'Скидка: -'+disc+' RUB':'';document.getElementById('cart-total').textContent='Итого: '+(sub-disc)+' RUB';document.getElementById('order-form').style.display='block';}
+
+window.sendOrder=async function(){const name=document.getElementById('customer-name').value.trim();const contact=document.getElementById('customer-contact').value.trim();const payment=document.getElementById('payment-method').value;if(!name||!contact||!payment)return alert('Заполните все поля!');let sub=cart.reduce((s,i)=>s+i.price,0),disc=0;if(appliedPromo&&promos[appliedPromo.code]&&!promos[appliedPromo.code].used){disc=Math.round(sub*appliedPromo.discount/100);db.ref('promos/'+appliedPromo.code).update({used:true,usedBy:name,usedAt:Date.now()});}const total=sub-disc,orderId='SWW-'+Date.now().toString(36).toUpperCase().slice(-6),userId=getUserId(),tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;await db.ref('orders/'+orderId).set({id:orderId,userId,userName:name,userContact:contact,userUsername:tgUser?.username||contact,items:[...cart],subtotal:sub,discount:disc,total,payment,promoApplied:appliedPromo,status:'pending',date:Date.now(),promoCode:null});let atxt='🛒 НОВЫЙ ЗАКАЗ #'+orderId+'\n\n👤 Имя: '+name+'\n📱 Контакты: '+contact+'\n💳 Оплата: '+payment;if(tgUser?.username)atxt+='\n💬 Telegram: @'+tgUser.username;atxt+='\n\n📋 Товары:\n';cart.forEach((item,i)=>{atxt+=(i+1)+'. '+item.name+' - '+item.price+'₽\n';});if(disc>0)atxt+='\n🎫 Промокод: '+appliedPromo.code+' (-'+disc+'₽)';atxt+='\n💰 Итого: '+total+'₽\n📅 '+new Date().toLocaleString();await fetch('https://api.telegram.org/bot'+BOT_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:CHAT_ID,text:atxt})});if(tgUser?.id){let utxt='✅ *Заказ #'+orderId+' оформлен!*\n\n💳 Оплата: '+payment+'\n\n📋 Ваши товары:\n';cart.forEach((item,i)=>{utxt+=(i+1)+'. '+item.name+' - '+item.price+'₽\n';});if(disc>0)utxt+='\n🎫 Промокод: '+appliedPromo.code+' (-'+disc+'₽)';utxt+='\n💰 *Итого: '+total+'₽*\n\n⏳ Ожидайте выполнения!';try{await fetch('https://api.telegram.org/bot'+BOT_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:utxt,parse_mode:'Markdown'})});}catch(e){}}cart=[];appliedPromo=null;saveCart();document.getElementById('cart-items').innerHTML='';document.getElementById('cart-total').textContent='';document.getElementById('cart-discount').textContent='';document.getElementById('order-form').style.display='none';document.getElementById('order-success').style.display='block';document.getElementById('order-success').innerHTML='✅ Заказ #'+orderId+' оформлен!<br>Проверьте уведомления в боте';document.getElementById('promo-message').innerHTML='';document.getElementById('promo-input').value='';};
+
+const categoryIcons={liquids:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="8" y="4" width="24" height="32" rx="6" fill="url(#lg1)" stroke="#0096ff" stroke-width="1.5"/><defs><linearGradient id="lg1"><stop offset="0%" stop-color="#0096ff" stop-opacity="0.3"/><stop offset="100%" stop-color="#0056b3" stop-opacity="0.5"/></linearGradient></defs></svg>`,pouches:`<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="16" r="10" fill="url(#pg1)" stroke="#ff9600" stroke-width="1.5"/><circle cx="20" cy="16" r="3" fill="#ff9600"/><path d="M15 12c-2-5 2-8 5-8s7 3 5 8" stroke="#ff9600" stroke-width="1.5"/><defs><linearGradient id="pg1"><stop offset="0%" stop-color="#ff9600" stop-opacity="0.2"/><stop offset="100%" stop-color="#cc7a00" stop-opacity="0.4"/></linearGradient></defs></svg>`,coils:`<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="url(#cg1)" stroke="#888" stroke-width="1.5"/><circle cx="20" cy="20" r="8" stroke="#666" stroke-width="1"/><circle cx="20" cy="20" r="2" fill="#666"/><defs><linearGradient id="cg1"><stop offset="0%" stop-color="#aaa" stop-opacity="0.2"/><stop offset="100%" stop-color="#555" stop-opacity="0.4"/></linearGradient></defs></svg>`,devices:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="6" y="4" width="28" height="22" rx="4" fill="url(#dg1)" stroke="#64c864" stroke-width="1.5"/><rect x="10" y="8" width="20" height="14" rx="2" stroke="#64c864" stroke-width="1"/><path d="M14 30h12l2 4H12l2-4z" stroke="#64c864" stroke-width="1.5"/><defs><linearGradient id="dg1"><stop offset="0%" stop-color="#64c864" stop-opacity="0.2"/><stop offset="100%" stop-color="#3a8a3a" stop-opacity="0.4"/></linearGradient></defs></svg>`};
+
+window.showMain=function(){currentView='main';const earnings=getEarnings();document.getElementById('app').innerHTML=`<h1 class="shop-title">SWWSHOP</h1><div style="text-align:center;"><div class="users-counter">👥 Пользователей: <span>${getTotalUsers()}</span></div></div>${isAdmin?`<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${earnings.day} ₽</div></div></div>`:''}<p style="text-align:center;opacity:0.7;">Выберите категорию:</p><button class="category-btn" onclick="showCategory('liquids')">${categoryIcons.liquids} Жидкости</button><button class="category-btn" onclick="showCategory('pouches')">${categoryIcons.pouches} Шайбы</button><button class="category-btn" onclick="showCategory('coils')">${categoryIcons.coils} Испарители</button><button class="category-btn" onclick="showCategory('devices')">${categoryIcons.devices} Устройства</button>`;};
+
+window.showCategory=function(cat){currentView='category';currentCategory=cat;const t={liquids:'Жидкости',pouches:'Шайбы',coils:'Испарители',devices:'Устройства'};let h='<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">'+t[cat]+'</h1>';if(!data[cat]?.length){h+='<p style="text-align:center;">Нет товаров</p>';}else if(cat==='liquids'||cat==='pouches'){data[cat].forEach((line,i)=>{h+='<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+line.name+'</span><span style="font-size:13px;opacity:0.7;">'+line.price+' RUB | '+line.flavors.length+' вкусов</span></button>';if(isAdmin)h+='<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine(\''+cat+'\','+i+')">Удалить</button>';h+='</div>';});}else{data[cat].forEach((item,i)=>{h+='<div class="product-row"><span class="product-name">'+item.name+'</span><span class="product-price">'+item.price+' RUB</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span><div class="product-actions">';h+=item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';if(isAdmin)h+='<button class="btn-sm btn-toggle" onclick="toggleItem(\''+cat+'\','+i+')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\''+cat+'\','+i+')">Удалить</button>';h+='</div></div>';});}document.getElementById('app').innerHTML=h;};
+
+window.showDetail=function(cat,idx){currentView='detail';currentCategory=cat;currentIndex=idx;const line=data[cat][idx];let h='<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1 class="shop-title">'+line.name+'</h1><p style="text-align:center;color:var(--accent);">'+line.price+' RUB</p>';h+='<div class="section-title">Выберите вкус ('+line.flavors.length+'):</div>';line.flavors.forEach((flavor,fi)=>{h+='<div class="flavor-row"><span class="flavor-name">'+flavor.name+'</span><div class="flavor-actions"><span class="status-badge '+stClass(flavor.inStock)+'">'+stText(flavor.inStock)+'</span>';h+=flavor.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+flavor.name+'\')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';if(isAdmin)h+='<button class="btn-sm btn-toggle" onclick="toggleFlavor(\''+cat+'\','+idx+','+fi+')">Сменить</button>';h+='</div></div>';});document.getElementById('app').innerHTML=h;};
+
+window.deleteLine=function(cat,idx){if(!isAdmin)return;if(confirm('Удалить?')){data[cat].splice(idx,1);db.ref('assortment').set(data);showCategory(cat);}};
+window.deleteItem=function(cat,idx){if(!isAdmin)return;if(confirm('Удалить?')){data[cat].splice(idx,1);db.ref('assortment').set(data);showCategory(cat);}};
+window.toggleItem=function(cat,idx){if(!isAdmin)return;data[cat][idx].inStock=!data[cat][idx].inStock;db.ref('assortment').set(data);showCategory(cat);};
+window.toggleFlavor=function(cat,l,f){if(!isAdmin)return;data[cat][l].flavors[f].inStock=!data[cat][l].flavors[f].inStock;db.ref('assortment').set(data);showDetail(cat,l);};
+
+window.updateDelSelect=function(){const cat=document.getElementById('del-category')?.value;const sel=document.getElementById('del-item');if(!sel||!data[cat])return;sel.innerHTML='<option value="">-- Выберите --</option>';data[cat].forEach((item,i)=>{sel.innerHTML+='<option value="'+i+'">'+item.name+'</option>';});};
+
+window.adminLogin=function(){if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){isAdmin=true;document.getElementById('admin-login-area').style.display='none';document.getElementById('admin-controls-area').style.display='block';updateAdminUI();updateAdminEarnings();showMain();}else alert('Неверный пароль!');};
+window.adminLogout=function(){isAdmin=false;document.getElementById('admin-login-area').style.display='block';document.getElementById('admin-controls-area').style.display='none';document.getElementById('admin-panel').classList.remove('active');activePanel=null;updateAdminUI();showMain();};
+window.addLine=function(){if(!isAdmin)return;const n=document.getElementById('line-name').value.trim(),p=parseInt(document.getElementById('line-price').value),c=document.getElementById('line-category').value,ft=document.getElementById('line-flavors').value.trim();if(!n||!p||!ft)return alert('Заполните!');const fl=ft.split('\n').filter(l=>l.trim()).map(l=>{const a=l.split(',');return{name:a[0].trim(),inStock:a[1]?.trim().toUpperCase()==='YES'};});if(!fl.length)return alert('Минимум 1 вкус!');data[c].push({name:n,price:p,flavors:fl});db.ref('assortment').set(data);alert('✅');document.getElementById('line-name').value='';document.getElementById('line-price').value='';document.getElementById('line-flavors').value='';showMain();};
+window.addItem=function(){if(!isAdmin)return;const n=document.getElementById('item-name').value.trim(),p=parseInt(document.getElementById('item-price').value),c=document.getElementById('item-category').value,q=parseInt(document.getElementById('item-qty').value)||0;if(!n||!p)return alert('Заполните!');data[c].push({name:n,price:p,inStock:q>0});db.ref('assortment').set(data);alert('✅');document.getElementById('item-name').value='';document.getElementById('item-price').value='';document.getElementById('item-qty').value='';showMain();};
+window.deleteSelected=function(){if(!isAdmin)return;const c=document.getElementById('del-category').value,i=parseInt(document.getElementById('del-item').value);if(isNaN(i))return alert('Выберите!');if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showMain();}};
+window.deleteAllOutOfStock=function(){if(!isAdmin||!confirm('Удалить всё?'))return;['liquids','pouches'].forEach(c=>{data[c]=data[c].filter(l=>l.flavors?.some(f=>f.inStock));});['coils','devices'].forEach(c=>{data[c]=data[c].filter(i=>i.inStock);});db.ref('assortment').set(data);alert('✅');showMain();};
+
+const tg=window.Telegram.WebApp;tg.ready();tg.expand();
+registerUser();updateCartBadge();updateAdminUI();
+if(!initialized)showMain();
+}
+</script>
 </body>
 </html>
