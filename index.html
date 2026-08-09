@@ -327,8 +327,8 @@
     </div>
   </div>
 
-  <!-- ============ МАГАЗИН (изначально скрыт) ============ -->
-  <div id="main-app" style="display:none;flex:1;flex-direction:column;">
+  <!-- ============ МАГАЗИН ============ -->
+  <div id="main-app" style="display:none;flex:1;flex-direction:column;width:100%;">
     <div class="admin-indicator" id="admin-indicator">АДМИН</div>
     <div class="header-icons">
       <button class="icon-btn orders-btn" onclick="openPanel('orders')">📋<span class="badge" id="orders-badge" style="display:none;">0</span></button>
@@ -362,23 +362,21 @@
   </div>
 
   <script>
+    // ============ СБРОС СЕССИЙ ВЕРИФИКАЦИИ ============
+    localStorage.removeItem('swwshop_verified');
+    localStorage.removeItem('swwshop_verified_time');
+    console.log('🔄 Сессии верификации сброшены');
+    
     // ============ ВЕРИФИКАЦИЯ ============
     let verifyCodeValue = '';
     let verifyTimer;
     let verifyTimeLeft = 300;
     
-    // Проверяем, верифицирован ли уже пользователь
-    const verified = localStorage.getItem('swwshop_verified');
-    const verifiedTime = localStorage.getItem('swwshop_verified_time');
-    
-    if (verified === 'true' && verifiedTime && (Date.now() - parseInt(verifiedTime)) < 3600000) {
-      document.getElementById('verify-overlay').style.display = 'none';
-      document.getElementById('main-app').style.display = 'flex';
-      initShop();
-    } else {
-      generateVerifyCode();
-      startVerifyTimer();
-    }
+    // Всегда показываем верификацию (для теста)
+    document.getElementById('verify-overlay').style.display = 'flex';
+    document.getElementById('main-app').style.display = 'none';
+    generateVerifyCode();
+    startVerifyTimer();
     
     function generateVerifyCode() {
       verifyCodeValue = Math.floor(100000 + Math.random() * 900000).toString();
@@ -411,7 +409,7 @@
         if (verifyTimeLeft <= 0) {
           clearInterval(verifyTimer);
           document.getElementById('v-resend').classList.remove('disabled');
-          showVerifyMsg('Время истекло. Сгенерируйте новый код.', 'error');
+          document.getElementById('v-countdown').textContent = '00:00';
         }
       }, 1000);
     }
@@ -447,12 +445,13 @@
           localStorage.setItem('swwshop_verified_time', Date.now().toString());
           btn.innerHTML = '✅ Доступ разрешён';
           btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-          showVerifyMsg('Верификация пройдена! Загрузка...', 'success');
+          showVerifyMsg('Верификация пройдена!', 'success');
+          
           setTimeout(() => {
             document.getElementById('verify-overlay').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             initShop();
-          }, 800);
+          }, 500);
         } else {
           showVerifyMsg('Неверный код. Попробуйте снова.', 'error');
           document.getElementById('v-input').value = '';
