@@ -17,28 +17,30 @@
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
-    .category-btn { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; }
+    .category-btn { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .category-btn span { font-size: 13px; opacity: 0.7; }
     .earnings-display { text-align: center; margin: 8px auto 16px; padding: 10px 16px; background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(94,163,217,0.15)); border-radius: 16px; display: inline-block; }
     .earnings-label { font-size: 11px; opacity: 0.7; }
     .earnings-amount { font-size: 22px; font-weight: 800; color: var(--success); }
     .users-counter { text-align: center; padding: 8px 16px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(94,163,217,0.2), rgba(46,204,113,0.2)); border-radius: 20px; display: inline-block; font-size: 14px; font-weight: 600; color: var(--accent); }
     .users-counter span { background: var(--accent); color: white; padding: 2px 10px; border-radius: 12px; margin: 0 4px; }
-    .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .flavor-name { flex: 1; font-size: 14px; }
-    .flavor-actions { display: flex; align-items: center; gap: 6px; }
-    .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 8px; }
-    .product-name { font-size: 14px; flex: 1; }
+    .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: nowrap; }
+    .flavor-name { flex: 1; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .flavor-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 8px; flex-wrap: nowrap; }
+    .product-name { font-size: 14px; flex: 1; min-width: 0; }
     .product-price { font-weight: 600; color: var(--accent); white-space: nowrap; }
-    .product-actions { display: flex; align-items: center; gap: 6px; }
-    .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+    .product-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
     .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
     .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
     .back-btn { padding: 8px 12px; border: none; background: transparent; color: var(--accent); cursor: pointer; font-size: 14px; }
-    .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
-    .btn-sm { padding: 6px 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; color: white; font-weight: 500; }
+    .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .add-to-cart-btn:disabled { background: #999; cursor: not-allowed; }
+    .btn-sm { padding: 6px 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; color: white; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
     .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); }
+    .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; margin-top: 4px; }
     
-    /* ВЫДВИЖНОЕ МЕНЮ */
     .header-menu { position: fixed; top: 16px; right: 16px; z-index: 150; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
     .menu-toggle-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.3s; }
     .menu-toggle-btn.open { transform: rotate(180deg); }
@@ -97,14 +99,14 @@
     /* РУЛЕТКА */
     .slot-container { text-align: center; padding: 20px; background: var(--card-bg); border-radius: 16px; margin: 10px 0; }
     .slot-machine { width: 200px; height: 120px; margin: 0 auto 20px; overflow: hidden; position: relative; background: #0a0e17; border-radius: 16px; border: 3px solid var(--accent); }
-    .slot-reel { position: absolute; width: 100%; top: 0; left: 0; }
+    .slot-reel { position: absolute; width: 100%; top: 0; left: 0; transition: transform 5s cubic-bezier(0.15, 0.55, 0.35, 1); }
     .slot-item { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 800; color: #ffd700; }
     .spin-btn { display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: #333; border: none; border-radius: 30px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(255,107,107,0.4); }
     .spin-btn:active { transform: scale(0.95); }
     .spin-btn:disabled { opacity: 0.5; cursor: default; }
     .roulette-result { margin-top: 16px; font-size: 16px; font-weight: 600; min-height: 40px; }
     .roulette-timer { text-align: center; font-size: 14px; color: var(--warning); margin-top: 8px; }
-    .roulette-info { font-size: 12px; opacity: 0.7; margin-top: 8px; }
+    .admin-roulette-note { font-size: 12px; color: #10b981; margin-top: 4px; }
   </style>
 </head>
 <body class="telegram">
@@ -116,27 +118,22 @@
       <div class="v-code-display" id="code-display" onclick="copyVerifyCode()">------</div>
       <input type="text" class="v-input" id="v-input" placeholder="Вставьте код" maxlength="6" />
       <button class="v-btn" id="v-btn" onclick="verifyCode()">Подтвердить и войти</button>
-      <div id="v-msg" style="font-size:12px;margin-top:10px;"></div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:8px;">Код: <span id="v-countdown">05:00</span></div>
     </div>
   </div>
 
   <div id="main-app">
     <div class="admin-indicator" id="admin-indicator">АДМИН</div>
-    
-    <!-- ВЫДВИЖНОЕ МЕНЮ -->
     <div class="header-menu">
       <button class="menu-toggle-btn" id="menu-toggle" onclick="toggleMenu()">▼</button>
       <div class="menu-items" id="menu-items">
         <button class="icon-btn roulette-btn" onclick="openPanel('roulette');toggleMenu();">🎰</button>
         <button class="icon-btn mypromos-btn" onclick="openPanel('mypromos');toggleMenu();">🎫</button>
-        <button class="icon-btn orders-btn" onclick="openPanel('orders');toggleMenu();">📋<span class="badge" id="orders-badge">0</span></button>
-        <button class="icon-btn cart-btn" onclick="openPanel('cart');toggleMenu();">🛒<span class="badge" id="cart-count">0</span></button>
+        <button class="icon-btn orders-btn" onclick="openPanel('orders');toggleMenu();">📋</button>
+        <button class="icon-btn cart-btn" onclick="openPanel('cart');toggleMenu();">🛒</button>
         <button class="icon-btn users-btn" id="users-icon" style="display:none;" onclick="openPanel('users');toggleMenu();">👥</button>
         <button class="icon-btn console-btn" id="console-icon" style="display:none;" onclick="openPanel('console');toggleMenu();">💬</button>
       </div>
     </div>
-    
     <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
     <div id="orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div><div id="orders-list"></div></div>
@@ -148,11 +145,11 @@
     
     <div id="roulette-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎰 Колесо удачи</h2><button class="panel-close-btn" onclick="closePanel('roulette')">✕</button></div>
       <div class="slot-container">
-        <div class="slot-machine"><div class="slot-reel" id="slot-reel"><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">0%</div><div class="slot-item">🎰</div></div></div>
+        <div class="slot-machine"><div class="slot-reel" id="slot-reel"><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">0%</div><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div></div></div>
         <button class="spin-btn" id="spin-btn" onclick="spinRoulette()">🎰 КРУТИТЬ</button>
         <div class="roulette-timer" id="roulette-timer"></div>
         <div class="roulette-result" id="roulette-result"></div>
-        <div class="roulette-info">Шансы: 0% — 85% | 1% — 10% | 5% — 4.5% | 15% — 0.5%</div>
+        <div class="admin-roulette-note" id="admin-roulette-note" style="display:none;">🔑 Админ: безлимитные вращения</div>
       </div>
     </div>
     
@@ -173,12 +170,12 @@
           <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬 Консоль</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Линейка</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить</button></div>
-          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить</button></div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить линейку</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button></div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0=нет)" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button></div>
         </div>
-        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Создать промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать</button></div>
-        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
-        <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">Выйти</button>
+        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Создать промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать промокод</button></div>
+        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление товаров</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить выбранный</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
+        <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">🚪 Выйти из админки</button>
       </div>
     </div>
   </div>
@@ -188,12 +185,11 @@
 let vc='',vt,vtl=300;
 localStorage.removeItem('swwshop_verified');
 if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
-else{document.getElementById('verify-overlay').style.display='flex';document.getElementById('main-app').style.display='none';vc=Math.floor(100000+Math.random()*900000).toString();document.getElementById('code-display').textContent=vc;vtl=300;vt=setInterval(()=>{vtl--;const m=Math.floor(vtl/60),s=vtl%60;document.getElementById('v-countdown').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');if(vtl<=0)clearInterval(vt);},1000);}
+else{document.getElementById('verify-overlay').style.display='flex';document.getElementById('main-app').style.display='none';vc=Math.floor(100000+Math.random()*900000).toString();document.getElementById('code-display').textContent=vc;vtl=300;vt=setInterval(()=>{vtl--;const m=Math.floor(vtl/60),s=vtl%60;const el=document.getElementById('v-countdown');if(el)el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');if(vtl<=0)clearInterval(vt);},1000);}
 function copyVerifyCode(){navigator.clipboard.writeText(vc).then(()=>{const d=document.getElementById('code-display');d.textContent='✓';setTimeout(()=>d.textContent=vc,1500);}).catch(()=>{});}
 function verifyCode(){if(document.getElementById('v-input').value.trim()===vc){clearInterval(vt);localStorage.setItem('swwshop_verified','true');document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}else{alert('Неверный код');}}
 document.getElementById('v-input').addEventListener('input',function(e){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)verifyCode();});
 
-// ВЫДВИЖНОЕ МЕНЮ
 window.toggleMenu=function(){const items=document.getElementById('menu-items');const btn=document.getElementById('menu-toggle');items.classList.toggle('open');btn.classList.toggle('open');};
 
 function initShop(){
@@ -207,13 +203,90 @@ window.setTheme=function(t){document.body.className=t;localStorage.setItem('swws
 setTheme(localStorage.getItem('swwshop_theme')||'telegram');
 
 let data={liquids:[],pouches:[],coils:[],devices:[]},orders=[],promos={},users={};
-let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
+let isAdmin=localStorage.getItem('swwshop_admin')==='true';
+let currentView='main',currentCategory='',currentIndex=0;
 let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
 let spinning=false,lastSpin=parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
 
-// РУЛЕТКА
-function updateRouletteTimer(){const now=Date.now(),week=7*24*60*60*1000,el=document.getElementById('roulette-timer'),btn=document.getElementById('spin-btn');if(!el||!btn)return;if(now-lastSpin>=week){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';}else{const rem=week-(now-lastSpin);const d=Math.floor(rem/86400000),h=Math.floor((rem%86400000)/3600000),m=Math.floor((rem%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;btn.disabled=true;btn.textContent='⏳ Ждите';}}
-window.spinRoulette=function(){if(spinning)return;const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}spinning=true;const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';document.getElementById('roulette-result').innerHTML='';const rand=Math.random();let prize={d:0,l:'0%'};if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};const reel=document.getElementById('slot-reel');const h=120;const target=prize.d===15?4:prize.d===5?3:prize.d===1?2:(Math.floor(Math.random()*5)+5);const dist=(3*10+target)*h;reel.style.transition='none';reel.style.transform='translateY(0)';setTimeout(()=>{reel.style.transition='transform 3s cubic-bezier(0.25,0.1,0.1,1)';reel.style.transform=`translateY(-${dist}px)`;},50);lastSpin=now;localStorage.setItem('swwshop_roulette_time',now.toString());db.ref('settings/lastRouletteTime').set(now);setTimeout(()=>{spinning=false;reel.style.transition='none';reel.style.transform='translateY(0)';updateRouletteTimer();if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette'};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Рулетка!*\n\nВы выиграли скидку *${prize.l}*!\nПромокод: \`${code}\``,parse_mode:'Markdown'})});}}else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте через неделю.</p>';}},3200);};
+// РУЛЕТКА (плавная, без исчезновения, админ безлимит)
+function updateRouletteTimer(){
+  const el=document.getElementById('roulette-timer'),btn=document.getElementById('spin-btn');
+  const adminNote=document.getElementById('admin-roulette-note');
+  if(!el||!btn)return;
+  
+  if(isAdmin){
+    el.innerHTML='<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';
+    btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';
+    if(adminNote)adminNote.style.display='block';
+    return;
+  }
+  if(adminNote)adminNote.style.display='none';
+  
+  const now=Date.now(),week=7*24*60*60*1000;
+  if(now-lastSpin>=week){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';}
+  else{const rem=week-(now-lastSpin);const d=Math.floor(rem/86400000),h=Math.floor((rem%86400000)/3600000),m=Math.floor((rem%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;btn.disabled=true;btn.textContent='⏳ Ждите';}
+}
+
+window.spinRoulette=function(){
+  if(spinning)return;
+  if(!isAdmin){
+    const now=Date.now();
+    if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}
+  }
+  spinning=true;
+  const btn=document.getElementById('spin-btn');
+  btn.disabled=true;btn.textContent='🎰 Крутится...';
+  document.getElementById('roulette-result').innerHTML='';
+  
+  const rand=Math.random();
+  let prize={d:0,l:'0%'};
+  if(rand<0.005)prize={d:15,l:'15%'};
+  else if(rand<0.05)prize={d:5,l:'5%'};
+  else if(rand<0.15)prize={d:1,l:'1%'};
+  
+  const reel=document.getElementById('slot-reel');
+  const itemH=120,totalItems=15; // 15 элементов в ленте
+  const target=prize.d===15?4:prize.d===5?3:prize.d===1?2:(Math.floor(Math.random()*5)+10);
+  const extraRounds=isAdmin?5:4; // Админ: больше оборотов = медленнее
+  const distance=(extraRounds*totalItems+target)*itemH;
+  
+  // Устанавливаем начальную позицию (без рывка)
+  reel.style.transition='none';
+  const currentTransform=reel.style.transform||'translateY(0px)';
+  reel.style.transform='translateY(0px)';
+  
+  // Запускаем плавную анимацию
+  setTimeout(()=>{
+    reel.style.transition='transform '+(isAdmin?6:5)+'s cubic-bezier(0.15, 0.55, 0.35, 1)';
+    reel.style.transform=`translateY(-${distance}px)`;
+  },30);
+  
+  if(!isAdmin){
+    lastSpin=Date.now();
+    localStorage.setItem('swwshop_roulette_time',lastSpin.toString());
+    db.ref('settings/lastRouletteTime').set(lastSpin);
+  }
+  
+  const duration=isAdmin?6500:5500;
+  setTimeout(()=>{
+    spinning=false;
+    // Плавный сброс позиции
+    reel.style.transition='none';
+    reel.style.transform='translateY(0px)';
+    updateRouletteTimer();
+    
+    if(prize.d>0){
+      const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();
+      promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette'};
+      db.ref('promos/'+code).set(promos[code]);
+      document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;
+      const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Рулетка!*\n\nВы выиграли скидку *${prize.l}*!\nПромокод: \`${code}\``,parse_mode:'Markdown'})});}
+    }else{
+      document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';
+    }
+  },duration);
+};
 
 // ПРОМОКОДЫ
 function showMyPromos(){const userId=getUserId();const myOrders=orders.filter(o=>o.userId===userId&&o.status==='completed'&&o.promoCode);const myRoulette=Object.entries(promos).filter(([c,p])=>p.type==='roulette');let h='';if(myOrders.length){h+='<h4>🎁 От выполненных заказов:</h4>';myOrders.forEach(o=>{if(o.promoCode&&promos[o.promoCode]){const p=promos[o.promoCode];h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${o.promoCode}</strong> - ${p.discount}%<br><small>Заказ #${o.id}</small></div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;}});}if(myRoulette.length){h+='<h4>🎰 От рулетки:</h4>';myRoulette.forEach(([c,p])=>{h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;});}document.getElementById('mypromos-list').innerHTML=h||'<p style="text-align:center;opacity:0.5;">У вас пока нет промокодов</p>';}
@@ -231,20 +304,26 @@ db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
 db.ref('settings/lastRouletteTime').on('value',s=>{const v=s.val();if(v&&v>lastSpin){lastSpin=v;localStorage.setItem('swwshop_roulette_time',v.toString());updateRouletteTimer();}});
 
 function refreshView(){if(currentView==='main')showMain();else if(currentView==='category')showCategory(currentCategory);else if(currentView==='detail')showDetail(currentCategory,currentIndex);}
-function updateUI(){updateOrdersBadge();if(activePanel==='orders')showOrders();if(activePanel==='all-orders')showAllOrders();if(activePanel==='mypromos')showMyPromos();if(activePanel==='all-promos')showAllPromos();if(activePanel==='roulette')updateRouletteTimer();if(activePanel==='users')showUsers();if(activePanel==='console')updateConsoleUsers();if(currentView==='main')showMain();if(isAdmin)updateAdminEarnings();}
+function updateUI(){if(activePanel==='orders')showOrders();if(activePanel==='all-orders')showAllOrders();if(activePanel==='mypromos')showMyPromos();if(activePanel==='all-promos')showAllPromos();if(activePanel==='roulette')updateRouletteTimer();if(activePanel==='users')showUsers();if(activePanel==='console')updateConsoleUsers();if(currentView==='main')showMain();if(isAdmin)updateAdminEarnings();}
 function updateAdminEarnings(){const e=getEarnings();const el=document.getElementById('admin-earnings');if(el)el.innerHTML=`<div class="earning-card"><div class="earning-amount">${e.day} ₽</div><div class="earning-label">Сегодня</div></div><div class="earning-card"><div class="earning-amount">${e.week} ₽</div><div class="earning-label">Неделя</div></div><div class="earning-card"><div class="earning-amount">${e.month} ₽</div><div class="earning-label">Месяц</div></div><div class="earning-card"><div class="earning-amount">${e.year} ₽</div><div class="earning-label">Год</div></div>`;}
 
 window.openPanel=function(n){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(n+'-panel');if(p){p.classList.add('active');activePanel=n;}if(n==='orders')showOrders();if(n==='all-orders')showAllOrders();if(n==='mypromos')showMyPromos();if(n==='all-promos')showAllPromos();if(n==='roulette')updateRouletteTimer();if(n==='cart')showCart();if(n==='users')showUsers();if(n==='console')updateConsoleUsers();};
 window.closePanel=function(n){const p=document.getElementById(n+'-panel');if(p)p.classList.remove('active');activePanel=null;};
-window.toggleAdminPanel=function(){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}};
+window.toggleAdminPanel=function(){if(isAdmin){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}}else{const p=document.getElementById('admin-panel');p.classList.toggle('active');if(p.classList.contains('active'))activePanel='admin';else activePanel=null;}};
 
-function updateAdminUI(){document.getElementById('admin-indicator').className=isAdmin?'admin-indicator active':'admin-indicator';document.getElementById('console-icon').style.display=isAdmin?'flex':'none';document.getElementById('users-icon').style.display=isAdmin?'flex':'none';}
+function updateAdminUI(){
+  document.getElementById('admin-indicator').className=isAdmin?'admin-indicator active':'admin-indicator';
+  document.getElementById('console-icon').style.display=isAdmin?'flex':'none';
+  document.getElementById('users-icon').style.display=isAdmin?'flex':'none';
+  if(!isAdmin){document.getElementById('admin-login-area').style.display='block';document.getElementById('admin-controls-area').style.display='none';}
+  else{document.getElementById('admin-login-area').style.display='none';document.getElementById('admin-controls-area').style.display='block';}
+}
+
 function stText(s){return s?'В наличии':'Нет';}function stClass(s){return s?'status-in-stock':'status-out-stock';}
 function getUserId(){const tgU=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgU)return'tg_'+tgU.id;let id=localStorage.getItem('swwshop_userId');if(!id){id='web_'+Date.now();localStorage.setItem('swwshop_userId',id);}return id;}
 function getTotalUsers(){return Object.keys(users).length;}
-function updateOrdersBadge(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const b=document.getElementById('orders-badge');b.style.display=my.length?'flex':'none';if(my.length)b.textContent=my.length;}
 
-function showUsers(){if(!isAdmin)return;const ul=Object.values(users);document.getElementById('user-stats').innerHTML=`<div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>`;const el=document.getElementById('users-list');if(!ul.length){el.innerHTML='<p>Нет</p>';return;}el.innerHTML=ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`<div class="user-card"><div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div></div>`).join('');}
+function showUsers(){if(!isAdmin)return;const ul=Object.values(users);document.getElementById('user-stats').innerHTML=`<div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>`;const el=document.getElementById('users-list');if(!ul.length){el.innerHTML='<p>Нет</p>';return;}el.innerHTML=ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`<div class="user-card"><div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div><div style="font-size:12px;opacity:0.7;">ID: ${u.id}</div></div>`).join('');}
 function updateConsoleUsers(){if(!isAdmin)return;const sel=document.getElementById('console-user');sel.innerHTML='<option value="">-- Выберите --</option>';Object.values(users).forEach(u=>{sel.innerHTML+=`<option value="${u.id}">${u.firstName||'Пользователь'}</option>`;});}
 
 window.sendMessageToUser=async function(){if(!isAdmin)return;const uid=document.getElementById('console-user').value,msg=document.getElementById('console-message').value.trim();if(!uid||!msg)return alert('Заполните!');const user=users[uid];if(!user?.telegramId)return alert('Не в Telegram');await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:'📨 SWWSHOP:\n\n'+msg})});alert('✅');};
@@ -261,8 +340,8 @@ window.applyPromo=function(){const input=document.getElementById('promo-input').
 function saveCart(){localStorage.setItem('swwshop_cart',JSON.stringify(cart));updateCartBadge();}
 function updateCartBadge(){const c=cart.reduce((s,i)=>s+(i.quantity||1),0);const el=document.getElementById('cart-count');el.style.display=c>0?'flex':'none';if(c>0)el.textContent=c;}
 
-window.addToCart=function(n,p,ln,fn){if(!fn){alert('❌ Выберите вкус!');return;}const line=data[currentCategory]?.find(l=>l.name===ln);if(line){const f=line.flavors.find(f=>f.name===fn);if(f&&!f.inStock){alert('❌ Нет!');return;}}cart.push({name:fn+' ('+ln+')',price:p});saveCart();alert('✅');};
-window.addToCartSimple=function(n,p){const item=data[currentCategory]?.find(i=>i.name===n);if(item&&!item.inStock){alert('❌ Нет!');return;}cart.push({name:n,price:p});saveCart();alert('✅');};
+window.addToCart=function(n,p,ln,fn){if(!fn){alert('❌ Выберите вкус!');return;}const line=data[currentCategory]?.find(l=>l.name===ln);if(line){const f=line.flavors.find(f=>f.name===fn);if(f&&!f.inStock){alert('❌ Нет в наличии!');return;}}cart.push({name:fn+' ('+ln+')',price:p});saveCart();alert('✅ Добавлено!');};
+window.addToCartSimple=function(n,p){const item=data[currentCategory]?.find(i=>i.name===n);if(item&&!item.inStock){alert('❌ Нет в наличии!');return;}cart.push({name:n,price:p});saveCart();alert('✅ Добавлено!');};
 window.removeFromCart=function(i){cart.splice(i,1);saveCart();showCart();};
 
 function showCart(){if(!cart.length){document.getElementById('cart-items').innerHTML='<p>Пусто</p>';document.getElementById('cart-total').textContent='';document.getElementById('order-form').style.display='none';return;}let sub=cart.reduce((s,i)=>s+i.price,0);let disc=appliedPromo?Math.round(sub*appliedPromo.discount/100):0;document.getElementById('cart-items').innerHTML=cart.map((item,i)=>`<div class="cart-item"><div>${item.name}</div><span>${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>`).join('');document.getElementById('cart-total').textContent='Итого: '+(sub-disc)+' RUB';document.getElementById('order-form').style.display='block';}
@@ -273,22 +352,40 @@ const ci={liquids:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="8" y="
 
 window.showMain=function(){currentView='main';const e=getEarnings();document.getElementById('app').innerHTML=`<h1 class="shop-title">SWWSHOP</h1><div style="text-align:center;"><div class="users-counter">👥 Пользователей: <span>${getTotalUsers()}</span></div></div>${isAdmin?`<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${e.day} ₽</div></div></div>`:''}<p style="text-align:center;opacity:0.7;">Выберите категорию:</p><button class="category-btn" onclick="showCategory('liquids')">${ci.liquids} Жидкости</button><button class="category-btn" onclick="showCategory('pouches')">${ci.pouches} Шайбы</button><button class="category-btn" onclick="showCategory('coils')">${ci.coils} Испарители</button><button class="category-btn" onclick="showCategory('devices')">${ci.devices} Устройства</button>`;};
 
-window.showCategory=function(cat){currentView='category';currentCategory=cat;const t={liquids:'Жидкости',pouches:'Шайбы',coils:'Испарители',devices:'Устройства'};let h='<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">'+t[cat]+'</h1>';if(!data[cat]?.length){h+='<p>Нет товаров</p>';}else if(cat==='liquids'||cat==='pouches'){data[cat].forEach((l,i)=>{h+='<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+l.name+'</span><span style="font-size:13px;">'+l.price+' RUB</span></button></div>';});}else{data[cat].forEach((item,i)=>{h+='<div class="product-row"><span>'+item.name+'</span><span>'+item.price+' RUB</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span>';h+=item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';h+='</div>';});}document.getElementById('app').innerHTML=h;};
+window.showCategory=function(cat){currentView='category';currentCategory=cat;const t={liquids:'Жидкости',pouches:'Шайбы',coils:'Испарители',devices:'Устройства'};let h='<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">'+t[cat]+'</h1>';if(!data[cat]?.length){h+='<p>Нет товаров</p>';}else if(cat==='liquids'||cat==='pouches'){data[cat].forEach((l,i)=>{h+='<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+l.name+'</span><span style="font-size:13px;opacity:0.7;">'+l.price+' RUB | '+l.flavors.length+' вкусов</span></button>';if(isAdmin)h+='<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine(\''+cat+'\','+i+')">Удалить линейку</button>';h+='</div>';});}else{data[cat].forEach((item,i)=>{h+='<div class="product-row"><span class="product-name">'+item.name+'</span><span class="product-price">'+item.price+' RUB</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span><div class="product-actions">';h+=item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';if(isAdmin)h+='<button class="btn-sm btn-toggle" onclick="toggleItem(\''+cat+'\','+i+')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\''+cat+'\','+i+')">Удалить</button>';h+='</div></div>';});}document.getElementById('app').innerHTML=h;};
 
-window.showDetail=function(cat,idx){currentView='detail';currentCategory=cat;currentIndex=idx;const line=data[cat][idx];let h='<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1 class="shop-title">'+line.name+'</h1><p>'+line.price+' RUB</p><div class="section-title">Выберите вкус:</div>';line.flavors.forEach((f,fi)=>{h+='<div class="flavor-row"><span>'+f.name+'</span><span class="status-badge '+stClass(f.inStock)+'">'+stText(f.inStock)+'</span>';h+=f.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+f.name+'\')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';h+='</div>';});document.getElementById('app').innerHTML=h;};
+window.showDetail=function(cat,idx){currentView='detail';currentCategory=cat;currentIndex=idx;const line=data[cat][idx];let h='<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1 class="shop-title">'+line.name+'</h1><p style="text-align:center;color:var(--accent);font-weight:600;">'+line.price+' RUB</p>';h+='<div class="section-title">Выберите вкус ('+line.flavors.length+'):</div>';line.flavors.forEach((f,fi)=>{h+='<div class="flavor-row"><span class="flavor-name">'+f.name+'</span><div class="flavor-actions"><span class="status-badge '+stClass(f.inStock)+'">'+stText(f.inStock)+'</span>';h+=f.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+f.name+'\')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';if(isAdmin)h+='<button class="btn-sm btn-toggle" onclick="toggleFlavor(\''+cat+'\','+idx+','+fi+')">Сменить</button>';h+='</div></div>';});document.getElementById('app').innerHTML=h;};
 
-window.deleteLine=function(c,i){if(!isAdmin)return;if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
-window.deleteItem=function(c,i){if(!isAdmin)return;if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
+window.deleteLine=function(c,i){if(!isAdmin)return;if(confirm('Удалить линейку?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
+window.deleteItem=function(c,i){if(!isAdmin)return;if(confirm('Удалить товар?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
 window.toggleItem=function(c,i){if(!isAdmin)return;data[c][i].inStock=!data[c][i].inStock;db.ref('assortment').set(data);showCategory(c);};
 window.toggleFlavor=function(c,l,f){if(!isAdmin)return;data[c][l].flavors[f].inStock=!data[c][l].flavors[f].inStock;db.ref('assortment').set(data);showDetail(c,l);};
 window.updateDelSelect=function(){const c=document.getElementById('del-category')?.value;const s=document.getElementById('del-item');if(!s||!data[c])return;s.innerHTML='<option value="">-- Выберите --</option>';data[c].forEach((item,i)=>{s.innerHTML+='<option value="'+i+'">'+item.name+'</option>';});};
 
-window.adminLogin=function(){if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){isAdmin=true;document.getElementById('admin-login-area').style.display='none';document.getElementById('admin-controls-area').style.display='block';updateAdminUI();updateAdminEarnings();showMain();}else alert('Неверный пароль!');};
-window.adminLogout=function(){isAdmin=false;document.getElementById('admin-login-area').style.display='block';document.getElementById('admin-controls-area').style.display='none';document.getElementById('admin-panel').classList.remove('active');updateAdminUI();showMain();};
-window.addLine=function(){if(!isAdmin)return;const n=document.getElementById('line-name').value.trim(),p=parseInt(document.getElementById('line-price').value),c=document.getElementById('line-category').value,ft=document.getElementById('line-flavors').value.trim();if(!n||!p||!ft)return alert('Заполните!');const fl=ft.split('\n').filter(l=>l.trim()).map(l=>{const a=l.split(',');return{name:a[0].trim(),inStock:a[1]?.trim().toUpperCase()==='YES'};});if(!fl.length)return alert('Минимум 1 вкус!');data[c].push({name:n,price:p,flavors:fl});db.ref('assortment').set(data);alert('✅');showMain();};
-window.addItem=function(){if(!isAdmin)return;const n=document.getElementById('item-name').value.trim(),p=parseInt(document.getElementById('item-price').value),c=document.getElementById('item-category').value,q=parseInt(document.getElementById('item-qty').value)||0;if(!n||!p)return alert('Заполните!');data[c].push({name:n,price:p,inStock:q>0});db.ref('assortment').set(data);alert('✅');showMain();};
-window.deleteSelected=function(){if(!isAdmin)return;const c=document.getElementById('del-category').value,i=parseInt(document.getElementById('del-item').value);if(isNaN(i))return alert('Выберите!');if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showMain();}};
-window.deleteAllOutOfStock=function(){if(!isAdmin||!confirm('Удалить всё?'))return;['liquids','pouches'].forEach(c=>{data[c]=data[c].filter(l=>l.flavors?.some(f=>f.inStock));});['coils','devices'].forEach(c=>{data[c]=data[c].filter(i=>i.inStock);});db.ref('assortment').set(data);alert('✅');showMain();};
+window.adminLogin=function(){
+  if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){
+    isAdmin=true;
+    localStorage.setItem('swwshop_admin','true');
+    document.getElementById('admin-login-area').style.display='none';
+    document.getElementById('admin-controls-area').style.display='block';
+    updateAdminUI();updateAdminEarnings();showMain();updateRouletteTimer();
+  }else alert('Неверный пароль!');
+};
+
+window.adminLogout=function(){
+  isAdmin=false;
+  localStorage.removeItem('swwshop_admin');
+  document.getElementById('admin-login-area').style.display='block';
+  document.getElementById('admin-controls-area').style.display='none';
+  document.getElementById('admin-panel').classList.remove('active');
+  activePanel=null;
+  updateAdminUI();showMain();updateRouletteTimer();
+};
+
+window.addLine=function(){if(!isAdmin)return;const n=document.getElementById('line-name').value.trim(),p=parseInt(document.getElementById('line-price').value),c=document.getElementById('line-category').value,ft=document.getElementById('line-flavors').value.trim();if(!n||!p||!ft)return alert('Заполните!');const fl=ft.split('\n').filter(l=>l.trim()).map(l=>{const a=l.split(',');return{name:a[0].trim(),inStock:a[1]?.trim().toUpperCase()==='YES'};});if(!fl.length)return alert('Минимум 1 вкус!');data[c].push({name:n,price:p,flavors:fl});db.ref('assortment').set(data);alert('✅ Добавлено!');document.getElementById('line-name').value='';document.getElementById('line-price').value='';document.getElementById('line-flavors').value='';showMain();};
+window.addItem=function(){if(!isAdmin)return;const n=document.getElementById('item-name').value.trim(),p=parseInt(document.getElementById('item-price').value),c=document.getElementById('item-category').value,q=parseInt(document.getElementById('item-qty').value)||0;if(!n||!p)return alert('Заполните!');data[c].push({name:n,price:p,inStock:q>0});db.ref('assortment').set(data);alert('✅ Добавлено!');document.getElementById('item-name').value='';document.getElementById('item-price').value='';document.getElementById('item-qty').value='';showMain();};
+window.deleteSelected=function(){if(!isAdmin)return;const c=document.getElementById('del-category').value,i=parseInt(document.getElementById('del-item').value);if(isNaN(i))return alert('Выберите товар!');if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showMain();}};
+window.deleteAllOutOfStock=function(){if(!isAdmin||!confirm('Удалить всё что закончилось?'))return;['liquids','pouches'].forEach(c=>{data[c]=data[c].filter(l=>l.flavors?.some(f=>f.inStock));});['coils','devices'].forEach(c=>{data[c]=data[c].filter(i=>i.inStock);});db.ref('assortment').set(data);alert('✅ Готово!');showMain();};
 
 const tg=window.Telegram.WebApp;tg.ready();tg.expand();
 registerUser();updateCartBadge();updateAdminUI();
