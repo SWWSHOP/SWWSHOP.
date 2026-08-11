@@ -96,7 +96,6 @@
     #verify-overlay .v-input { width: 100%; padding: 12px; background: #1a2235; border: 2px solid #1e293b; border-radius: 12px; color: #fff; font-size: 18px; text-align: center; letter-spacing: 6px; font-family: 'Courier New', monospace; outline: none; margin-bottom: 14px; }
     #verify-overlay .v-btn { width: 100%; padding: 13px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
     
-    /* РУЛЕТКА */
     .slot-container { text-align: center; padding: 20px; background: var(--card-bg); border-radius: 16px; margin: 10px 0; }
     .slot-machine { width: 200px; height: 120px; margin: 0 auto 20px; overflow: hidden; position: relative; background: #0a0e17; border-radius: 16px; border: 3px solid var(--accent); }
     .slot-reel { position: absolute; width: 100%; top: 0; left: 0; transition: transform 5s cubic-bezier(0.15, 0.55, 0.35, 1); }
@@ -181,7 +180,6 @@
   </div>
 
 <script>
-// ВЕРИФИКАЦИЯ
 let vc='',vt,vtl=300;
 localStorage.removeItem('swwshop_verified');
 if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
@@ -203,25 +201,16 @@ window.setTheme=function(t){document.body.className=t;localStorage.setItem('swws
 setTheme(localStorage.getItem('swwshop_theme')||'telegram');
 
 let data={liquids:[],pouches:[],coils:[],devices:[]},orders=[],promos={},users={};
-let isAdmin=localStorage.getItem('swwshop_admin')==='true';
-let currentView='main',currentCategory='',currentIndex=0;
+let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
 let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
 let spinning=false,lastSpin=parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
 
-// РУЛЕТКА (плавная, без исчезновения, админ безлимит)
 function updateRouletteTimer(){
   const el=document.getElementById('roulette-timer'),btn=document.getElementById('spin-btn');
   const adminNote=document.getElementById('admin-roulette-note');
   if(!el||!btn)return;
-  
-  if(isAdmin){
-    el.innerHTML='<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';
-    btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';
-    if(adminNote)adminNote.style.display='block';
-    return;
-  }
+  if(isAdmin){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';if(adminNote)adminNote.style.display='block';return;}
   if(adminNote)adminNote.style.display='none';
-  
   const now=Date.now(),week=7*24*60*60*1000;
   if(now-lastSpin>=week){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';}
   else{const rem=week-(now-lastSpin);const d=Math.floor(rem/86400000),h=Math.floor((rem%86400000)/3600000),m=Math.floor((rem%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;btn.disabled=true;btn.textContent='⏳ Ждите';}
@@ -229,66 +218,27 @@ function updateRouletteTimer(){
 
 window.spinRoulette=function(){
   if(spinning)return;
-  if(!isAdmin){
-    const now=Date.now();
-    if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}
-  }
+  if(!isAdmin){const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}}
   spinning=true;
-  const btn=document.getElementById('spin-btn');
-  btn.disabled=true;btn.textContent='🎰 Крутится...';
+  const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';
   document.getElementById('roulette-result').innerHTML='';
-  
-  const rand=Math.random();
-  let prize={d:0,l:'0%'};
-  if(rand<0.005)prize={d:15,l:'15%'};
-  else if(rand<0.05)prize={d:5,l:'5%'};
-  else if(rand<0.15)prize={d:1,l:'1%'};
-  
-  const reel=document.getElementById('slot-reel');
-  const itemH=120,totalItems=15; // 15 элементов в ленте
+  const rand=Math.random();let prize={d:0,l:'0%'};
+  if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};
+  const reel=document.getElementById('slot-reel');const itemH=120,totalItems=15;
   const target=prize.d===15?4:prize.d===5?3:prize.d===1?2:(Math.floor(Math.random()*5)+10);
-  const extraRounds=isAdmin?5:4; // Админ: больше оборотов = медленнее
+  const extraRounds=isAdmin?5:4;
   const distance=(extraRounds*totalItems+target)*itemH;
-  
-  // Устанавливаем начальную позицию (без рывка)
-  reel.style.transition='none';
-  const currentTransform=reel.style.transform||'translateY(0px)';
-  reel.style.transform='translateY(0px)';
-  
-  // Запускаем плавную анимацию
-  setTimeout(()=>{
-    reel.style.transition='transform '+(isAdmin?6:5)+'s cubic-bezier(0.15, 0.55, 0.35, 1)';
-    reel.style.transform=`translateY(-${distance}px)`;
-  },30);
-  
-  if(!isAdmin){
-    lastSpin=Date.now();
-    localStorage.setItem('swwshop_roulette_time',lastSpin.toString());
-    db.ref('settings/lastRouletteTime').set(lastSpin);
-  }
-  
+  reel.style.transition='none';reel.style.transform='translateY(0px)';
+  setTimeout(()=>{reel.style.transition='transform '+(isAdmin?6:5)+'s cubic-bezier(0.15, 0.55, 0.35, 1)';reel.style.transform=`translateY(-${distance}px)`;},30);
+  if(!isAdmin){lastSpin=Date.now();localStorage.setItem('swwshop_roulette_time',lastSpin.toString());db.ref('settings/lastRouletteTime').set(lastSpin);}
   const duration=isAdmin?6500:5500;
   setTimeout(()=>{
-    spinning=false;
-    // Плавный сброс позиции
-    reel.style.transition='none';
-    reel.style.transform='translateY(0px)';
-    updateRouletteTimer();
-    
-    if(prize.d>0){
-      const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();
-      promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette'};
-      db.ref('promos/'+code).set(promos[code]);
-      document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;
-      const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Рулетка!*\n\nВы выиграли скидку *${prize.l}*!\nПромокод: \`${code}\``,parse_mode:'Markdown'})});}
-    }else{
-      document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';
-    }
+    spinning=false;reel.style.transition='none';reel.style.transform='translateY(0px)';updateRouletteTimer();
+    if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette'};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Рулетка!*\n\nВы выиграли скидку *${prize.l}*!\nПромокод: \`${code}\``,parse_mode:'Markdown'})});}}
+    else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';}
   },duration);
 };
 
-// ПРОМОКОДЫ
 function showMyPromos(){const userId=getUserId();const myOrders=orders.filter(o=>o.userId===userId&&o.status==='completed'&&o.promoCode);const myRoulette=Object.entries(promos).filter(([c,p])=>p.type==='roulette');let h='';if(myOrders.length){h+='<h4>🎁 От выполненных заказов:</h4>';myOrders.forEach(o=>{if(o.promoCode&&promos[o.promoCode]){const p=promos[o.promoCode];h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${o.promoCode}</strong> - ${p.discount}%<br><small>Заказ #${o.id}</small></div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;}});}if(myRoulette.length){h+='<h4>🎰 От рулетки:</h4>';myRoulette.forEach(([c,p])=>{h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;});}document.getElementById('mypromos-list').innerHTML=h||'<p style="text-align:center;opacity:0.5;">У вас пока нет промокодов</p>';}
 function showAllPromos(){if(!isAdmin)return;const el=document.getElementById('all-promos-list');const codes=Object.entries(promos);el.innerHTML=codes.length?codes.sort((a,b)=>b[1].created-a[1].created).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌':'✅'} | ${p.type==='roulette'?'🎰':p.type==='auto'?'🎁':'👤'}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button></div>`).join(''):'<p style="text-align:center;opacity:0.5;">Нет</p>';}
 window.deletePromo=function(c){if(!isAdmin||!confirm('Удалить?'))return;db.ref('promos/'+c).remove();};
@@ -309,7 +259,10 @@ function updateAdminEarnings(){const e=getEarnings();const el=document.getElemen
 
 window.openPanel=function(n){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(n+'-panel');if(p){p.classList.add('active');activePanel=n;}if(n==='orders')showOrders();if(n==='all-orders')showAllOrders();if(n==='mypromos')showMyPromos();if(n==='all-promos')showAllPromos();if(n==='roulette')updateRouletteTimer();if(n==='cart')showCart();if(n==='users')showUsers();if(n==='console')updateConsoleUsers();};
 window.closePanel=function(n){const p=document.getElementById(n+'-panel');if(p)p.classList.remove('active');activePanel=null;};
-window.toggleAdminPanel=function(){if(isAdmin){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}}else{const p=document.getElementById('admin-panel');p.classList.toggle('active');if(p.classList.contains('active'))activePanel='admin';else activePanel=null;}};
+window.toggleAdminPanel=function(){
+  if(isAdmin){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}}
+  else{const p=document.getElementById('admin-panel');p.classList.toggle('active');if(p.classList.contains('active'))activePanel='admin';else activePanel=null;}
+};
 
 function updateAdminUI(){
   document.getElementById('admin-indicator').className=isAdmin?'admin-indicator active':'admin-indicator';
@@ -365,7 +318,6 @@ window.updateDelSelect=function(){const c=document.getElementById('del-category'
 window.adminLogin=function(){
   if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){
     isAdmin=true;
-    localStorage.setItem('swwshop_admin','true');
     document.getElementById('admin-login-area').style.display='none';
     document.getElementById('admin-controls-area').style.display='block';
     updateAdminUI();updateAdminEarnings();showMain();updateRouletteTimer();
@@ -374,7 +326,6 @@ window.adminLogin=function(){
 
 window.adminLogout=function(){
   isAdmin=false;
-  localStorage.removeItem('swwshop_admin');
   document.getElementById('admin-login-area').style.display='block';
   document.getElementById('admin-controls-area').style.display='none';
   document.getElementById('admin-panel').classList.remove('active');
