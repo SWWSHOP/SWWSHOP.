@@ -89,22 +89,21 @@
     #verify-overlay .v-code-display { background: #1a2235; border: 2px dashed #5ea3d9; border-radius: 12px; padding: 14px; margin: 14px 0; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #5ea3d9; cursor: pointer; font-family: 'Courier New', monospace; }
     #verify-overlay .v-input { width: 100%; padding: 12px; background: #1a2235; border: 2px solid #1e293b; border-radius: 12px; color: #fff; font-size: 18px; text-align: center; letter-spacing: 6px; font-family: 'Courier New', monospace; outline: none; margin-bottom: 14px; }
     #verify-overlay .v-btn { width: 100%; padding: 13px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
-    #verify-overlay .v-msg { font-size: 12px; margin-top: 10px; padding: 8px; border-radius: 8px; display: none; }
-    #verify-overlay .v-msg.show { display: block; }
-    #verify-overlay .v-timer { font-size: 11px; color: #94a3b8; margin-top: 8px; }
-    #verify-overlay .v-resend { color: #5ea3d9; cursor: pointer; font-weight: 600; margin-top: 2px; display: inline-block; font-size: 12px; }
-    #verify-overlay .v-resend.disabled { opacity: 0.4; pointer-events: none; }
     
-    /* РУЛЕТКА */
-    .roulette-container { text-align: center; padding: 20px; position: relative; }
-    .roulette-wheel { position: relative; width: 280px; height: 280px; margin: 0 auto 20px; }
-    .roulette-arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #ffd700; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-    .roulette-canvas { width: 100%; height: 100%; transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); }
+    /* РУЛЕТКА-СЛОТ */
+    .slot-container { text-align: center; padding: 20px; background: var(--card-bg); border-radius: 16px; margin: 10px 0; }
+    .slot-window { width: 200px; height: 120px; margin: 0 auto 20px; overflow: hidden; position: relative; background: #0a0e17; border-radius: 16px; border: 3px solid var(--accent); }
+    .slot-reel { position: absolute; width: 100%; transition: transform 3s cubic-bezier(0.25, 0.1, 0.1, 1); }
+    .slot-item { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 800; color: #ffd700; }
+    .slot-item.win { color: #10b981; text-shadow: 0 0 20px rgba(16,185,129,0.5); }
+    .slot-item.lose { color: #ef4444; }
     .roulette-btn-spin { display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: #333; border: none; border-radius: 30px; font-size: 18px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 6px 20px rgba(255,107,107,0.4); transition: all 0.3s; margin: 10px 0; }
-    .roulette-btn-spin:disabled { opacity: 0.5; cursor: not-allowed; }
-    .roulette-result { margin-top: 16px; font-size: 16px; font-weight: 600; }
+    .roulette-btn-spin:active { transform: scale(0.95); }
+    .roulette-btn-spin:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .roulette-result { margin-top: 16px; font-size: 16px; font-weight: 600; min-height: 40px; }
     .roulette-timer { text-align: center; font-size: 14px; color: var(--warning); margin-top: 8px; }
     .roulette-timer span { font-weight: 700; font-size: 16px; }
+    .roulette-info { font-size: 12px; opacity: 0.7; margin-top: 8px; }
   </style>
 </head>
 <body class="telegram">
@@ -117,7 +116,7 @@
       <input type="text" class="v-input" id="v-input" placeholder="Вставьте код" maxlength="6" />
       <button class="v-btn" id="v-btn" onclick="verifyCode()">Подтвердить и войти</button>
       <div class="v-msg" id="v-msg"></div>
-      <div class="v-timer">Код: <span id="v-countdown">05:00</span><br><a class="v-resend disabled" id="v-resend" onclick="resendVerifyCode()">Новый код</a></div>
+      <div class="v-timer">Код: <span id="v-countdown">05:00</span></div>
     </div>
   </div>
 
@@ -126,8 +125,8 @@
     <div class="header-icons">
       <button class="icon-btn roulette-btn" onclick="openPanel('roulette')" title="Рулетка">🎰</button>
       <button class="icon-btn mypromos-btn" onclick="openPanel('mypromos')" title="Мои промокоды">🎫</button>
-      <button class="icon-btn orders-btn" onclick="openPanel('orders')">📋<span class="badge" id="orders-badge" style="display:none;">0</span></button>
-      <button class="icon-btn cart-btn" onclick="openPanel('cart')">🛒<span class="badge" id="cart-count" style="display:none;">0</span></button>
+      <button class="icon-btn orders-btn" onclick="openPanel('orders')">📋<span class="badge" id="orders-badge">0</span></button>
+      <button class="icon-btn cart-btn" onclick="openPanel('cart')">🛒<span class="badge" id="cart-count">0</span></button>
       <button class="icon-btn users-btn" id="users-icon" style="display:none;" onclick="openPanel('users')">👥</button>
       <button class="icon-btn console-btn" id="console-icon" style="display:none;" onclick="openPanel('console')">💬</button>
     </div>
@@ -140,13 +139,14 @@
     <div id="users-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Пользователи</h2><button class="panel-close-btn" onclick="closePanel('users')">✕</button></div><div class="user-stats" id="user-stats"></div><div id="users-list"></div></div>
     <div id="cart-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div><div id="cart-items"></div><div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div><div id="promo-message"></div><div class="cart-discount" id="cart-discount"></div><div class="cart-total" id="cart-total"></div><div class="order-form" id="order-form" style="display:none;"><input type="text" id="customer-name" placeholder="Ваше имя *" /><input type="text" id="customer-contact" placeholder="Телефон или @username *" /><select id="payment-method"><option value="">Способ оплаты *</option><option value="Наличные">Наличные</option><option value="Безналичные">Безналичные</option><option value="Смешанная">Смешанная</option></select><button class="order-btn" onclick="sendOrder()">Оформить заказ</button></div><div class="order-success" id="order-success" style="display:none;"></div></div>
     
-    <!-- РУЛЕТКА -->
+    <!-- РУЛЕТКА-СЛОТ -->
     <div id="roulette-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎰 Колесо удачи</h2><button class="panel-close-btn" onclick="closePanel('roulette')">✕</button></div>
-      <div class="roulette-container">
-        <div class="roulette-wheel"><div class="roulette-arrow"></div><canvas class="roulette-canvas" id="roulette-canvas" width="280" height="280"></canvas></div>
+      <div class="slot-container">
+        <div class="slot-window"><div class="slot-reel" id="slot-reel"><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">0%</div><div class="slot-item">🎰</div></div></div>
         <button class="roulette-btn-spin" id="roulette-spin-btn" onclick="spinRoulette()">🎰 КРУТИТЬ</button>
         <div class="roulette-timer" id="roulette-timer"></div>
         <div class="roulette-result" id="roulette-result"></div>
+        <div class="roulette-info">Шансы: 0% — 85% | 1% — 10% | 5% — 4.5% | 15% — 0.5%</div>
       </div>
     </div>
     
@@ -160,11 +160,11 @@
       <div id="admin-login-area"><div style="display:flex;gap:8px;"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div></div>
       <div id="admin-controls-area" style="display:none;">
         <div class="earnings-stats" id="admin-earnings"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
-          <button class="admin-action-btn btn-green" onclick="openPanel('all-orders')">📋</button>
-          <button class="admin-action-btn btn-orange" onclick="openPanel('all-promos')">🎫</button>
-          <button class="admin-action-btn btn-cyan" onclick="openPanel('users')">👥</button>
-          <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
+          <button class="admin-action-btn btn-green" onclick="openPanel('all-orders')">📋 Заказы</button>
+          <button class="admin-action-btn btn-orange" onclick="openPanel('all-promos')">🎫 Промокоды</button>
+          <button class="admin-action-btn btn-cyan" onclick="openPanel('users')">👥 Пользователи</button>
+          <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬 Консоль</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Линейка</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить</button></div>
@@ -180,24 +180,24 @@
 <script>
 let verifyCodeValue='',verifyTimer,verifyTimeLeft=300;
 localStorage.removeItem('swwshop_verified');localStorage.removeItem('swwshop_verified_time');
-const verified=localStorage.getItem('swwshop_verified'),verifiedTime=localStorage.getItem('swwshop_verified_time');
-if(verified==='true'&&verifiedTime&&(Date.now()-parseInt(verifiedTime))<3600000){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
+if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
 else{document.getElementById('verify-overlay').style.display='flex';document.getElementById('main-app').style.display='none';generateVerifyCode();startVerifyTimer();}
 function generateVerifyCode(){verifyCodeValue=Math.floor(100000+Math.random()*900000).toString();document.getElementById('code-display').textContent=verifyCodeValue;}
-function copyVerifyCode(){navigator.clipboard.writeText(verifyCodeValue).then(()=>{const d=document.getElementById('code-display');d.textContent='✓ СКОПИРОВАНО';d.style.color='#10b981';d.style.borderColor='#10b981';setTimeout(()=>{d.textContent=verifyCodeValue;d.style.color='';d.style.borderColor='';},1500);}).catch(()=>{const d=document.getElementById('code-display');const r=document.createRange();r.selectNode(d);window.getSelection().removeAllRanges();window.getSelection().addRange(r);});}
-function startVerifyTimer(){verifyTimeLeft=300;updateVerifyTimer();clearInterval(verifyTimer);verifyTimer=setInterval(()=>{verifyTimeLeft--;updateVerifyTimer();if(verifyTimeLeft<=0){clearInterval(verifyTimer);document.getElementById('v-resend').classList.remove('disabled');}},1000);}
+function copyVerifyCode(){navigator.clipboard.writeText(verifyCodeValue).then(()=>{const d=document.getElementById('code-display');d.textContent='✓ СКОПИРОВАНО';d.style.color='#10b981';setTimeout(()=>{d.textContent=verifyCodeValue;d.style.color='';},1500);}).catch(()=>{});}
+function startVerifyTimer(){verifyTimeLeft=300;updateVerifyTimer();clearInterval(verifyTimer);verifyTimer=setInterval(()=>{verifyTimeLeft--;updateVerifyTimer();if(verifyTimeLeft<=0)clearInterval(verifyTimer);},1000);}
 function updateVerifyTimer(){const m=Math.floor(verifyTimeLeft/60),s=verifyTimeLeft%60;document.getElementById('v-countdown').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
-function verifyCode(){const input=document.getElementById('v-input').value.trim(),btn=document.getElementById('v-btn');if(input.length!==6){alert('Введите 6 цифр');return;}btn.disabled=true;btn.textContent='Проверка...';setTimeout(()=>{if(input===verifyCodeValue){clearInterval(verifyTimer);localStorage.setItem('swwshop_verified','true');localStorage.setItem('swwshop_verified_time',Date.now().toString());btn.innerHTML='✅ Доступ разрешён';btn.style.background='linear-gradient(135deg, #10b981, #059669)';setTimeout(()=>{document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();},500);}else{alert('Неверный код');document.getElementById('v-input').value='';btn.disabled=false;btn.textContent='Подтвердить и войти';}},800);}
-function resendVerifyCode(){if(verifyTimeLeft>0)return;generateVerifyCode();startVerifyTimer();document.getElementById('v-resend').classList.add('disabled');document.getElementById('v-input').value='';}
-document.getElementById('v-input').addEventListener('input',function(e){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)setTimeout(verifyCode,400);});
+function verifyCode(){const input=document.getElementById('v-input').value.trim();if(input===verifyCodeValue){clearInterval(verifyTimer);localStorage.setItem('swwshop_verified','true');document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}else{alert('Неверный код');document.getElementById('v-input').value='';}}
+document.getElementById('v-input').addEventListener('input',function(e){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)verifyCode();});
 
 function initShop(){
 const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',CHAT_ID='5993502384';
 firebase.initializeApp({apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",authDomain:"swwshop.firebaseapp.com",databaseURL:"https://swwshop-default-rtdb.firebaseio.com",projectId:"swwshop",storageBucket:"swwshop.firebasestorage.app",messagingSenderId:"698268675105",appId:"1:698268675105:web:15814d169ee2e74c8e4760"});
 const db=firebase.database();
+
 let lastUpdateId=0;
-async function checkBot(){try{const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);const data=await resp.json();if(data.ok&&data.result.length){for(const u of data.result){lastUpdateId=u.update_id;if(u.message?.text){const m=u.message,chatId=m.chat.id,text=m.text;let response='';if(text==='/start')response=`🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n🎁 Заказ от 800₽ = промокод 15%\n🎰 Колесо удачи — крути раз в неделю!\n\n/s — статистика`;else if(text==='/s'){const uSnap=await db.ref('users').once('value'),oSnap=await db.ref('orders').once('value');const users=uSnap.val()||{},orders=oSnap.val()||{},oList=Object.values(orders);response=`📊 *Статистика*\n\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${oList.length}*\n✅ Выполнено: *${oList.filter(o=>o.status==='completed').length}*`;}if(response)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:response,parse_mode:'Markdown'})});}}}}catch(e){}setTimeout(checkBot,2000);}
+async function checkBot(){try{const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);const data=await resp.json();if(data.ok&&data.result.length){for(const u of data.result){lastUpdateId=u.update_id;if(u.message?.text){const m=u.message,chatId=m.chat.id,text=m.text;let response='';if(text==='/start')response=`🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n🎁 Заказ от 800₽ = промокод 15%\n🎰 Рулетка раз в неделю!\n\n/s — статистика`;else if(text==='/s'){const uSnap=await db.ref('users').once('value'),oSnap=await db.ref('orders').once('value');const users=uSnap.val()||{},orders=oSnap.val()||{};response=`📊 *Статистика*\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${Object.values(orders).length}*`;}if(response)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:response,parse_mode:'Markdown'})});}}}}catch(e){}setTimeout(checkBot,2000);}
 checkBot();
+
 window.setTheme=function(t){document.body.className=t;localStorage.setItem('swwshop_theme',t);};
 setTheme(localStorage.getItem('swwshop_theme')||'telegram');
 
@@ -205,21 +205,109 @@ let data={liquids:[],pouches:[],coils:[],devices:[]},orders=[],promos={},users={
 let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
 let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
 let rouletteSpinning=false,lastRouletteTime=parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
-let rouletteTimerInterval=null;
 
-// ============ РУЛЕТКА (РАЗ В НЕДЕЛЮ) ============
-const roulettePrizes=[{label:'0%',discount:0,color:'#ff6b6b',chance:0.85},{label:'1%',discount:1,color:'#ffd93d',chance:0.10},{label:'5%',discount:5,color:'#6bcf7f',chance:0.02},{label:'15%',discount:15,color:'#ffd700',chance:0.001}];
+// ============ РУЛЕТКА-СЛОТ ============
+const slotItems=['0%','0%','0%','0%','0%','0%','0%','0%','0%','1%','1%','0%','0%','5%','0%','0%','15%','0%','0%','🎰'];
 
-function drawRoulette(){const canvas=document.getElementById('roulette-canvas');if(!canvas)return;const ctx=canvas.getContext('2d'),cx=140,cy=140,r=130;ctx.clearRect(0,0,280,280);const totalChance=roulettePrizes.reduce((s,p)=>s+p.chance,0);let startAngle=-Math.PI/2;roulettePrizes.forEach(prize=>{const sliceAngle=(prize.chance/totalChance)*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,startAngle,startAngle+sliceAngle);ctx.closePath();ctx.fillStyle=prize.color;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.save();ctx.translate(cx,cy);ctx.rotate(startAngle+sliceAngle/2);ctx.fillStyle='#fff';ctx.font='bold 13px -apple-system,sans-serif';ctx.fillText(prize.label,r*0.55,5);ctx.restore();startAngle+=sliceAngle;});ctx.beginPath();ctx.arc(cx,cy,25,0,Math.PI*2);ctx.fillStyle='#333';ctx.fill();ctx.fillStyle='#ffd700';ctx.font='bold 16px -apple-system,sans-serif';ctx.fillText('🎰',cx-12,cy+7);}
+function updateRouletteTimer(){
+  const now=Date.now(),weekMs=7*24*60*60*1000,timeSince=now-lastRouletteTime;
+  const el=document.getElementById('roulette-timer'),btn=document.getElementById('roulette-spin-btn');
+  if(!el||!btn)return;
+  if(timeSince>=weekMs){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';}
+  else{const remaining=weekMs-timeSince;const days=Math.floor(remaining/86400000);const hours=Math.floor((remaining%86400000)/3600000);const mins=Math.floor((remaining%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${days}д ${hours}ч ${mins}м</span>`;btn.disabled=true;btn.textContent='⏳ Ждите';}
+}
 
-function updateRouletteTimer(){const now=Date.now();const weekMs=7*24*60*60*1000;const timeSince=now-lastRouletteTime;const el=document.getElementById('roulette-timer');const btn=document.getElementById('roulette-spin-btn');if(timeSince>=weekMs){if(el)el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';if(btn){btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';}}else{const remaining=weekMs-timeSince;const days=Math.floor(remaining/(24*60*60*1000));const hours=Math.floor((remaining%(24*60*60*1000))/(60*60*1000));const mins=Math.floor((remaining%(60*60*1000))/(60*1000));if(el)el.innerHTML=`⏳ Следующая попытка через: <span>${days}д ${hours}ч ${mins}м</span>`;if(btn){btn.disabled=true;btn.textContent='⏳ Ждите';}}}
+function spinRoulette(){
+  if(rouletteSpinning)return;
+  const now=Date.now();
+  if(now-lastRouletteTime<7*24*60*60*1000){updateRouletteTimer();return;}
+  rouletteSpinning=true;
+  const btn=document.getElementById('roulette-spin-btn');
+  btn.disabled=true;btn.textContent='🎰 Крутится...';
+  document.getElementById('roulette-result').innerHTML='';
+  
+  // Определяем приз
+  const rand=Math.random();
+  let winPrize={discount:0,label:'0%'};
+  if(rand<0.005)winPrize={discount:15,label:'15%'};
+  else if(rand<0.05)winPrize={discount:5,label:'5%'};
+  else if(rand<0.15)winPrize={discount:1,label:'1%'};
+  
+  // Рассчитываем позицию для анимации
+  const reel=document.getElementById('slot-reel');
+  const itemHeight=120;
+  const targetIndex=winPrize.discount===15?17:winPrize.discount===5?14:winPrize.discount===1?10:Math.floor(Math.random()*9);
+  const extraSpins=3;
+  const totalDistance=(extraSpins*slotItems.length+targetIndex)*itemHeight;
+  
+  reel.style.transition='none';
+  reel.style.transform='translateY(0)';
+  setTimeout(()=>{
+    reel.style.transition='transform 3s cubic-bezier(0.25, 0.1, 0.1, 1)';
+    reel.style.transform=`translateY(-${totalDistance}px)`;
+  },50);
+  
+  lastRouletteTime=now;
+  localStorage.setItem('swwshop_roulette_time',now.toString());
+  db.ref('settings/lastRouletteTime').set(now);
+  
+  setTimeout(()=>{
+    rouletteSpinning=false;
+    reel.style.transition='none';
+    reel.style.transform='translateY(0)';
+    updateRouletteTimer();
+    
+    if(winPrize.discount>0){
+      const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();
+      promos[code]={discount:winPrize.discount,used:false,created:Date.now(),type:'roulette'};
+      db.ref('promos/'+code).set(promos[code]);
+      document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${winPrize.label}!<br>Промокод: <strong>${code}</strong></div>`;
+      const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Рулетка!*\n\nВы выиграли скидку *${winPrize.label}*!\nПромокод: \`${code}\``,parse_mode:'Markdown'})});}
+    }else{
+      document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте через неделю.</p>';
+    }
+  },3200);
+}
 
-function spinRoulette(){if(rouletteSpinning)return;const now=Date.now();if(now-lastRouletteTime<7*24*60*60*1000){updateRouletteTimer();return;}rouletteSpinning=true;document.getElementById('roulette-spin-btn').disabled=true;const rand=Math.random();let cumulative=0,winPrize=roulettePrizes[0];for(const p of roulettePrizes){cumulative+=p.chance;if(rand<=cumulative){winPrize=p;break;}}const totalChance=roulettePrizes.reduce((s,p)=>s+p.chance,0);let targetAngle=0;cumulative=0;for(let i=0;i<roulettePrizes.length;i++){cumulative+=roulettePrizes[i].chance;if(roulettePrizes[i]===winPrize){const sliceAngle=(roulettePrizes[i].chance/totalChance)*Math.PI*2;targetAngle=((cumulative-roulettePrizes[i].chance/2)/totalChance)*360+Math.random()*(sliceAngle*180/Math.PI*0.8);break;}}const spins=5+Math.floor(Math.random()*3);const totalRotation=spins*360+360-targetAngle;const canvas=document.getElementById('roulette-canvas');canvas.style.transform=`rotate(${totalRotation}deg)`;lastRouletteTime=now;localStorage.setItem('swwshop_roulette_time',now.toString());db.ref('settings/lastRouletteTime').set(now);setTimeout(()=>{rouletteSpinning=false;canvas.style.transform='rotate(0deg)';if(winPrize.discount>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:winPrize.discount,used:false,created:Date.now(),type:'roulette'};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${winPrize.label}!<br>Промокод: <strong>${code}</strong></div>`;const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Колесо удачи!*\n\nВы выиграли скидку *${winPrize.label}*!\nПромокод: \`${code}\`\n\nИспользуйте его в корзине.`,parse_mode:'Markdown'})});}}else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте через неделю.</p>';}updateRouletteTimer();},4000);}
+// ============ ПРОМОКОДЫ ============
+function showMyPromos(){
+  const userId=getUserId();
+  const myCompletedOrders=orders.filter(o=>o.userId===userId&&o.status==='completed'&&o.promoCode);
+  const myRoulettePromos=Object.entries(promos).filter(([c,p])=>p.type==='roulette');
+  const el=document.getElementById('mypromos-list');
+  
+  let html='';
+  
+  // Промокоды от выполненных заказов
+  if(myCompletedOrders.length>0){
+    html+='<h4>🎁 От выполненных заказов:</h4>';
+    myCompletedOrders.forEach(o=>{
+      if(o.promoCode&&promos[o.promoCode]){
+        const p=promos[o.promoCode];
+        html+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${o.promoCode}</strong> - ${p.discount}%<br><small>Заказ #${o.id} | ${new Date(p.created).toLocaleDateString()}</small></div><span style="color:${p.used?'var(--danger)':'var(--success)'};font-weight:600;">${p.used?'Использован':'Доступен'}</span></div>`;
+      }
+    });
+  }
+  
+  // Промокоды от рулетки
+  if(myRoulettePromos.length>0){
+    html+='<h4 style="margin-top:16px;">🎰 От рулетки:</h4>';
+    myRoulettePromos.forEach(([c,p])=>{
+      html+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${new Date(p.created).toLocaleDateString()}</small></div><span style="color:${p.used?'var(--danger)':'var(--success)'};font-weight:600;">${p.used?'Использован':'Доступен'}</span></div>`;
+    });
+  }
+  
+  if(!html)html='<p style="text-align:center;opacity:0.5;padding:20px;">У вас пока нет промокодов</p>';
+  el.innerHTML=html;
+}
 
-// ============ МОИ ПРОМОКОДЫ ============
-function showMyPromos(){const userId=getUserId();const allPromos=Object.entries(promos).filter(([c,p])=>p.usedBy===userId||(p.type==='roulette'&&!p.used)||(!p.type&&p.usedBy===userId));const el=document.getElementById('mypromos-list');if(!allPromos.length){el.innerHTML='<p style="text-align:center;opacity:0.5;padding:20px;">У вас пока нет промокодов</p>';return;}el.innerHTML='<h4>Доступные промокоды:</h4>'+allPromos.filter(([c,p])=>!p.used).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.type==='roulette'?'🎰 Рулетка':p.type==='auto'?'🎁 Авто':'👤 Админ'} | ${new Date(p.created).toLocaleDateString()}</small></div><span style="color:var(--success);font-weight:600;">Доступен</span></div>`).join('')+'<h4 style="margin-top:16px;">Использованные:</h4>'+allPromos.filter(([c,p])=>p.used).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;opacity:0.6;"><div><strong>${c}</strong> - ${p.discount}%<br><small>Использован ${p.usedAt?new Date(p.usedAt).toLocaleDateString():''}</small></div><span>Исп.</span></div>`).join('');}
-
-function showAllPromos(){if(!isAdmin)return;const el=document.getElementById('all-promos-list');const codes=Object.entries(promos);if(!codes.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет промокодов</p>';return;}el.innerHTML=codes.sort((a,b)=>b[1].created-a[1].created).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌ Исп.':'✅ Доступен'} | ${p.type==='roulette'?'🎰 Рулетка':p.type==='auto'?'🎁 Авто':'👤 Админ'} | ${new Date(p.created).toLocaleString()}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">Удалить</button></div>`).join('');}
+function showAllPromos(){
+  if(!isAdmin)return;
+  const el=document.getElementById('all-promos-list');
+  const codes=Object.entries(promos);
+  if(!codes.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет промокодов</p>';return;}
+  el.innerHTML=codes.sort((a,b)=>b[1].created-a[1].created).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌ Исп.':'✅ Доступен'} | ${p.type==='roulette'?'🎰 Рулетка':p.type==='auto'?'🎁 Авто':'👤 Админ'} | ${new Date(p.created).toLocaleString()}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">Удалить</button></div>`).join('');}
 
 window.deletePromo=function(code){if(!isAdmin||!confirm('Удалить?'))return;db.ref('promos/'+code).remove();};
 window.createPromo=function(){if(!isAdmin)return;const c=document.getElementById('promo-code').value.trim()||'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();db.ref('promos/'+c).set({discount:parseInt(document.getElementById('promo-discount').value)||15,used:false,created:Date.now(),type:'admin'});alert('✅');document.getElementById('promo-code').value='';};
@@ -228,18 +316,18 @@ function getEarnings(){const dayStart=new Date();dayStart.setHours(0,0,0,0);cons
 
 function registerUser(){const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;const userId=getUserId();const userData={id:userId,firstSeen:Date.now(),lastSeen:Date.now(),visitCount:1};if(tgUser){userData.telegramId=tgUser.id;userData.firstName=tgUser.first_name;userData.username=tgUser.username||'';}db.ref('users/'+userId).once('value').then(snap=>{const ex=snap.val();if(ex)db.ref('users/'+userId).update({lastSeen:Date.now(),visitCount:(ex.visitCount||1)+1});else db.ref('users/'+userId).set(userData);});}
 
-db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();drawRoulette();updateRouletteTimer();}});
+db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();}});
 db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];updateUI();});
 db.ref('promos').on('value',s=>{promos=s.val()||{};updateUI();});
 db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
 db.ref('settings/lastRouletteTime').on('value',s=>{const v=s.val();if(v&&v>lastRouletteTime){lastRouletteTime=v;localStorage.setItem('swwshop_roulette_time',v.toString());updateRouletteTimer();}});
 
 function refreshView(){if(currentView==='main')showMain();else if(currentView==='category')showCategory(currentCategory);else if(currentView==='detail')showDetail(currentCategory,currentIndex);}
-function updateUI(){updateOrdersBadge();if(activePanel==='orders')showOrders();if(activePanel==='all-orders')showAllOrders();if(activePanel==='mypromos')showMyPromos();if(activePanel==='all-promos')showAllPromos();if(activePanel==='roulette'){drawRoulette();updateRouletteTimer();}if(activePanel==='users')showUsers();if(activePanel==='console')updateConsoleUsers();if(currentView==='main')showMain();if(isAdmin)updateAdminEarnings();}
+function updateUI(){updateOrdersBadge();if(activePanel==='orders')showOrders();if(activePanel==='all-orders')showAllOrders();if(activePanel==='mypromos')showMyPromos();if(activePanel==='all-promos')showAllPromos();if(activePanel==='roulette')updateRouletteTimer();if(activePanel==='users')showUsers();if(activePanel==='console')updateConsoleUsers();if(currentView==='main')showMain();if(isAdmin)updateAdminEarnings();}
 
 function updateAdminEarnings(){const earnings=getEarnings();const el=document.getElementById('admin-earnings');if(el)el.innerHTML=`<div class="earning-card"><div class="earning-amount">${earnings.day} ₽</div><div class="earning-label">Сегодня</div></div><div class="earning-card"><div class="earning-amount">${earnings.week} ₽</div><div class="earning-label">Неделя</div></div><div class="earning-card"><div class="earning-amount">${earnings.month} ₽</div><div class="earning-label">Месяц</div></div><div class="earning-card"><div class="earning-amount">${earnings.year} ₽</div><div class="earning-label">Год</div></div>`;}
 
-window.openPanel=function(name){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(name+'-panel');if(p){p.classList.add('active');activePanel=name;}if(name==='orders')showOrders();if(name==='all-orders')showAllOrders();if(name==='mypromos')showMyPromos();if(name==='all-promos')showAllPromos();if(name==='roulette'){drawRoulette();updateRouletteTimer();}if(name==='cart')showCart();if(name==='users')showUsers();if(name==='console')updateConsoleUsers();};
+window.openPanel=function(name){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(name+'-panel');if(p){p.classList.add('active');activePanel=name;}if(name==='orders')showOrders();if(name==='all-orders')showAllOrders();if(name==='mypromos')showMyPromos();if(name==='all-promos')showAllPromos();if(name==='roulette')updateRouletteTimer();if(name==='cart')showCart();if(name==='users')showUsers();if(name==='console')updateConsoleUsers();};
 window.closePanel=function(name){const p=document.getElementById(name+'-panel');if(p)p.classList.remove('active');activePanel=null;};
 window.toggleAdminPanel=function(){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}};
 
@@ -247,7 +335,7 @@ function updateAdminUI(){document.getElementById('admin-indicator').className=is
 function stText(s){return s?'В наличии':'Нет';}function stClass(s){return s?'status-in-stock':'status-out-stock';}
 function getUserId(){const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgUser)return'tg_'+tgUser.id;let id=localStorage.getItem('swwshop_userId');if(!id){id='web_'+Date.now();localStorage.setItem('swwshop_userId',id);}return id;}
 function getTotalUsers(){return Object.keys(users).length;}
-function updateOrdersBadge(){const my=orders.filter(o=>o.userId===getUserId());const b=document.getElementById('orders-badge');b.style.display=my.length?'flex':'none';if(my.length)b.textContent=my.length;}
+function updateOrdersBadge(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const b=document.getElementById('orders-badge');b.style.display=my.length?'flex':'none';if(my.length)b.textContent=my.length;}
 
 function showUsers(){if(!isAdmin)return;const ul=Object.values(users);document.getElementById('user-stats').innerHTML=`<div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>`;const el=document.getElementById('users-list');if(!ul.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет</p>';return;}el.innerHTML=ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`<div class="user-card"><div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div><div style="font-size:12px;opacity:0.7;">ID: ${u.id} | 👁 ${u.visitCount||1} | 📋 ${orders.filter(o=>o.userId===u.id).length}</div></div>`).join('');}
 function updateConsoleUsers(){if(!isAdmin)return;const sel=document.getElementById('console-user');sel.innerHTML='<option value="">-- Выберите --</option>';Object.values(users).forEach(u=>{sel.innerHTML+=`<option value="${u.id}">${u.firstName||'Пользователь'} ${u.username?'@'+u.username:''}</option>`;});}
@@ -255,13 +343,13 @@ function updateConsoleUsers(){if(!isAdmin)return;const sel=document.getElementBy
 window.sendMessageToUser=async function(){if(!isAdmin)return;const uid=document.getElementById('console-user').value,msg=document.getElementById('console-message').value.trim();if(!uid||!msg)return alert('Заполните!');const user=users[uid];if(!user?.telegramId)return alert('Не в Telegram');await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:'📨 SWWSHOP:\n\n'+msg})});alert('✅');document.getElementById('console-message').value='';};
 window.sendBroadcast=async function(){if(!isAdmin)return;const msg=document.getElementById('console-broadcast').value.trim();if(!msg||!confirm('Всем?'))return;let sent=0;for(const u of Object.values(users)){if(u.telegramId){try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:u.telegramId,text:'📢 SWWSHOP:\n\n'+msg})});sent++;}catch(e){}}}alert(`✅ ${sent} чел.`);document.getElementById('console-broadcast').value='';};
 
-function showOrders(){const my=orders.filter(o=>o.userId===getUserId());const el=document.getElementById('orders-list');if(!my.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет выполненных заказов</p>';return;}el.innerHTML=my.filter(o=>o.status==='completed').reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status status-completed">Выполнен</span></div>`).join('');}
+function showOrders(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const el=document.getElementById('orders-list');if(!my.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет выполненных заказов</p>';return;}el.innerHTML=my.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status status-completed">Выполнен</span>${o.promoCode&&promos[o.promoCode]&&!promos[o.promoCode].used?`<div class="promo-code-display">🎁 Ваш промокод: ${o.promoCode}</div>`:''}</div>`).join('');}
 function showAllOrders(){if(!isAdmin)return;const el=document.getElementById('all-orders-list');if(!orders.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет заказов</p>';return;}el.innerHTML=orders.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong> | ${o.userName} | ${o.userContact}</div><div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div><span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>${o.status==='pending'?`<div style="margin-top:8px;"><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌</button></div>`:''}</div>`).join('');}
 
 window.completeOrder=async function(orderId,subtotal){if(!isAdmin||!confirm('Выполнить?'))return;const update={status:'completed',completedAt:Date.now()};let promo=null;if(subtotal>=800){promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();update.promoCode=promo;db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),type:'auto'});}await db.ref('orders/'+orderId).update(update);const order=(await db.ref('orders/'+orderId).once('value')).val();if(order){const user=(await db.ref('users/'+order.userId).once('value')).val();if(user?.telegramId){let txt='🎉 *Заказ #'+orderId+' выполнен!*\n\nСпасибо за покупку!';if(promo)txt+='\n\n🎁 *Промокод 15%:* `'+promo+'`';try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:txt,parse_mode:'Markdown'})});}catch(e){}}}alert('✅'+(promo?' Промокод: '+promo:''));showAllOrders();updateAdminEarnings();};
 window.cancelOrder=function(orderId){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+orderId).update({status:'cancelled'});};
 
-window.applyPromo=function(){const input=document.getElementById('promo-input').value.trim().toUpperCase();if(!input)return;if(promos[input]){if(promos[input].used){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Исп.</span>';return;}appliedPromo={code:input,discount:promos[input].discount};document.getElementById('promo-message').innerHTML='<span style="color:var(--success);">-'+promos[input].discount+'%</span>';showCart();}else{document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Нет</span>';appliedPromo=null;}};
+window.applyPromo=function(){const input=document.getElementById('promo-input').value.trim().toUpperCase();if(!input)return;if(promos[input]){if(promos[input].used){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Использован</span>';return;}appliedPromo={code:input,discount:promos[input].discount};document.getElementById('promo-message').innerHTML='<span style="color:var(--success);">Скидка -'+promos[input].discount+'%</span>';showCart();}else{document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Не найден</span>';appliedPromo=null;}};
 
 function saveCart(){localStorage.setItem('swwshop_cart',JSON.stringify(cart));updateCartBadge();}
 function updateCartBadge(){const c=cart.reduce((s,i)=>s+(i.quantity||1),0);const el=document.getElementById('cart-count');el.style.display=c>0?'flex':'none';if(c>0)el.textContent=c;}
