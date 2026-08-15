@@ -38,7 +38,7 @@
     .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
     .add-to-cart-btn:disabled { background: #999; cursor: not-allowed; }
     .btn-sm { padding: 6px 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; color: white; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
-    .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); }
+    .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); } .btn-view { background: #06b6d4; }
     .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; margin-top: 4px; }
     
     .header-menu { position: fixed; top: 16px; right: 16px; z-index: 150; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
@@ -96,6 +96,7 @@
     #verify-overlay .v-input { width: 100%; padding: 12px; background: #1a2235; border: 2px solid #1e293b; border-radius: 12px; color: #fff; font-size: 18px; text-align: center; letter-spacing: 6px; font-family: 'Courier New', monospace; outline: none; margin-bottom: 14px; }
     #verify-overlay .v-btn { width: 100%; padding: 13px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
     
+    /* РУЛЕТКА */
     .slot-container { text-align: center; padding: 20px; background: var(--card-bg); border-radius: 16px; margin: 10px 0; }
     .slot-machine { width: 200px; height: 120px; margin: 0 auto 20px; overflow: hidden; position: relative; background: #0a0e17; border-radius: 16px; border: 3px solid var(--accent); }
     .slot-reel { position: absolute; width: 100%; top: 0; left: 0; transition: transform 5s cubic-bezier(0.15, 0.55, 0.35, 1); }
@@ -106,6 +107,11 @@
     .roulette-result { margin-top: 16px; font-size: 16px; font-weight: 600; min-height: 40px; }
     .roulette-timer { text-align: center; font-size: 14px; color: var(--warning); margin-top: 8px; }
     .admin-roulette-note { font-size: 12px; color: #10b981; margin-top: 4px; }
+    
+    /* Детали заказа */
+    .order-detail-card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .order-detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
+    .order-detail-total { font-size: 18px; font-weight: 700; text-align: right; color: var(--accent); margin-top: 12px; }
   </style>
 </head>
 <body class="telegram">
@@ -137,6 +143,7 @@
 
     <div id="orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div><div id="orders-list"></div></div>
     <div id="all-orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div><div id="all-orders-list"></div></div>
+    <div id="order-detail-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Детали заказа</h2><button class="panel-close-btn" onclick="closePanel('order-detail');showAllOrders();">✕</button></div><div id="order-detail-content"></div></div>
     <div id="mypromos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎫 Мои промокоды</h2><button class="panel-close-btn" onclick="closePanel('mypromos')">✕</button></div><div id="mypromos-list"></div></div>
     <div id="all-promos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Все промокоды</h2><button class="panel-close-btn" onclick="closePanel('all-promos')">✕</button></div><div id="all-promos-list"></div></div>
     <div id="users-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Пользователи</h2><button class="panel-close-btn" onclick="closePanel('users')">✕</button></div><div class="user-stats" id="user-stats"></div><div id="users-list"></div></div>
@@ -180,6 +187,7 @@
   </div>
 
 <script>
+// ВЕРИФИКАЦИЯ
 let vc='',vt,vtl=300;
 localStorage.removeItem('swwshop_verified');
 if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
@@ -283,10 +291,72 @@ window.sendMessageToUser=async function(){if(!isAdmin)return;const uid=document.
 window.sendBroadcast=async function(){if(!isAdmin)return;const msg=document.getElementById('console-broadcast').value.trim();if(!msg||!confirm('Всем?'))return;let sent=0;for(const u of Object.values(users)){if(u.telegramId){try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:u.telegramId,text:'📢 SWWSHOP:\n\n'+msg})});sent++;}catch(e){}}}alert(`✅ ${sent} чел.`);};
 
 function showOrders(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const el=document.getElementById('orders-list');if(!my.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет выполненных заказов</p>';return;}el.innerHTML=my.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB</div>${o.promoCode&&promos[o.promoCode]&&!promos[o.promoCode].used?`<div class="promo-code-display">🎁 ${o.promoCode}</div>`:''}</div>`).join('');}
-function showAllOrders(){if(!isAdmin)return;const el=document.getElementById('all-orders-list');if(!orders.length){el.innerHTML='<p>Нет</p>';return;}el.innerHTML=orders.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong> | ${o.userName}</div><div style="font-size:12px;">${o.total} RUB | ${o.payment||''}</div><span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>${o.status==='pending'?`<div><button class="btn-sm btn-complete" onclick="completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="btn-sm btn-delete" onclick="cancelOrder('${o.id}')">❌</button></div>`:''}</div>`).join('');}
+
+// ПРОСМОТР ДЕТАЛЕЙ ЗАКАЗА ДЛЯ АДМИНА
+function showAllOrders(){
+  if(!isAdmin)return;
+  const el=document.getElementById('all-orders-list');
+  if(!orders.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет заказов</p>';return;}
+  el.innerHTML=orders.reverse().map(o=>`
+    <div class="order-card" style="cursor:pointer;" onclick="showOrderDetail('${o.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div><strong>#${o.id}</strong> | ${o.userName}</div>
+          <div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div>
+          <div style="font-size:12px;opacity:0.6;">📱 ${o.userContact}${o.userUsername?' | @'+o.userUsername:''}</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
+          <div style="margin-top:8px;">
+            <button class="btn-sm btn-view" onclick="event.stopPropagation();showOrderDetail('${o.id}')">👁 Открыть</button>
+            ${o.status==='pending'?`<button class="btn-sm btn-complete" onclick="event.stopPropagation();completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="btn-sm btn-delete" onclick="event.stopPropagation();cancelOrder('${o.id}')">❌</button>`:''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.showOrderDetail=function(orderId){
+  const order=orders.find(o=>o.id===orderId);
+  if(!order)return;
+  const el=document.getElementById('order-detail-content');
+  let html=`
+    <div class="order-detail-card">
+      <h3 style="margin-top:0;">Заказ #${order.id}</h3>
+      <div style="font-size:13px;opacity:0.8;margin-bottom:12px;">
+        👤 ${order.userName} | 📱 ${order.userContact}${order.userUsername?' | 💬 @'+order.userUsername:''}<br>
+        📅 ${new Date(order.date).toLocaleString()} | 💳 ${order.payment||'Не указано'}
+      </div>
+      <div style="font-weight:600;margin-bottom:8px;">📋 Товары (${order.items.length}):</div>
+  `;
+  order.items.forEach((item,i)=>{
+    html+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
+  });
+  if(order.discount>0){
+    html+=`<div class="order-detail-item"><span>🎫 Скидка (${order.promoApplied?order.promoApplied.discount:''}%)</span><span>-${order.discount} ₽</span></div>`;
+  }
+  html+=`<div class="order-detail-total">Итого: ${order.total} ₽</div>`;
+  
+  const statusNames={pending:'⏳ Ожидает',completed:'✅ Выполнен',cancelled:'❌ Отменён'};
+  html+=`<div style="text-align:center;margin-top:12px;"><span class="order-status ${order.status==='completed'?'status-completed':order.status==='cancelled'?'status-cancelled':'status-pending'}">${statusNames[order.status]}</span></div>`;
+  
+  if(order.status==='pending'){
+    html+=`<div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="admin-action-btn btn-green" onclick="completeOrder('${order.id}',${order.subtotal});closePanel('order-detail');">✅ Выполнить</button>
+      <button class="admin-action-btn btn-red" onclick="cancelOrder('${order.id}');closePanel('order-detail');">❌ Отменить</button>
+    </div>`;
+  }
+  html+=`</div>`;
+  
+  el.innerHTML=html;
+  document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('order-detail-panel').classList.add('active');
+  activePanel='order-detail';
+};
 
 window.completeOrder=async function(oid,sub){if(!isAdmin||!confirm('Выполнить?'))return;const up={status:'completed',completedAt:Date.now()};let promo=null;if(sub>=800){promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();up.promoCode=promo;db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),type:'auto'});}await db.ref('orders/'+oid).update(up);const order=(await db.ref('orders/'+oid).once('value')).val();if(order){const user=(await db.ref('users/'+order.userId).once('value')).val();if(user?.telegramId){let txt='🎉 *Заказ #'+oid+' выполнен!*';if(promo)txt+='\n\n🎁 *Промокод 15%:* `'+promo+'`';try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:txt,parse_mode:'Markdown'})});}catch(e){}}}alert('✅');showAllOrders();updateAdminEarnings();};
-window.cancelOrder=function(oid){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+oid).update({status:'cancelled'});};
+window.cancelOrder=function(oid){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+oid).update({status:'cancelled'});showAllOrders();};
 
 window.applyPromo=function(){const input=document.getElementById('promo-input').value.trim().toUpperCase();if(!input)return;if(promos[input]){if(promos[input].used){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Использован</span>';return;}appliedPromo={code:input,discount:promos[input].discount};document.getElementById('promo-message').innerHTML='<span style="color:var(--success);">-'+promos[input].discount+'%</span>';showCart();}else{document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Не найден</span>';}};
 
