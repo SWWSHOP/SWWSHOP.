@@ -96,7 +96,6 @@
     #verify-overlay .v-input { width: 100%; padding: 12px; background: #1a2235; border: 2px solid #1e293b; border-radius: 12px; color: #fff; font-size: 18px; text-align: center; letter-spacing: 6px; font-family: 'Courier New', monospace; outline: none; margin-bottom: 14px; }
     #verify-overlay .v-btn { width: 100%; padding: 13px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
     
-    /* РУЛЕТКА */
     .slot-container { text-align: center; padding: 20px; background: var(--card-bg); border-radius: 16px; margin: 10px 0; }
     .slot-machine { width: 200px; height: 120px; margin: 0 auto 20px; overflow: hidden; position: relative; background: #0a0e17; border-radius: 16px; border: 3px solid var(--accent); }
     .slot-reel { position: absolute; width: 100%; top: 0; left: 0; transition: transform 5s cubic-bezier(0.15, 0.55, 0.35, 1); }
@@ -107,8 +106,6 @@
     .roulette-result { margin-top: 16px; font-size: 16px; font-weight: 600; min-height: 40px; }
     .roulette-timer { text-align: center; font-size: 14px; color: var(--warning); margin-top: 8px; }
     .admin-roulette-note { font-size: 12px; color: #10b981; margin-top: 4px; }
-    
-    /* Детали заказа */
     .order-detail-card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
     .order-detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
     .order-detail-total { font-size: 18px; font-weight: 700; text-align: right; color: var(--accent); margin-top: 12px; }
@@ -256,7 +253,7 @@ function getEarnings(){const ds=new Date();ds.setHours(0,0,0,0);const ws=new Dat
 function registerUser(){const tgU=window.Telegram?.WebApp?.initDataUnsafe?.user;const uid=getUserId();const ud={id:uid,firstSeen:Date.now(),lastSeen:Date.now(),visitCount:1};if(tgU){ud.telegramId=tgU.id;ud.firstName=tgU.first_name;ud.username=tgU.username||'';}db.ref('users/'+uid).once('value').then(s=>{const ex=s.val();if(ex)db.ref('users/'+uid).update({lastSeen:Date.now(),visitCount:(ex.visitCount||1)+1});else db.ref('users/'+uid).set(ud);});}
 
 db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();}});
-db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];updateUI();});
+db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];console.log('📋 Заказы загружены:',orders.length);updateUI();});
 db.ref('promos').on('value',s=>{promos=s.val()||{};updateUI();});
 db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
 db.ref('settings/lastRouletteTime').on('value',s=>{const v=s.val();if(v&&v>lastSpin){lastSpin=v;localStorage.setItem('swwshop_roulette_time',v.toString());updateRouletteTimer();}});
@@ -292,63 +289,66 @@ window.sendBroadcast=async function(){if(!isAdmin)return;const msg=document.getE
 
 function showOrders(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const el=document.getElementById('orders-list');if(!my.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет выполненных заказов</p>';return;}el.innerHTML=my.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB</div>${o.promoCode&&promos[o.promoCode]&&!promos[o.promoCode].used?`<div class="promo-code-display">🎁 ${o.promoCode}</div>`:''}</div>`).join('');}
 
-// ПРОСМОТР ДЕТАЛЕЙ ЗАКАЗА ДЛЯ АДМИНА
 function showAllOrders(){
   if(!isAdmin)return;
   const el=document.getElementById('all-orders-list');
-  if(!orders.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет заказов</p>';return;}
-  el.innerHTML=orders.reverse().map(o=>`
-    <div class="order-card" style="cursor:pointer;" onclick="showOrderDetail('${o.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div><strong>#${o.id}</strong> | ${o.userName}</div>
-          <div style="font-size:12px;opacity:0.7;">${new Date(o.date).toLocaleString()} | ${o.items.length} поз. | ${o.total} RUB | ${o.payment||''}</div>
-          <div style="font-size:12px;opacity:0.6;">📱 ${o.userContact}${o.userUsername?' | @'+o.userUsername:''}</div>
+  if(!orders.length){el.innerHTML='<p style="text-align:center;opacity:0.5;padding:20px;">Нет заказов</p>';return;}
+  const sortedOrders=[...orders].sort((a,b)=>(b.date||0)-(a.date||0));
+  el.innerHTML=sortedOrders.map(o=>{
+    const statusNames={pending:'⏳ Ожидает',completed:'✅ Выполнен',cancelled:'❌ Отменён'};
+    const statusClasses={pending:'status-pending',completed:'status-completed',cancelled:'status-cancelled'};
+    const itemCount=o.items?o.items.length:0;
+    const total=o.total||0;
+    const payment=o.payment||'Не указано';
+    const contact=o.userContact||'Нет контакта';
+    const username=o.userUsername?' | @'+o.userUsername:'';
+    return `<div class="order-card" style="cursor:pointer;" onclick="showOrderDetail('${o.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div><strong>#${o.id}</strong> | ${o.userName||'Без имени'}</div>
+          <div style="font-size:12px;opacity:0.7;">${new Date(o.date||Date.now()).toLocaleString()} | ${itemCount} поз. | ${total} RUB</div>
+          <div style="font-size:12px;opacity:0.6;">📱 ${contact}${username} | 💳 ${payment}</div>
         </div>
-        <div style="text-align:right;">
-          <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${{pending:'Ожидает',completed:'Выполнен',cancelled:'Отменён'}[o.status]}</span>
-          <div style="margin-top:8px;">
-            <button class="btn-sm btn-view" onclick="event.stopPropagation();showOrderDetail('${o.id}')">👁 Открыть</button>
-            ${o.status==='pending'?`<button class="btn-sm btn-complete" onclick="event.stopPropagation();completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="btn-sm btn-delete" onclick="event.stopPropagation();cancelOrder('${o.id}')">❌</button>`:''}
+        <div style="text-align:right;flex-shrink:0;">
+          <span class="order-status ${statusClasses[o.status]||'status-pending'}">${statusNames[o.status]||'Ожидает'}</span>
+          <div style="margin-top:6px;">
+            <button class="btn-sm btn-view" onclick="event.stopPropagation();showOrderDetail('${o.id}')">👁</button>
+            ${o.status==='pending'?`<button class="btn-sm btn-complete" onclick="event.stopPropagation();completeOrder('${o.id}',${o.subtotal||0})">✅</button> <button class="btn-sm btn-delete" onclick="event.stopPropagation();cancelOrder('${o.id}')">❌</button>`:''}
           </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 window.showOrderDetail=function(orderId){
   const order=orders.find(o=>o.id===orderId);
-  if(!order)return;
+  if(!order)return alert('Заказ не найден');
   const el=document.getElementById('order-detail-content');
-  let html=`
-    <div class="order-detail-card">
-      <h3 style="margin-top:0;">Заказ #${order.id}</h3>
-      <div style="font-size:13px;opacity:0.8;margin-bottom:12px;">
-        👤 ${order.userName} | 📱 ${order.userContact}${order.userUsername?' | 💬 @'+order.userUsername:''}<br>
-        📅 ${new Date(order.date).toLocaleString()} | 💳 ${order.payment||'Не указано'}
-      </div>
-      <div style="font-weight:600;margin-bottom:8px;">📋 Товары (${order.items.length}):</div>
-  `;
-  order.items.forEach((item,i)=>{
-    html+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
-  });
-  if(order.discount>0){
-    html+=`<div class="order-detail-item"><span>🎫 Скидка (${order.promoApplied?order.promoApplied.discount:''}%)</span><span>-${order.discount} ₽</span></div>`;
-  }
-  html+=`<div class="order-detail-total">Итого: ${order.total} ₽</div>`;
-  
   const statusNames={pending:'⏳ Ожидает',completed:'✅ Выполнен',cancelled:'❌ Отменён'};
-  html+=`<div style="text-align:center;margin-top:12px;"><span class="order-status ${order.status==='completed'?'status-completed':order.status==='cancelled'?'status-cancelled':'status-pending'}">${statusNames[order.status]}</span></div>`;
-  
+  const statusClasses={pending:'status-pending',completed:'status-completed',cancelled:'status-cancelled'};
+  let html=`<div class="order-detail-card">
+    <h3 style="margin-top:0;">Заказ #${order.id}</h3>
+    <div style="font-size:13px;opacity:0.8;margin-bottom:12px;">
+      👤 ${order.userName||'Без имени'}<br>
+      📱 ${order.userContact||'Нет контакта'}${order.userUsername?' | 💬 @'+order.userUsername:''}<br>
+      📅 ${new Date(order.date||Date.now()).toLocaleString()}<br>
+      💳 ${order.payment||'Не указано'}
+    </div>
+    <div style="font-weight:600;margin-bottom:8px;">📋 Товары (${order.items?order.items.length:0}):</div>`;
+  if(order.items&&order.items.length>0){
+    order.items.forEach((item,i)=>{html+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;});
+  }else{html+='<p style="opacity:0.5;">Нет товаров</p>';}
+  if(order.discount>0){html+=`<div class="order-detail-item"><span>🎫 Скидка</span><span>-${order.discount} ₽</span></div>`;}
+  html+=`<div class="order-detail-total">Итого: ${order.total||0} ₽</div>`;
+  html+=`<div style="text-align:center;margin-top:12px;"><span class="order-status ${statusClasses[order.status]||'status-pending'}">${statusNames[order.status]||'Ожидает'}</span></div>`;
   if(order.status==='pending'){
     html+=`<div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="admin-action-btn btn-green" onclick="completeOrder('${order.id}',${order.subtotal});closePanel('order-detail');">✅ Выполнить</button>
-      <button class="admin-action-btn btn-red" onclick="cancelOrder('${order.id}');closePanel('order-detail');">❌ Отменить</button>
+      <button class="admin-action-btn btn-green" onclick="completeOrder('${order.id}',${order.subtotal||0});closePanel('order-detail');showAllOrders();">✅ Выполнить</button>
+      <button class="admin-action-btn btn-red" onclick="cancelOrder('${order.id}');closePanel('order-detail');showAllOrders();">❌ Отменить</button>
     </div>`;
   }
   html+=`</div>`;
-  
   el.innerHTML=html;
   document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('order-detail-panel').classList.add('active');
@@ -385,24 +385,8 @@ window.toggleItem=function(c,i){if(!isAdmin)return;data[c][i].inStock=!data[c][i
 window.toggleFlavor=function(c,l,f){if(!isAdmin)return;data[c][l].flavors[f].inStock=!data[c][l].flavors[f].inStock;db.ref('assortment').set(data);showDetail(c,l);};
 window.updateDelSelect=function(){const c=document.getElementById('del-category')?.value;const s=document.getElementById('del-item');if(!s||!data[c])return;s.innerHTML='<option value="">-- Выберите --</option>';data[c].forEach((item,i)=>{s.innerHTML+='<option value="'+i+'">'+item.name+'</option>';});};
 
-window.adminLogin=function(){
-  if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){
-    isAdmin=true;
-    document.getElementById('admin-login-area').style.display='none';
-    document.getElementById('admin-controls-area').style.display='block';
-    updateAdminUI();updateAdminEarnings();showMain();updateRouletteTimer();
-  }else alert('Неверный пароль!');
-};
-
-window.adminLogout=function(){
-  isAdmin=false;
-  document.getElementById('admin-login-area').style.display='block';
-  document.getElementById('admin-controls-area').style.display='none';
-  document.getElementById('admin-panel').classList.remove('active');
-  activePanel=null;
-  updateAdminUI();showMain();updateRouletteTimer();
-};
-
+window.adminLogin=function(){if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){isAdmin=true;document.getElementById('admin-login-area').style.display='none';document.getElementById('admin-controls-area').style.display='block';updateAdminUI();updateAdminEarnings();showMain();updateRouletteTimer();}else alert('Неверный пароль!');};
+window.adminLogout=function(){isAdmin=false;document.getElementById('admin-login-area').style.display='block';document.getElementById('admin-controls-area').style.display='none';document.getElementById('admin-panel').classList.remove('active');activePanel=null;updateAdminUI();showMain();updateRouletteTimer();};
 window.addLine=function(){if(!isAdmin)return;const n=document.getElementById('line-name').value.trim(),p=parseInt(document.getElementById('line-price').value),c=document.getElementById('line-category').value,ft=document.getElementById('line-flavors').value.trim();if(!n||!p||!ft)return alert('Заполните!');const fl=ft.split('\n').filter(l=>l.trim()).map(l=>{const a=l.split(',');return{name:a[0].trim(),inStock:a[1]?.trim().toUpperCase()==='YES'};});if(!fl.length)return alert('Минимум 1 вкус!');data[c].push({name:n,price:p,flavors:fl});db.ref('assortment').set(data);alert('✅ Добавлено!');document.getElementById('line-name').value='';document.getElementById('line-price').value='';document.getElementById('line-flavors').value='';showMain();};
 window.addItem=function(){if(!isAdmin)return;const n=document.getElementById('item-name').value.trim(),p=parseInt(document.getElementById('item-price').value),c=document.getElementById('item-category').value,q=parseInt(document.getElementById('item-qty').value)||0;if(!n||!p)return alert('Заполните!');data[c].push({name:n,price:p,inStock:q>0});db.ref('assortment').set(data);alert('✅ Добавлено!');document.getElementById('item-name').value='';document.getElementById('item-price').value='';document.getElementById('item-qty').value='';showMain();};
 window.deleteSelected=function(){if(!isAdmin)return;const c=document.getElementById('del-category').value,i=parseInt(document.getElementById('del-item').value);if(isNaN(i))return alert('Выберите товар!');if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showMain();}};
