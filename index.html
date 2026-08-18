@@ -172,6 +172,8 @@ const db=firebase.database();
 
 // ============ БОТ С СИНХРОНИЗАЦИЕЙ ТОВАРОВ ============
 let lastUpdateId=0;
+const userStates = {};
+
 async function checkBot(){
   try{
     const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);
@@ -180,20 +182,38 @@ async function checkBot(){
       for(const u of data.result){
         lastUpdateId=u.update_id;
         if(u.message?.text){
-          const m=u.message,chatId=m.chat.id,text=m.text,firstName=m.from.first_name;
+          const m=u.message,chatId=m.chat.id,text=m.text.trim(),firstName=m.from.first_name;
           let r='';
           let keyboard=null;
           
-          // /start - приветствие
+          // /start - приветствие с описанием команд
           if(text==='/start'){
             r=`🛍 *Добро пожаловать в SWWSHOP, ${firstName}!*\n\n`+
-              `Магазин жидкостей, шайб, испарителей.\n\n`+
-              `📋 *Команды:*\n`+
-              `/catalog — товары\n`+
-              `/s — статистика\n`+
-              `/orders — мои заказы\n`+
-              `/promo — промокоды`;
-            keyboard={inline_keyboard:[[{text:'🛍 Открыть каталог',url:'https://t.me/your_bot/app'}]]};
+              `🏪 Магазин жидкостей, шайб, испарителей и устройств.\n\n`+
+              `📋 *Доступные команды:*\n`+
+              `/catalog — 📂 Посмотреть каталог\n`+
+              `/buy — 🛒 Оформить заказ\n`+
+              `/cart — 🛍 Моя корзина\n`+
+              `/orders — 📋 Мои заказы\n`+
+              `/promo — 🎫 Мои промокоды\n`+
+              `/help — ❓ Помощь\n\n`+
+              `Нажмите кнопку ниже, чтобы открыть магазин.`;
+            keyboard={
+              inline_keyboard: [
+                [{text:'🛍 Открыть магазин', url:'https://t.me/SWWSHOPBOT/app'}]
+              ]
+            };
+          }
+          
+          // /help - помощь
+          else if(text==='/help'){
+            r=`🆘 *Помощь по командам:*\n\n`+
+              `/catalog — просмотр товаров по категориям\n`+
+              `/buy — оформление заказа с выбором товаров\n`+
+              `/cart — просмотр корзины\n`+
+              `/orders — история заказов\n`+
+              `/promo — ваши промокоды\n`+
+              `/start — главное меню`;
           }
           
           // /catalog - показать категории
@@ -201,76 +221,353 @@ async function checkBot(){
             const snap=await db.ref('assortment').once('value');
             const catalog=snap.val()||{};
             const cats={liquids:'💧 Жидкости',pouches:'👄 Шайбы',coils:'🔄 Испарители',devices:'📱 Устройства'};
-            r='📋 *Каталог:*\n\n';
+            r='📋 *Каталог SWWSHOP:*\n\n';
             for(const [key,label] of Object.entries(cats)){
               const items=catalog[key]||[];
-              r+=`${label}: *${items.length}* поз.\n`;
+              r+=`${label}: *${items.length}* позиций\n`;
             }
-            keyboard={inline_keyboard:Object.entries(cats).map(([key,label])=>[{text:label,url:`https://t.me/your_bot/app?category=${key}`}])};
+            r+=`\nВыберите категорию:\n/category_liquids\n/category_pouches\n/category_coils\n/category_devices`;
           }
           
-          // /category_liquids - показать товары категории
+          // /category_* - показать товары категории
           else if(text.startsWith('/category_')){
             const cat=text.replace('/category_','');
             const snap=await db.ref('assortment/'+cat).once('value');
             const items=snap.val()||[];
-            if(items.length===0){r='В этой категории пока нет товаров.';}
-            else{
-              r=`📋 *Товары:*\n\n`;
-              items.forEach((item,i)=>{
-                if(item.flavors){
+            const catNames={liquids:'💧 Жидкости',pouches:'👄 Шайбы',coils:'🔄 Испарители',devices:'📱 Устройства'};
+            if(items.length===0){
+              r=`В категории "${catNames[cat]}" пока нет товаров.`;
+            }else{
+              r=`📋 *${catNames[cat]}*:\n\n`;
+              if(cat==='liquids'||cat==='pouches'){
+                items.forEach((item,i)=>{
                   r+=`${i+1}. *${item.name}* — ${item.price}₽\n`;
-                  item.flavors.filter(f=>f.inStock).forEach(f=>{
-                    r+=`   • ${f.name} — ${item.price}₽\n`;
-                  });
-                }else{
+                  if(item.flavors){
+                    const available = item.flavors.filter(f=>f.inStock).map(f=>f.name).join(', ');
+                    r+=`   🍃 Вкусы: ${available || 'нет в наличии'}\n`;
+                  }
+                  r+=`   ➕ Добавить: /add_${cat}_${i}\n\n`;
+                });
+              }else{
+                items.forEach((item,i)=>{
                   r+=`${i+1}. *${item.name}* — ${item.price}₽ ${item.inStock?'✅':'❌'}\n`;
-                }
-              });
-              r+=`\nДля заказа нажмите кнопку меню.`;
+                  if(item.inStock) r+=`   ➕ /add_${cat}_${i}\n\n`;
+                });
+              }
+              r+=`\nДля оформления заказа используйте /buy`;
             }
           }
           
-          // /s - статистика
-          else if(text==='/s'||text==='/stats'){
-            const us=await db.ref('users').once('value');
-            const os=await db.ref('orders').once('value');
-            const users=us.val()||{},orders=os.val()||{};
-            const oList=Object.values(orders);
-            r=`📊 *Статистика*\n\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${oList.length}*\n✅ Выполнено: *${oList.filter(o=>o.status==='completed').length}*\n⏳ Ожидают: *${oList.filter(o=>o.status==='pending').length}*`;
+          // /add_* - добавление в корзину
+          else if(text.startsWith('/add_')){
+            const parts = text.split('_');
+            if(parts.length === 3){
+              const cat = parts[1];
+              const idx = parseInt(parts[2]);
+              const snap = await db.ref('assortment/'+cat).once('value');
+              const items = snap.val()||[];
+              if(items[idx]){
+                const item = items[idx];
+                if(cat==='liquids'||cat==='pouches'){
+                  const flavors = item.flavors?.filter(f=>f.inStock)||[];
+                  if(flavors.length===1){
+                    cart.push({name:flavors[0].name+' ('+item.name+')', price:item.price});
+                    saveCart();
+                    r=`✅ *${flavors[0].name}* (${item.name}) добавлен в корзину!\nЦена: ${item.price}₽\n\nПродолжить: /buy или /catalog`;
+                  }else if(flavors.length>1){
+                    r=`🍃 *Выберите вкус для ${item.name}:*\n\n`;
+                    flavors.forEach((f,i)=>{
+                      r+=`/addflavor_${cat}_${idx}_${i} — ${f.name}\n`;
+                    });
+                    r+=`\nИли перейдите в каталог: /catalog`;
+                  }else{
+                    r=`❌ К сожалению, этот товар временно отсутствует.`;
+                  }
+                }else{
+                  if(item.inStock){
+                    cart.push({name:item.name, price:item.price});
+                    saveCart();
+                    r=`✅ *${item.name}* добавлен в корзину!\nЦена: ${item.price}₽\n\nПродолжить: /buy или /catalog`;
+                  }else{
+                    r=`❌ Товар *${item.name}* отсутствует.`;
+                  }
+                }
+              }else{
+                r=`❌ Товар не найден.`;
+              }
+            }
+          }
+          
+          // /addflavor_* - добавление вкуса
+          else if(text.startsWith('/addflavor_')){
+            const parts = text.split('_');
+            if(parts.length === 5){
+              const cat = parts[1];
+              const idx = parseInt(parts[2]);
+              const fidx = parseInt(parts[3]);
+              const snap = await db.ref('assortment/'+cat).once('value');
+              const items = snap.val()||[];
+              if(items[idx] && items[idx].flavors && items[idx].flavors[fidx]){
+                const flavor = items[idx].flavors[fidx];
+                if(flavor.inStock){
+                  cart.push({name:flavor.name+' ('+items[idx].name+')', price:items[idx].price});
+                  saveCart();
+                  r=`✅ *${flavor.name}* (${items[idx].name}) добавлен в корзину!\nЦена: ${items[idx].price}₽\n\nПродолжить: /buy или /catalog`;
+                }else{
+                  r=`❌ Этот вкус временно отсутствует.`;
+                }
+              }else{
+                r=`❌ Вкус не найден.`;
+              }
+            }
+          }
+          
+          // /cart - показать корзину
+          else if(text==='/cart'){
+            if(cart.length===0){
+              r=`🛍 *Корзина пуста*\n\nДобавьте товары через каталог: /catalog`;
+            }else{
+              let total = 0;
+              r=`🛍 *Ваша корзина:*\n\n`;
+              cart.forEach((item,i)=>{
+                r+=`${i+1}. ${item.name} — ${item.price}₽\n`;
+                total += item.price;
+              });
+              r+=`\n💰 *Итого:* ${total}₽`;
+              if(appliedPromo){
+                const disc = Math.round(total * appliedPromo.discount / 100);
+                r+=`\n🎫 *Промокод:* ${appliedPromo.code} (-${appliedPromo.discount}%) = ${total - disc}₽`;
+              }
+              r+=`\n\nДля оформления: /buy\nОчистить: /clearcart`;
+            }
+          }
+          
+          // /clearcart - очистить корзину
+          else if(text==='/clearcart'){
+            cart = [];
+            appliedPromo = null;
+            saveCart();
+            r=`🗑 Корзина очищена.`;
+          }
+          
+          // /buy - начать оформление заказа
+          else if(text==='/buy'){
+            if(cart.length===0){
+              r=`🛍 *Корзина пуста!*\nДобавьте товары через /catalog\n\nИли используйте /catalog для просмотра.`;
+            }else{
+              userStates[chatId] = { step: 'name' };
+              r=`📝 *Оформление заказа*\n\nВведите ваше *Имя*:`;
+            }
+          }
+          
+          // /promo - показать промокоды
+          else if(text==='/promo'){
+            const ps=await db.ref('promos').once('value');
+            const promos=ps.val()||{};
+            const userId = getUserId();
+            const myPromos=Object.entries(promos).filter(([c,p])=>p.userId===userId || !p.userId);
+            if(myPromos.length===0){
+              r=`🎫 У вас пока нет промокодов.\n\nИспользуйте /roulette для получения скидки!`;
+            }else{
+              r=`🎫 *Ваши промокоды:*\n\n`;
+              myPromos.forEach(([c,p])=>{
+                r+=`• \`${c}\` — ${p.discount}% ${p.used?'❌ (использован)':'✅ (доступен)'}\n`;
+              });
+              r+=`\nДля применения промокода при заказе используйте /buy`;
+            }
           }
           
           // /orders - мои заказы
           else if(text==='/orders'){
             const os=await db.ref('orders').once('value');
             const orders=os.val()||{};
-            const myOrders=Object.values(orders).filter(o=>o.userId==='tg_'+m.from.id);
-            if(myOrders.length===0){r='📋 У вас пока нет заказов.';}
-            else{r='📋 *Ваши заказы:*\n\n';myOrders.reverse().forEach(o=>{const st=o.status==='completed'?'✅':o.status==='pending'?'⏳':'❌';r+=`${st} #${o.id} — ${o.total}₽\n`;});}
+            const userId = getUserId();
+            const myOrders=Object.values(orders).filter(o=>o.userId===userId);
+            if(myOrders.length===0){
+              r=`📋 У вас пока нет заказов.\n\nСделайте заказ через /buy`;
+            }else{
+              r=`📋 *Ваши заказы:*\n\n`;
+              myOrders.reverse().forEach(o=>{
+                const st = o.status==='completed' ? '✅ Выполнен' : o.status==='pending' ? '⏳ Ожидает' : '❌ Отменён';
+                r+=`#${o.id} — ${o.total}₽ — ${st}\n`;
+              });
+            }
           }
           
-          // /promo - мои промокоды
-          else if(text==='/promo'){
-            const ps=await db.ref('promos').once('value');
-            const promos=ps.val()||{};
-            const myPromos=Object.entries(promos).filter(([c,p])=>p.userId==='tg_'+m.from.id);
-            if(myPromos.length===0){r='🎫 У вас пока нет промокодов.';}
-            else{r='🎫 *Ваши промокоды:*\n\n';myPromos.forEach(([c,p])=>{r+=`• \`${c}\` — ${p.discount}% ${p.used?'(исп.)':'(доступен)'}\n`;});}
+          // /roulette - информация о рулетке
+          else if(text==='/roulette'){
+            r=`🎰 *Колесо удачи*\n\nКаждую неделю вы можете крутить колесо и получить промокод со скидкой до 15%!\n\nИспользуйте кнопку 🎰 в меню магазина.`;
           }
           
-          // /help
-          else if(text==='/help'){
-            r=`🆘 *Помощь*\n\n/catalog — товары\n/s — статистика\n/orders — заказы\n/promo — промокоды`;
+          // ОБРАБОТКА СОСТОЯНИЙ ДЛЯ /buy
+          if(userStates[chatId]){
+            const state = userStates[chatId];
+            
+            // Шаг 1: Имя
+            if(state.step === 'name'){
+              state.name = text;
+              state.step = 'contact';
+              r = `📝 Отлично, *${text}*!\n\nТеперь введите ваш *контакт* (телефон или @username):`;
+            }
+            
+            // Шаг 2: Контакт
+            else if(state.step === 'contact'){
+              state.contact = text;
+              state.step = 'payment';
+              r = `📞 Спасибо!\n\nВыберите *способ оплаты*:\n\n/Наличные\n/Безналичные\n/Смешанная`;
+            }
+            
+            // Шаг 3: Способ оплаты
+            else if(state.step === 'payment'){
+              const paymentMethods = ['Наличные', 'Безналичные', 'Смешанная'];
+              let payment = null;
+              for(const method of paymentMethods){
+                if(text.toLowerCase().includes(method.toLowerCase())){
+                  payment = method;
+                  break;
+                }
+              }
+              if(!payment){
+                r = `❌ Пожалуйста, выберите один из вариантов:\n\n/Наличные\n/Безналичные\n/Смешанная`;
+              }else{
+                state.payment = payment;
+                state.step = 'promo';
+                r = `💳 Способ оплаты: *${payment}*\n\nЕсть ли у вас промокод? Введите его или нажмите /skip`;
+              }
+            }
+            
+            // Шаг 4: Промокод
+            else if(state.step === 'promo'){
+              if(text.toLowerCase() === '/skip'){
+                state.promo = null;
+              }else{
+                const promoCode = text.toUpperCase();
+                const ps = await db.ref('promos').once('value');
+                const promos = ps.val()||{};
+                if(promos[promoCode] && !promos[promoCode].used){
+                  const userId = getUserId();
+                  if(!promos[promoCode].userId || promos[promoCode].userId === userId){
+                    state.promo = { code: promoCode, discount: promos[promoCode].discount };
+                    r = `✅ Промокод *${promoCode}* применён (скидка ${promos[promoCode].discount}%)!`;
+                  }else{
+                    state.promo = null;
+                    r = `❌ Этот промокод не для вас. Продолжаем без скидки.`;
+                  }
+                }else{
+                  state.promo = null;
+                  r = `❌ Промокод недействителен. Продолжаем без скидки.`;
+                }
+              }
+              
+              // Подтверждение заказа
+              if(!r) r = '✅ Продолжаем без промокода.';
+              let total = cart.reduce((s,i)=>s+i.price,0);
+              let disc = state.promo ? Math.round(total * state.promo.discount / 100) : 0;
+              let finalTotal = total - disc;
+              
+              r += `\n\n📋 *Проверьте заказ:*\n`;
+              cart.forEach((item,i)=>{
+                r += `${i+1}. ${item.name} — ${item.price}₽\n`;
+              });
+              r += `\n💰 Сумма: ${total}₽`;
+              if(disc > 0) r += `\n🎫 Скидка: -${disc}₽`;
+              r += `\n💳 Итого: *${finalTotal}₽*`;
+              r += `\n\n👤 Имя: ${state.name}\n📞 Контакт: ${state.contact}\n💳 Оплата: ${state.payment}`;
+              r += `\n\nПодтвердите заказ: /confirm\nОтменить: /cancel`;
+              
+              state.step = 'confirm';
+            }
+            
+            // Шаг 5: Подтверждение
+            else if(state.step === 'confirm'){
+              if(text === '/confirm'){
+                // Сохраняем заказ
+                const oid = 'SWW-'+Date.now().toString(36).toUpperCase().slice(-6);
+                const uid = getUserId();
+                const total = cart.reduce((s,i)=>s+i.price,0);
+                const disc = state.promo ? Math.round(total * state.promo.discount / 100) : 0;
+                const finalTotal = total - disc;
+                
+                await db.ref('orders/'+oid).set({
+                  id: oid,
+                  userId: uid,
+                  userName: state.name,
+                  userContact: state.contact,
+                  items: [...cart],
+                  subtotal: total,
+                  discount: disc,
+                  total: finalTotal,
+                  payment: state.payment,
+                  status: 'pending',
+                  date: Date.now(),
+                  promoCode: state.promo?.code || null
+                });
+                
+                if(state.promo){
+                  await db.ref('promos/'+state.promo.code).update({
+                    used: true,
+                    usedBy: uid,
+                    usedAt: Date.now()
+                  });
+                }
+                
+                // Уведомление админу
+                await sendAdminNotification(`🆕 *Новый заказ!*\n\n#${oid}\n👤 ${state.name}\n📞 ${state.contact}\n💰 ${finalTotal}₽\n💳 ${state.payment}\n📦 ${cart.length} товаров`);
+                
+                cart = [];
+                appliedPromo = null;
+                saveCart();
+                delete userStates[chatId];
+                
+                r = `✅ *Заказ #${oid} оформлен!*\n\nСпасибо за покупку!\nСкоро с вами свяжутся.\n\n📋 Статус заказа: /orders`;
+              }else if(text === '/cancel'){
+                delete userStates[chatId];
+                r = `❌ Заказ отменён.\n\nДля нового заказа используйте /buy`;
+              }else{
+                r = `❌ Для подтверждения нажмите /confirm, для отмены /cancel`;
+              }
+            }
           }
           
-          if(r)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:r,parse_mode:'Markdown',reply_markup:keyboard})});
+          // Отправка сообщения (с задержкой чтобы избежать flood)
+          if(r){
+            await new Promise(resolve => setTimeout(resolve, 300));
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                chat_id: chatId,
+                text: r,
+                parse_mode: 'Markdown',
+                reply_markup: keyboard
+              })
+            });
+          }
         }
       }
     }
-  }catch(e){}
-  setTimeout(checkBot,2000);
+  }catch(e){
+    console.log('Bot error:', e);
+  }
+  setTimeout(checkBot, 3000);
 }
 checkBot();
+
+// Функция отправки уведомления админу
+async function sendAdminNotification(text){
+  try{
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        chat_id: CHAT_ID,
+        text: text,
+        parse_mode: 'Markdown'
+      })
+    });
+  }catch(e){}
+}
 
 window.setTheme=function(t){document.body.className=t;localStorage.setItem('swwshop_theme',t);};
 setTheme(localStorage.getItem('swwshop_theme')||'telegram');
@@ -311,7 +608,26 @@ function showAllOrders(){if(!isAdmin)return;const el=document.getElementById('al
 
 window.showOrderDetail=function(oid){const o=orders.find(x=>x.id===oid);if(!o)return;const el=document.getElementById('order-detail-content');let h=`<div class="order-detail-card"><h3>#${o.id}</h3><p>👤 ${o.userName} | 📱 ${o.userContact} | 💳 ${o.payment}</p><strong>Товары:</strong>`;o.items.forEach((item,i)=>{h+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price}₽</span></div>`;});h+=`<div class="order-detail-total">Итого: ${o.total}₽</div>`;if(o.status==='pending'){h+=`<button class="admin-action-btn btn-green" onclick="completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="admin-action-btn btn-red" onclick="cancelOrder('${o.id}')">❌</button>`;}h+=`</div>`;el.innerHTML=h;document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));document.getElementById('order-detail-panel').classList.add('active');activePanel='order-detail';};
 
-window.completeOrder=async function(oid,sub){if(!isAdmin||!confirm('Выполнить?'))return;const up={status:'completed',completedAt:Date.now()};let promo=null;if(sub>=800){promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();up.promoCode=promo;const od=(await db.ref('orders/'+oid).once('value')).val();db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),type:'auto',userId:od.userId});}await db.ref('orders/'+oid).update(up);alert('✅'+(promo?' Промокод: '+promo:''));showAllOrders();};
+window.completeOrder=async function(oid,sub){if(!isAdmin||!confirm('Выполнить?'))return;const up={status:'completed',completedAt:Date.now()};let promo=null;if(sub>=800){promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();up.promoCode=promo;const od=(await db.ref('orders/'+oid).once('value')).val();db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),type:'auto',userId:od.userId});}await db.ref('orders/'+oid).update(up);
+
+// Уведомление пользователю о выполнении заказа
+const order = await db.ref('orders/'+oid).once('value');
+const orderData = order.val();
+if(orderData && orderData.userId){
+  const tgId = orderData.userId.replace('tg_','');
+  await sendAdminNotification(`✅ *Заказ #${oid} выполнен!*\n\nПользователь: ${orderData.userName}\nСумма: ${orderData.total}₽${promo ? '\n🎁 Промокод: '+promo : ''}`);
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      chat_id: tgId,
+      text: `✅ *Ваш заказ #${oid} выполнен!*\n\nСпасибо за покупку в SWWSHOP!${promo ? '\n\n🎁 Ваш промокод за заказ: *'+promo+'* (скидка 15%)' : ''}`,
+      parse_mode: 'Markdown'
+    })
+  });
+}
+alert('✅'+(promo?' Промокод: '+promo:''));
+showAllOrders();};
 window.cancelOrder=function(oid){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+oid).update({status:'cancelled'});showAllOrders();};
 
 function saveCart(){localStorage.setItem('swwshop_cart',JSON.stringify(cart));updateCartBadge();}
@@ -327,13 +643,66 @@ window.sendOrder=async function(){const name=document.getElementById('customer-n
 
 function stText(s){return s?'В наличии':'Нет';}function stClass(s){return s?'status-in-stock':'status-out-stock';}
 
-const ci={liquids:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="8" y="4" width="24" height="32" rx="6" fill="url(#l1)" stroke="#0096ff" stroke-width="1.5"/><defs><linearGradient id="l1"><stop offset="0%" stop-color="#0096ff" stop-opacity="0.3"/><stop offset="100%" stop-color="#0056b3" stop-opacity="0.5"/></linearGradient></defs></svg>`,pouches:`<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="16" r="10" fill="url(#p1)" stroke="#ff9600" stroke-width="1.5"/><circle cx="20" cy="16" r="3" fill="#ff9600"/><defs><linearGradient id="p1"><stop offset="0%" stop-color="#ff9600" stop-opacity="0.2"/><stop offset="100%" stop-color="#cc7a00" stop-opacity="0.4"/></linearGradient></defs></svg>`,coils:`<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="url(#c1)" stroke="#888" stroke-width="1.5"/><defs><linearGradient id="c1"><stop offset="0%" stop-color="#aaa" stop-opacity="0.2"/><stop offset="100%" stop-color="#555" stop-opacity="0.4"/></linearGradient></defs></svg>`,devices:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="6" y="4" width="28" height="22" rx="4" fill="url(#d1)" stroke="#64c864" stroke-width="1.5"/><defs><linearGradient id="d1"><stop offset="0%" stop-color="#64c864" stop-opacity="0.2"/><stop offset="100%" stop-color="#3a8a3a" stop-opacity="0.4"/></linearGradient></defs></svg>`};
+const ci={
+  liquids: `<svg class="section-icon" viewBox="0 0 40 40"><rect x="8" y="4" width="24" height="32" rx="6" fill="url(#l1)" stroke="#0096ff" stroke-width="1.5"/><defs><linearGradient id="l1"><stop offset="0%" stop-color="#0096ff" stop-opacity="0.3"/><stop offset="100%" stop-color="#0056b3" stop-opacity="0.5"/></linearGradient></defs></svg>`,
+  pouches: `<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="16" r="10" fill="url(#p1)" stroke="#ff9600" stroke-width="1.5"/><circle cx="20" cy="16" r="3" fill="#ff9600"/><defs><linearGradient id="p1"><stop offset="0%" stop-color="#ff9600" stop-opacity="0.2"/><stop offset="100%" stop-color="#cc7a00" stop-opacity="0.4"/></linearGradient></defs></svg>`,
+  coils: `<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="url(#c1)" stroke="#888" stroke-width="1.5"/><defs><linearGradient id="c1"><stop offset="0%" stop-color="#aaa" stop-opacity="0.2"/><stop offset="100%" stop-color="#555" stop-opacity="0.4"/></linearGradient></defs></svg>`,
+  devices: `<svg class="section-icon" viewBox="0 0 40 40"><rect x="6" y="4" width="28" height="22" rx="4" fill="url(#d1)" stroke="#64c864" stroke-width="1.5"/><defs><linearGradient id="d1"><stop offset="0%" stop-color="#64c864" stop-opacity="0.2"/><stop offset="100%" stop-color="#3a8a3a" stop-opacity="0.4"/></linearGradient></defs></svg>`
+};
 
-window.showMain=function(){currentView='main';const e=getEarnings();document.getElementById('app').innerHTML=`<h1 class="shop-title">SWWSHOP</h1><div style="text-align:center;"><div style="display:inline-block;padding:8px 16px;background:linear-gradient(135deg,rgba(94,163,217,0.2),rgba(46,204,113,0.2));border-radius:20px;font-size:14px;">👥 Пользователей: <span style="background:var(--accent);color:white;padding:2px 10px;border-radius:12px;">${getTotalUsers()}</span></div></div>${isAdmin?`<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${e.day} ₽</div></div></div>`:''}<p style="text-align:center;opacity:0.7;">Выберите категорию:</p><button class="category-btn" onclick="showCategory('liquids')">${ci.liquids} Жидкости</button><button class="category-btn" onclick="showCategory('pouches')">${ci.pouches} Шайбы</button><button class="category-btn" onclick="showCategory('coils')">${ci.coils} Испарители</button><button class="category-btn" onclick="showCategory('devices')">${ci.devices} Устройства</button>`;};
+window.showMain=function(){
+  currentView='main';
+  const e=getEarnings();
+  document.getElementById('app').innerHTML=`
+    <h1 class="shop-title">SWWSHOP</h1>
+    <div style="text-align:center;">
+      <div style="display:inline-block;padding:8px 16px;background:linear-gradient(135deg,rgba(94,163,217,0.2),rgba(46,204,113,0.2));border-radius:20px;font-size:14px;">
+        👥 Пользователей: <span style="background:var(--accent);color:white;padding:2px 10px;border-radius:12px;">${getTotalUsers()}</span>
+      </div>
+    </div>
+    ${isAdmin?`<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${e.day} ₽</div></div></div>`:''}
+    <p style="text-align:center;opacity:0.7;">Выберите категорию:</p>
+    <button class="category-btn" onclick="showCategory('liquids')">${ci.liquids} Жидкости</button>
+    <button class="category-btn" onclick="showCategory('pouches')">${ci.pouches} Шайбы</button>
+    <button class="category-btn" onclick="showCategory('coils')">${ci.coils} Испарители</button>
+    <button class="category-btn" onclick="showCategory('devices')">${ci.devices} Устройства</button>
+  `;
+};
 
-window.showCategory=function(cat){currentView='category';currentCategory=cat;const t={liquids:'Жидкости',pouches:'Шайбы',coils:'Испарители',devices:'Устройства'};let h='<button class="back-btn" onclick="showMain()">← Назад</button><h1>'+t[cat]+'</h1>';if(!data[cat]?.length){h+='<p>Нет товаров</p>';}else if(cat==='liquids'||cat==='pouches'){data[cat].forEach((l,i)=>{h+='<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+l.name+'</span><span>'+l.price+' ₽</span></button></div>';});}else{data[cat].forEach((item,i)=>{h+='<div class="product-row"><span>'+item.name+'</span><span>'+item.price+' ₽</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span>';h+=item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" disabled>Нет</button>';h+='</div>';});}document.getElementById('app').innerHTML=h;};
+window.showCategory=function(cat){
+  currentView='category';
+  currentCategory=cat;
+  const t={liquids:'Жидкости',pouches:'Шайбы',coils:'Испарители',devices:'Устройства'};
+  let h='<button class="back-btn" onclick="showMain()">← Назад</button><h1>'+t[cat]+'</h1>';
+  if(!data[cat]?.length){
+    h+='<p>Нет товаров</p>';
+  }else if(cat==='liquids'||cat==='pouches'){
+    data[cat].forEach((l,i)=>{
+      h+='<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+l.name+'</span><span>'+l.price+' ₽</span></button></div>';
+    });
+  }else{
+    data[cat].forEach((item,i)=>{
+      h+='<div class="product-row"><span>'+item.name+'</span><span>'+item.price+' ₽</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span>';
+      h+=item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" disabled>Нет</button>';
+      h+='</div>';
+    });
+  }
+  document.getElementById('app').innerHTML=h;
+};
 
-window.showDetail=function(cat,idx){currentView='detail';currentCategory=cat;currentIndex=idx;const line=data[cat][idx];let h='<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1>'+line.name+'</h1><p>'+line.price+' ₽</p><div class="section-title">Выберите вкус:</div>';line.flavors.forEach((f,fi)=>{h+='<div class="flavor-row"><span class="flavor-name">'+f.name+'</span><div class="flavor-actions"><span class="status-badge '+stClass(f.inStock)+'">'+stText(f.inStock)+'</span>';h+=f.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+f.name+'\')">🛒</button>':'<button class="add-to-cart-btn" disabled>Нет</button>';h+='</div></div>';});document.getElementById('app').innerHTML=h;};
+window.showDetail=function(cat,idx){
+  currentView='detail';
+  currentCategory=cat;
+  currentIndex=idx;
+  const line=data[cat][idx];
+  let h='<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1>'+line.name+'</h1><p>'+line.price+' ₽</p><div class="section-title">Выберите вкус:</div>';
+  line.flavors.forEach((f,fi)=>{
+    h+='<div class="flavor-row"><span class="flavor-name">'+f.name+'</span><div class="flavor-actions"><span class="status-badge '+stClass(f.inStock)+'">'+stText(f.inStock)+'</span>';
+    h+=f.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+f.name+'\')">🛒</button>':'<button class="add-to-cart-btn" disabled>Нет</button>';
+    h+='</div></div>';
+  });
+  document.getElementById('app').innerHTML=h;
+};
 
 window.deleteLine=function(c,i){if(!isAdmin)return;if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
 window.deleteItem=function(c,i){if(!isAdmin)return;if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
