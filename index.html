@@ -95,6 +95,8 @@
       <div class="v-code-display" id="code-display" onclick="copyVerifyCode()">------</div>
       <input type="text" class="v-input" id="v-input" placeholder="Вставьте код" maxlength="6" />
       <button class="v-btn" id="v-btn" onclick="verifyCode()">Подтвердить и войти</button>
+      <div id="v-msg" style="font-size:12px;margin-top:10px;"></div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:8px;">Код: <span id="v-countdown">05:00</span></div>
     </div>
   </div>
 
@@ -158,7 +160,7 @@ localStorage.removeItem('swwshop_verified');
 if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
 else{document.getElementById('verify-overlay').style.display='flex';document.getElementById('main-app').style.display='none';vc=Math.floor(100000+Math.random()*900000).toString();document.getElementById('code-display').textContent=vc;vt=setInterval(()=>{vtl--;const el=document.getElementById('v-countdown');if(el)el.textContent=String(Math.floor(vtl/60)).padStart(2,'0')+':'+String(vtl%60).padStart(2,'0');if(vtl<=0)clearInterval(vt);},1000);}
 function copyVerifyCode(){navigator.clipboard.writeText(vc).then(()=>{const d=document.getElementById('code-display');d.textContent='✓';setTimeout(()=>d.textContent=vc,1500);}).catch(()=>{});}
-function verifyCode(){if(document.getElementById('v-input').value.trim()===vc){clearInterval(vt);localStorage.setItem('swwshop_verified','true');document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}else{alert('Неверный код');}}
+function verifyCode(){if(document.getElementById('v-input').value.trim()===vc){clearInterval(vt);localStorage.setItem('swwshop_verified','true');document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}else{alert('Неверный код');document.getElementById('v-input').value='';}}
 document.getElementById('v-input').addEventListener('input',function(e){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)verifyCode();});
 
 window.toggleMenu=function(){const items=document.getElementById('menu-items');const btn=document.getElementById('menu-toggle');items.classList.toggle('open');btn.classList.toggle('open');};
@@ -168,9 +170,106 @@ const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',CHAT_ID='599350
 firebase.initializeApp({apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",authDomain:"swwshop.firebaseapp.com",databaseURL:"https://swwshop-default-rtdb.firebaseio.com",projectId:"swwshop",storageBucket:"swwshop.firebasestorage.app",messagingSenderId:"698268675105",appId:"1:698268675105:web:15814d169ee2e74c8e4760"});
 const db=firebase.database();
 
-// БОТ POLLING
+// ============ БОТ С СИНХРОНИЗАЦИЕЙ ТОВАРОВ ============
 let lastUpdateId=0;
-async function checkBot(){try{const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);const data=await resp.json();if(data.ok&&data.result.length){for(const u of data.result){lastUpdateId=u.update_id;if(u.message?.text){const m=u.message,chatId=m.chat.id,text=m.text;let r='';if(text==='/start')r=`🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n🎁 Заказ от 800₽ = промокод 15%\n🎰 Рулетка раз в неделю!\n\n/s — статистика`;else if(text==='/s'){const us=await db.ref('users').once('value'),os=await db.ref('orders').once('value');const users=us.val()||{},orders=os.val()||{};r=`📊 *Статистика*\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${Object.values(orders).length}*`;}else if(text==='/help')r=`🆘 *Помощь*\n\n/start /s /help`;if(r)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:r,parse_mode:'Markdown'})});}}}catch(e){}setTimeout(checkBot,2000);}
+async function checkBot(){
+  try{
+    const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);
+    const data=await resp.json();
+    if(data.ok&&data.result.length){
+      for(const u of data.result){
+        lastUpdateId=u.update_id;
+        if(u.message?.text){
+          const m=u.message,chatId=m.chat.id,text=m.text,firstName=m.from.first_name;
+          let r='';
+          let keyboard=null;
+          
+          // /start - приветствие
+          if(text==='/start'){
+            r=`🛍 *Добро пожаловать в SWWSHOP, ${firstName}!*\n\n`+
+              `Магазин жидкостей, шайб, испарителей.\n\n`+
+              `📋 *Команды:*\n`+
+              `/catalog — товары\n`+
+              `/s — статистика\n`+
+              `/orders — мои заказы\n`+
+              `/promo — промокоды`;
+            keyboard={inline_keyboard:[[{text:'🛍 Открыть каталог',url:'https://t.me/your_bot/app'}]]};
+          }
+          
+          // /catalog - показать категории
+          else if(text==='/catalog'||text==='/shop'){
+            const snap=await db.ref('assortment').once('value');
+            const catalog=snap.val()||{};
+            const cats={liquids:'💧 Жидкости',pouches:'👄 Шайбы',coils:'🔄 Испарители',devices:'📱 Устройства'};
+            r='📋 *Каталог:*\n\n';
+            for(const [key,label] of Object.entries(cats)){
+              const items=catalog[key]||[];
+              r+=`${label}: *${items.length}* поз.\n`;
+            }
+            keyboard={inline_keyboard:Object.entries(cats).map(([key,label])=>[{text:label,url:`https://t.me/your_bot/app?category=${key}`}])};
+          }
+          
+          // /category_liquids - показать товары категории
+          else if(text.startsWith('/category_')){
+            const cat=text.replace('/category_','');
+            const snap=await db.ref('assortment/'+cat).once('value');
+            const items=snap.val()||[];
+            if(items.length===0){r='В этой категории пока нет товаров.';}
+            else{
+              r=`📋 *Товары:*\n\n`;
+              items.forEach((item,i)=>{
+                if(item.flavors){
+                  r+=`${i+1}. *${item.name}* — ${item.price}₽\n`;
+                  item.flavors.filter(f=>f.inStock).forEach(f=>{
+                    r+=`   • ${f.name} — ${item.price}₽\n`;
+                  });
+                }else{
+                  r+=`${i+1}. *${item.name}* — ${item.price}₽ ${item.inStock?'✅':'❌'}\n`;
+                }
+              });
+              r+=`\nДля заказа нажмите кнопку меню.`;
+            }
+          }
+          
+          // /s - статистика
+          else if(text==='/s'||text==='/stats'){
+            const us=await db.ref('users').once('value');
+            const os=await db.ref('orders').once('value');
+            const users=us.val()||{},orders=os.val()||{};
+            const oList=Object.values(orders);
+            r=`📊 *Статистика*\n\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${oList.length}*\n✅ Выполнено: *${oList.filter(o=>o.status==='completed').length}*\n⏳ Ожидают: *${oList.filter(o=>o.status==='pending').length}*`;
+          }
+          
+          // /orders - мои заказы
+          else if(text==='/orders'){
+            const os=await db.ref('orders').once('value');
+            const orders=os.val()||{};
+            const myOrders=Object.values(orders).filter(o=>o.userId==='tg_'+m.from.id);
+            if(myOrders.length===0){r='📋 У вас пока нет заказов.';}
+            else{r='📋 *Ваши заказы:*\n\n';myOrders.reverse().forEach(o=>{const st=o.status==='completed'?'✅':o.status==='pending'?'⏳':'❌';r+=`${st} #${o.id} — ${o.total}₽\n`;});}
+          }
+          
+          // /promo - мои промокоды
+          else if(text==='/promo'){
+            const ps=await db.ref('promos').once('value');
+            const promos=ps.val()||{};
+            const myPromos=Object.entries(promos).filter(([c,p])=>p.userId==='tg_'+m.from.id);
+            if(myPromos.length===0){r='🎫 У вас пока нет промокодов.';}
+            else{r='🎫 *Ваши промокоды:*\n\n';myPromos.forEach(([c,p])=>{r+=`• \`${c}\` — ${p.discount}% ${p.used?'(исп.)':'(доступен)'}\n`;});}
+          }
+          
+          // /help
+          else if(text==='/help'){
+            r=`🆘 *Помощь*\n\n/catalog — товары\n/s — статистика\n/orders — заказы\n/promo — промокоды`;
+          }
+          
+          if(r)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:r,parse_mode:'Markdown',reply_markup:keyboard})});
+        }
+      }
+    }
+  }catch(e){}
+  setTimeout(checkBot,2000);
+}
 checkBot();
 
 window.setTheme=function(t){document.body.className=t;localStorage.setItem('swwshop_theme',t);};
@@ -181,42 +280,8 @@ let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
 let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
 let spinning=false,lastSpin=parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
 
-// ============ УВЕДОМЛЕНИЕ О РУЛЕТКЕ (1 РАЗ) ============
-let rouletteNotificationSent = localStorage.getItem('swwshop_roulette_notified')==='true';
-
-async function sendRouletteNotificationOnce(){
-  // Проверяем, доступна ли рулетка
-  const now = Date.now();
-  const week = 7*24*60*60*1000;
-  const timeSinceSpin = now - lastSpin;
-  
-  // Если рулетка доступна И уведомление ещё не отправлялось
-  if(timeSinceSpin >= week && !rouletteNotificationSent){
-    const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if(tgU?.id){
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          chat_id:tgU.id,
-          text:'🎰 *Рулетка доступна!*\n\nВы можете крутить колесо удачи прямо сейчас!\n\nНажмите кнопку "Каталог" и испытайте удачу!',
-          parse_mode:'Markdown'
-        })
-      });
-      rouletteNotificationSent = true;
-      localStorage.setItem('swwshop_roulette_notified','true');
-    }
-  }
-  
-  // Если рулетку только что прокрутили — сбрасываем флаг
-  if(timeSinceSpin < 10000){
-    rouletteNotificationSent = false;
-    localStorage.setItem('swwshop_roulette_notified','false');
-  }
-}
-
 // ЗАГРУЗКА ДАННЫХ
-db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();sendRouletteNotificationOnce();}});
+db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();}});
 db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];updateUI();});
 db.ref('promos').on('value',s=>{promos=s.val()||{};updateUI();});
 db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
@@ -227,7 +292,7 @@ function updateAdminEarnings(){const e=getEarnings();const el=document.getElemen
 
 function updateRouletteTimer(){const el=document.getElementById('roulette-timer'),btn=document.getElementById('spin-btn');if(!el||!btn)return;if(isAdmin){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';btn.disabled=false;return;}const now=Date.now(),week=7*24*60*60*1000;if(now-lastSpin>=week){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;}else{const rem=week-(now-lastSpin);const d=Math.floor(rem/86400000),h=Math.floor((rem%86400000)/3600000),m=Math.floor((rem%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;btn.disabled=true;}}
 
-window.spinRoulette=function(){if(spinning)return;if(!isAdmin){const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}}spinning=true;const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';document.getElementById('roulette-result').innerHTML='';const rand=Math.random();let prize={d:0,l:'0%'};if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};const reel=document.getElementById('slot-reel');reel.style.transition='none';reel.style.transform='translateY(0)';setTimeout(()=>{reel.style.transition='transform 4s cubic-bezier(0.15,0.55,0.35,1)';reel.style.transform='translateY(-1200px)';},50);lastSpin=Date.now();localStorage.setItem('swwshop_roulette_time',lastSpin.toString());db.ref('settings/lastRouletteTime').set(lastSpin);rouletteNotificationSent=false;localStorage.setItem('swwshop_roulette_notified','false');setTimeout(()=>{spinning=false;reel.style.transition='none';reel.style.transform='translateY(0)';updateRouletteTimer();if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette',userId:getUserId()};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;}else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';}},4200);};
+window.spinRoulette=function(){if(spinning)return;if(!isAdmin){const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}}spinning=true;const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';document.getElementById('roulette-result').innerHTML='';const rand=Math.random();let prize={d:0,l:'0%'};if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};const reel=document.getElementById('slot-reel');reel.style.transition='none';reel.style.transform='translateY(0)';setTimeout(()=>{reel.style.transition='transform 4s cubic-bezier(0.15,0.55,0.35,1)';reel.style.transform='translateY(-1200px)';},50);if(!isAdmin){lastSpin=Date.now();localStorage.setItem('swwshop_roulette_time',lastSpin.toString());db.ref('settings/lastRouletteTime').set(lastSpin);}setTimeout(()=>{spinning=false;reel.style.transition='none';reel.style.transform='translateY(0)';updateRouletteTimer();if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette',userId:getUserId()};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;}else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';}},4200);};
 
 function showMyPromos(){const userId=getUserId();const myPromos=Object.entries(promos).filter(([c,p])=>p.userId===userId);const myOrders=orders.filter(o=>o.userId===userId&&o.status==='completed'&&o.promoCode);let h='';if(myOrders.length){h+='<h4>🎁 От заказов:</h4>';myOrders.forEach(o=>{if(o.promoCode&&promos[o.promoCode]){const p=promos[o.promoCode];h+=`<div class="promo-card"><div><strong>${o.promoCode}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Исп.':'Доступен'}</span></div>`;}});}if(myPromos.length){h+='<h4>🎰 От рулетки:</h4>';myPromos.forEach(([c,p])=>{h+=`<div class="promo-card"><div><strong>${c}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Исп.':'Доступен'}</span></div>`;});}document.getElementById('mypromos-list').innerHTML=h||'<p style="text-align:center;opacity:0.5;">Нет промокодов</p>';}
 function showAllPromos(){if(!isAdmin)return;const el=document.getElementById('all-promos-list');const codes=Object.entries(promos);el.innerHTML=codes.length?codes.sort((a,b)=>b[1].created-a[1].created).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌ Исп.':'✅ Доступен'} | ${p.userId?'👤 '+p.userId:'👥 Всем'}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button></div>`).join(''):'<p>Нет промокодов</p>';}
@@ -242,9 +307,9 @@ function getTotalUsers(){return Object.keys(users).length;}
 
 function showUsers(){if(!isAdmin)return;const el=document.getElementById('users-list');const ul=Object.values(users);el.innerHTML=ul.length?ul.map(u=>`<div class="user-card"><strong>${u.firstName||'Пользователь'}</strong> ${u.username?'@'+u.username:''}<br><small>ID: ${u.id}</small></div>`).join(''):'<p>Нет</p>';}
 function showOrders(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const el=document.getElementById('orders-list');el.innerHTML=my.length?my.reverse().map(o=>`<div class="order-card"><strong>#${o.id}</strong><br><small>${o.total}₽ | ${o.items.length} поз.</small>${o.promoCode&&promos[o.promoCode]&&!promos[o.promoCode].used?`<div class="promo-code-display">🎁 ${o.promoCode}</div>`:''}</div>`).join(''):'<p>Нет выполненных заказов</p>';}
-function showAllOrders(){if(!isAdmin)return;const el=document.getElementById('all-orders-list');if(!orders.length){el.innerHTML='<p>Нет заказов</p>';return;}el.innerHTML=orders.sort((a,b)=>(b.date||0)-(a.date||0)).map(o=>`<div class="order-card" onclick="showOrderDetail('${o.id}')" style="cursor:pointer;"><strong>#${o.id}</strong> | ${o.userName}<br><small>${o.total}₽ | ${o.status==='pending'?'⏳ Ожидает':o.status==='completed'?'✅ Выполнен':'❌ Отменён'}</small><br><button class="btn-sm btn-view" onclick="event.stopPropagation();showOrderDetail('${o.id}')">👁</button></div>`).join('');}
+function showAllOrders(){if(!isAdmin)return;const el=document.getElementById('all-orders-list');if(!orders.length){el.innerHTML='<p>Нет заказов</p>';return;}el.innerHTML=orders.sort((a,b)=>(b.date||0)-(a.date||0)).map(o=>`<div class="order-card"><strong>#${o.id}</strong> | ${o.userName}<br><small>${o.total}₽ | ${o.status==='pending'?'⏳ Ожидает':o.status==='completed'?'✅ Выполнен':'❌ Отменён'}</small><br><button class="btn-sm btn-view" onclick="showOrderDetail('${o.id}')">👁</button></div>`).join('');}
 
-window.showOrderDetail=function(oid){const o=orders.find(x=>x.id===oid);if(!o)return;const el=document.getElementById('order-detail-content');let h=`<div class="order-detail-card"><h3>#${o.id}</h3><p>👤 ${o.userName} | 📱 ${o.userContact} | 💳 ${o.payment}</p><strong>Товары:</strong>`;o.items.forEach((item,i)=>{h+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price}₽</span></div>`;});h+=`<div class="order-detail-total">Итого: ${o.total}₽</div>`;if(o.status==='pending'){h+=`<button class="admin-action-btn btn-green" onclick="completeOrder('${o.id}',${o.subtotal})">✅ Выполнить</button><button class="admin-action-btn btn-red" onclick="cancelOrder('${o.id}')">❌ Отменить</button>`;}h+=`</div>`;el.innerHTML=h;document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));document.getElementById('order-detail-panel').classList.add('active');activePanel='order-detail';};
+window.showOrderDetail=function(oid){const o=orders.find(x=>x.id===oid);if(!o)return;const el=document.getElementById('order-detail-content');let h=`<div class="order-detail-card"><h3>#${o.id}</h3><p>👤 ${o.userName} | 📱 ${o.userContact} | 💳 ${o.payment}</p><strong>Товары:</strong>`;o.items.forEach((item,i)=>{h+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price}₽</span></div>`;});h+=`<div class="order-detail-total">Итого: ${o.total}₽</div>`;if(o.status==='pending'){h+=`<button class="admin-action-btn btn-green" onclick="completeOrder('${o.id}',${o.subtotal})">✅</button> <button class="admin-action-btn btn-red" onclick="cancelOrder('${o.id}')">❌</button>`;}h+=`</div>`;el.innerHTML=h;document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));document.getElementById('order-detail-panel').classList.add('active');activePanel='order-detail';};
 
 window.completeOrder=async function(oid,sub){if(!isAdmin||!confirm('Выполнить?'))return;const up={status:'completed',completedAt:Date.now()};let promo=null;if(sub>=800){promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();up.promoCode=promo;const od=(await db.ref('orders/'+oid).once('value')).val();db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),type:'auto',userId:od.userId});}await db.ref('orders/'+oid).update(up);alert('✅'+(promo?' Промокод: '+promo:''));showAllOrders();};
 window.cancelOrder=function(oid){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+oid).update({status:'cancelled'});showAllOrders();};
