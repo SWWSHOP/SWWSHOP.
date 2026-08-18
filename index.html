@@ -18,11 +18,11 @@
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
     .category-btn { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
-    .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: nowrap; }
-    .flavor-name { flex: 1; font-size: 14px; min-width: 0; }
-    .flavor-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 8px; flex-wrap: nowrap; }
-    .product-name { font-size: 14px; flex: 1; min-width: 0; }
+    .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .flavor-name { flex: 1; font-size: 14px; }
+    .flavor-actions { display: flex; align-items: center; gap: 6px; }
+    .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+    .product-name { font-size: 14px; flex: 1; }
     .product-price { font-weight: 600; color: var(--accent); white-space: nowrap; }
     .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
     .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
@@ -66,6 +66,10 @@
     .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); }
     .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 101; display: none; }
     .admin-indicator.active { display: block; }
+    .earnings-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .earning-card { background: linear-gradient(135deg, rgba(46,204,113,0.1), rgba(94,163,217,0.1)); padding: 10px 6px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
+    .earning-amount { font-size: 16px; font-weight: 700; color: var(--success); }
+    .earning-label { font-size: 10px; opacity: 0.7; }
     #verify-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0a0e17; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
     #verify-overlay .verify-card { background: #111827; border: 1px solid #1e293b; border-radius: 20px; padding: 28px 22px; max-width: 400px; width: 100%; text-align: center; color: #fff; }
     #verify-overlay .v-title { font-size: 24px; font-weight: 800; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -148,7 +152,7 @@
   </div>
 
 <script>
-// ============ ВЕРИФИКАЦИЯ ============
+// ВЕРИФИКАЦИЯ
 let vc='',vt,vtl=300;
 localStorage.removeItem('swwshop_verified');
 if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
@@ -160,9 +164,15 @@ document.getElementById('v-input').addEventListener('input',function(e){this.val
 window.toggleMenu=function(){const items=document.getElementById('menu-items');const btn=document.getElementById('menu-toggle');items.classList.toggle('open');btn.classList.toggle('open');};
 
 function initShop(){
-const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
+const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',CHAT_ID='5993502384';
 firebase.initializeApp({apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",authDomain:"swwshop.firebaseapp.com",databaseURL:"https://swwshop-default-rtdb.firebaseio.com",projectId:"swwshop",storageBucket:"swwshop.firebasestorage.app",messagingSenderId:"698268675105",appId:"1:698268675105:web:15814d169ee2e74c8e4760"});
 const db=firebase.database();
+
+// БОТ POLLING
+let lastUpdateId=0;
+async function checkBot(){try{const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);const data=await resp.json();if(data.ok&&data.result.length){for(const u of data.result){lastUpdateId=u.update_id;if(u.message?.text){const m=u.message,chatId=m.chat.id,text=m.text;let r='';if(text==='/start')r=`🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n🎁 Заказ от 800₽ = промокод 15%\n🎰 Рулетка раз в неделю!\n\n/s — статистика`;else if(text==='/s'){const us=await db.ref('users').once('value'),os=await db.ref('orders').once('value');const users=us.val()||{},orders=os.val()||{};r=`📊 *Статистика*\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${Object.values(orders).length}*`;}else if(text==='/help')r=`🆘 *Помощь*\n\n/start /s /help`;if(r)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:r,parse_mode:'Markdown'})});}}}catch(e){}setTimeout(checkBot,2000);}
+checkBot();
+
 window.setTheme=function(t){document.body.className=t;localStorage.setItem('swwshop_theme',t);};
 setTheme(localStorage.getItem('swwshop_theme')||'telegram');
 
@@ -171,35 +181,42 @@ let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
 let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
 let spinning=false,lastSpin=parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
 
-// ============ УВЕДОМЛЕНИЕ О РУЛЕТКЕ ============
-async function notifyRouletteAvailable(){
-  const now=Date.now();
-  const week=7*24*60*60*1000;
+// ============ УВЕДОМЛЕНИЕ О РУЛЕТКЕ (1 РАЗ) ============
+let rouletteNotificationSent = localStorage.getItem('swwshop_roulette_notified')==='true';
+
+async function sendRouletteNotificationOnce(){
+  // Проверяем, доступна ли рулетка
+  const now = Date.now();
+  const week = 7*24*60*60*1000;
+  const timeSinceSpin = now - lastSpin;
   
-  // Проходим по всем пользователям
-  for(const [uid,user] of Object.entries(users)){
-    if(!user.telegramId) continue;
-    
-    // Проверяем, крутил ли пользователь рулетку
-    const userLastSpin = parseInt(localStorage.getItem('swwshop_roulette_time_'+uid)||'0');
-    const timeSinceSpin = now - userLastSpin;
-    
-    // Если пользователь НИКОГДА не крутил ИЛИ кд истёк
-    if(userLastSpin===0 || timeSinceSpin >= week){
-      const message = userLastSpin===0 
-        ? '🎰 *Рулетка доступна!*\n\nВы ещё ни разу не крутили колесо удачи!\n\nНажмите кнопку "Каталог" и испытайте удачу!'
-        : '🎰 *Рулетка снова доступна!*\n\nВаш кулдаун истёк!\n\nНажмите кнопку "Каталог" и крутите снова!';
-      
+  // Если рулетка доступна И уведомление ещё не отправлялось
+  if(timeSinceSpin >= week && !rouletteNotificationSent){
+    const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if(tgU?.id){
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chat_id:user.telegramId,text:message,parse_mode:'Markdown'})
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          chat_id:tgU.id,
+          text:'🎰 *Рулетка доступна!*\n\nВы можете крутить колесо удачи прямо сейчас!\n\nНажмите кнопку "Каталог" и испытайте удачу!',
+          parse_mode:'Markdown'
+        })
       });
+      rouletteNotificationSent = true;
+      localStorage.setItem('swwshop_roulette_notified','true');
     }
+  }
+  
+  // Если рулетку только что прокрутили — сбрасываем флаг
+  if(timeSinceSpin < 10000){
+    rouletteNotificationSent = false;
+    localStorage.setItem('swwshop_roulette_notified','false');
   }
 }
 
-// Загрузка данных
-db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();}});
+// ЗАГРУЗКА ДАННЫХ
+db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();sendRouletteNotificationOnce();}});
 db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];updateUI();});
 db.ref('promos').on('value',s=>{promos=s.val()||{};updateUI();});
 db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
@@ -210,27 +227,7 @@ function updateAdminEarnings(){const e=getEarnings();const el=document.getElemen
 
 function updateRouletteTimer(){const el=document.getElementById('roulette-timer'),btn=document.getElementById('spin-btn');if(!el||!btn)return;if(isAdmin){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';btn.disabled=false;return;}const now=Date.now(),week=7*24*60*60*1000;if(now-lastSpin>=week){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;}else{const rem=week-(now-lastSpin);const d=Math.floor(rem/86400000),h=Math.floor((rem%86400000)/3600000),m=Math.floor((rem%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;btn.disabled=true;}}
 
-window.spinRoulette=function(){
-  if(spinning)return;
-  if(!isAdmin){const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}}
-  spinning=true;
-  const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';
-  document.getElementById('roulette-result').innerHTML='';
-  const rand=Math.random();let prize={d:0,l:'0%'};
-  if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};
-  const reel=document.getElementById('slot-reel');
-  reel.style.transition='none';reel.style.transform='translateY(0)';
-  setTimeout(()=>{reel.style.transition='transform 4s cubic-bezier(0.15,0.55,0.35,1)';reel.style.transform='translateY(-1200px)';},50);
-  lastSpin=Date.now();
-  localStorage.setItem('swwshop_roulette_time',lastSpin.toString());
-  localStorage.setItem('swwshop_roulette_time_'+getUserId(),lastSpin.toString());
-  db.ref('settings/lastRouletteTime').set(lastSpin);
-  setTimeout(()=>{
-    spinning=false;reel.style.transition='none';reel.style.transform='translateY(0)';updateRouletteTimer();
-    if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette',userId:getUserId()};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;}
-    else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';}
-  },4200);
-};
+window.spinRoulette=function(){if(spinning)return;if(!isAdmin){const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}}spinning=true;const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';document.getElementById('roulette-result').innerHTML='';const rand=Math.random();let prize={d:0,l:'0%'};if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};const reel=document.getElementById('slot-reel');reel.style.transition='none';reel.style.transform='translateY(0)';setTimeout(()=>{reel.style.transition='transform 4s cubic-bezier(0.15,0.55,0.35,1)';reel.style.transform='translateY(-1200px)';},50);lastSpin=Date.now();localStorage.setItem('swwshop_roulette_time',lastSpin.toString());db.ref('settings/lastRouletteTime').set(lastSpin);rouletteNotificationSent=false;localStorage.setItem('swwshop_roulette_notified','false');setTimeout(()=>{spinning=false;reel.style.transition='none';reel.style.transform='translateY(0)';updateRouletteTimer();if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette',userId:getUserId()};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;}else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';}},4200);};
 
 function showMyPromos(){const userId=getUserId();const myPromos=Object.entries(promos).filter(([c,p])=>p.userId===userId);const myOrders=orders.filter(o=>o.userId===userId&&o.status==='completed'&&o.promoCode);let h='';if(myOrders.length){h+='<h4>🎁 От заказов:</h4>';myOrders.forEach(o=>{if(o.promoCode&&promos[o.promoCode]){const p=promos[o.promoCode];h+=`<div class="promo-card"><div><strong>${o.promoCode}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Исп.':'Доступен'}</span></div>`;}});}if(myPromos.length){h+='<h4>🎰 От рулетки:</h4>';myPromos.forEach(([c,p])=>{h+=`<div class="promo-card"><div><strong>${c}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Исп.':'Доступен'}</span></div>`;});}document.getElementById('mypromos-list').innerHTML=h||'<p style="text-align:center;opacity:0.5;">Нет промокодов</p>';}
 function showAllPromos(){if(!isAdmin)return;const el=document.getElementById('all-promos-list');const codes=Object.entries(promos);el.innerHTML=codes.length?codes.sort((a,b)=>b[1].created-a[1].created).map(([c,p])=>`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used?'❌ Исп.':'✅ Доступен'} | ${p.userId?'👤 '+p.userId:'👥 Всем'}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button></div>`).join(''):'<p>Нет промокодов</p>';}
@@ -286,7 +283,7 @@ window.addItem=function(){if(!isAdmin)return;const n=document.getElementById('it
 window.deleteSelected=function(){if(!isAdmin)return;const c=document.getElementById('del-category').value,i=parseInt(document.getElementById('del-item').value);if(isNaN(i))return alert('Выберите!');data[c].splice(i,1);db.ref('assortment').set(data);showMain();};
 window.deleteAllOutOfStock=function(){if(!isAdmin||!confirm('Удалить всё?'))return;['liquids','pouches'].forEach(c=>{data[c]=data[c].filter(l=>l.flavors?.some(f=>f.inStock));});['coils','devices'].forEach(c=>{data[c]=data[c].filter(i=>i.inStock);});db.ref('assortment').set(data);alert('✅');showMain();};
 
-window.openPanel=function(n){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(n+'-panel');if(p){p.classList.add('active');activePanel=n;}if(n==='orders')showOrders();if(n==='all-orders')showAllOrders();if(n==='mypromos')showMyPromos();if(n==='all-promos')showAllPromos();if(n==='roulette'){updateRouletteTimer();notifyRouletteAvailable();}if(n==='cart')showCart();if(n==='users')showUsers();};
+window.openPanel=function(n){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(n+'-panel');if(p){p.classList.add('active');activePanel=n;}if(n==='orders')showOrders();if(n==='all-orders')showAllOrders();if(n==='mypromos')showMyPromos();if(n==='all-promos')showAllPromos();if(n==='roulette')updateRouletteTimer();if(n==='cart')showCart();if(n==='users')showUsers();};
 window.closePanel=function(n){const p=document.getElementById(n+'-panel');if(p)p.classList.remove('active');activePanel=null;};
 window.toggleAdminPanel=function(){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}};
 
@@ -295,9 +292,6 @@ function registerUser(){const tgU=window.Telegram?.WebApp?.initDataUnsafe?.user;
 const tg=window.Telegram.WebApp;tg.ready();tg.expand();
 registerUser();updateCartBadge();updateAdminUI();
 if(!initialized)showMain();
-
-// Проверяем рулетку каждые 5 минут
-setInterval(notifyRouletteAvailable, 300000);
 }
 </script>
 </body>
