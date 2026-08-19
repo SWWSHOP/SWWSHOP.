@@ -3,355 +3,488 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>SWWSHOP</title>
+  <title>SWWSHOP — Ассортимент</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0e17;
-      color: #fff;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #verify-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #0a0e17;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .verify-card {
-      background: #111827;
-      border: 1px solid #1e293b;
-      border-radius: 20px;
-      padding: 32px 24px;
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-    }
-    .v-title {
-      font-size: 28px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #5ea3d9, #8b5cf6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 4px;
-    }
-    .v-sub {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-bottom: 16px;
-    }
-    .v-code-display {
-      background: #1a2235;
-      border: 2px dashed #5ea3d9;
-      border-radius: 12px;
-      padding: 14px;
-      margin: 14px 0;
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 6px;
-      color: #5ea3d9;
-      cursor: pointer;
-      font-family: 'Courier New', monospace;
-      user-select: all;
-    }
-    .v-input {
-      width: 100%;
-      padding: 12px;
-      background: #1a2235;
-      border: 2px solid #1e293b;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 18px;
-      text-align: center;
-      letter-spacing: 6px;
-      font-family: 'Courier New', monospace;
-      outline: none;
-      margin-bottom: 14px;
-    }
-    .v-input:focus {
-      border-color: #5ea3d9;
-    }
-    .v-btn {
-      width: 100%;
-      padding: 13px;
-      background: linear-gradient(135deg, #5ea3d9, #8b5cf6);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.3s;
-    }
-    .v-btn:hover {
-      opacity: 0.9;
-    }
-    .v-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .v-msg {
-      font-size: 12px;
-      margin-top: 10px;
-      min-height: 20px;
-    }
-    .v-msg.error { color: #ef4444; }
-    .v-msg.success { color: #22c55e; }
-    .v-timer {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-top: 8px;
-    }
-    .v-timer span {
-      color: #f59e0b;
-      font-weight: 600;
-    }
-    .v-icon {
-      font-size: 48px;
-      margin-bottom: 8px;
-    }
-
-    /* МАЙН СТРАНИЦА - ТЕХНИЧЕСКИЕ РАБОТЫ */
-    #main-app {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #0a0e17;
-      z-index: 9998;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
-    }
-    #main-app.active {
-      display: flex;
-    }
-    .maintenance-card {
-      max-width: 420px;
-      width: 100%;
-    }
-    .maintenance-icon {
-      font-size: 72px;
-      margin-bottom: 16px;
-    }
-    .maintenance-title {
-      font-size: 32px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #f59e0b, #ef4444);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
-    }
-    .maintenance-sub {
-      font-size: 18px;
-      font-weight: 600;
-      color: #e2e8f0;
-      margin-bottom: 12px;
-    }
-    .maintenance-text {
-      color: #94a3b8;
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-    .maintenance-text strong {
-      color: #e2e8f0;
-    }
-    .maintenance-divider {
-      width: 60px;
-      height: 3px;
-      background: linear-gradient(135deg, #5ea3d9, #8b5cf6);
-      border-radius: 3px;
-      margin: 16px auto;
-    }
-    .maintenance-contact {
-      display: inline-block;
-      padding: 10px 24px;
-      background: rgba(94, 163, 217, 0.15);
-      border: 1px solid rgba(94, 163, 217, 0.3);
-      border-radius: 10px;
-      color: #5ea3d9;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s;
-      margin-top: 8px;
-    }
-    .maintenance-contact:hover {
-      background: rgba(94, 163, 217, 0.25);
-    }
-    .maintenance-shop {
-      font-size: 13px;
-      color: #64748b;
-      margin-top: 16px;
-    }
-    .maintenance-shop strong {
-      color: #94a3b8;
-    }
+    :root { --bg: #ffffff; --text: #1a1a1a; --accent: #0078ff; --border: #e0e0e0; --success: #2ecc71; --danger: #e74c3c; --warning: #f39c12; --admin-bg: #f4f6f8; --card-bg: #f9f9f9; }
+    body.dark { --bg: #1a1a1a; --text: #ffffff; --accent: #4da3ff; --border: #333; --admin-bg: #2a2a2a; --card-bg: #2a2a2a; }
+    body.telegram { --bg: #18222d; --text: #ffffff; --accent: #5ea3d9; --border: #1f2d3d; --admin-bg: #1e2a38; --card-bg: #1e2a38; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+    .container { flex: 1; overflow-y: auto; padding: 12px 12px 100px; }
+    h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
+    .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
+    .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
+    .category-btn { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .category-btn span { font-size: 13px; opacity: 0.7; }
+    .earnings-display { text-align: center; margin: 8px auto 16px; padding: 10px 16px; background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(94,163,217,0.15)); border-radius: 16px; display: inline-block; }
+    .earnings-label { font-size: 11px; opacity: 0.7; }
+    .earnings-amount { font-size: 22px; font-weight: 800; color: var(--success); }
+    .users-counter { text-align: center; padding: 8px 16px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(94,163,217,0.2), rgba(46,204,113,0.2)); border-radius: 20px; display: inline-block; font-size: 14px; font-weight: 600; color: var(--accent); }
+    .users-counter span { background: var(--accent); color: white; padding: 2px 10px; border-radius: 12px; margin: 0 4px; }
+    .flavor-row { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: nowrap; }
+    .flavor-name { flex: 1; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .flavor-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .product-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 8px; flex-wrap: nowrap; }
+    .product-name { font-size: 14px; flex: 1; min-width: 0; }
+    .product-price { font-weight: 600; color: var(--accent); white-space: nowrap; }
+    .product-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
+    .status-in-stock { background: rgba(46,204,113,0.15); color: var(--success); }
+    .status-out-stock { background: rgba(231,76,60,0.15); color: var(--danger); }
+    .back-btn { padding: 8px 12px; border: none; background: transparent; color: var(--accent); cursor: pointer; font-size: 14px; }
+    .add-to-cart-btn { background: var(--success); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .add-to-cart-btn:disabled { background: #999; cursor: not-allowed; }
+    .btn-sm { padding: 6px 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; color: white; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+    .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); } .btn-view { background: #06b6d4; }
+    .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; margin-top: 4px; }
+    .header-menu { position: fixed; top: 16px; right: 16px; z-index: 150; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .menu-toggle-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.3s; }
+    .menu-toggle-btn.open { transform: rotate(180deg); }
+    .menu-items { display: flex; flex-direction: column; gap: 8px; max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; opacity: 0; }
+    .menu-items.open { max-height: 400px; opacity: 1; }
+    .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 20px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .cart-btn { background: var(--success); color: white; } .orders-btn { background: var(--accent); color: white; } .console-btn { background: #8b5cf6; color: white; } .users-btn { background: #06b6d4; color: white; } .roulette-btn { background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: white; } .mypromos-btn { background: #f59e0b; color: white; }
+    .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .overlay-panel { background: var(--admin-bg); padding: 16px; border-radius: 12px; position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
+    .overlay-panel.active { display: block; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .panel-close-btn { background: rgba(128,128,128,0.3); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .cart-item, .order-card, .promo-card, .user-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cart-item-name { font-weight: 500; font-size: 14px; }
+    .cart-total { font-size: 18px; font-weight: 700; text-align: right; margin: 12px 0; color: var(--accent); }
+    .cart-discount { font-size: 14px; text-align: right; color: var(--success); }
+    .order-status { font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block; }
+    .status-pending { background: rgba(255,193,7,0.2); color: #ffc107; }
+    .status-completed { background: rgba(46,204,113,0.2); color: #2ecc71; }
+    .status-cancelled { background: rgba(231,76,60,0.2); color: #e74c3c; }
+    .promo-code-display { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #333; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 16px; margin: 10px 0; word-break: break-all; }
+    .promo-section { background: rgba(255,193,7,0.1); border: 1px solid #ffc107; border-radius: 8px; padding: 10px; margin: 8px 0; display: flex; gap: 8px; }
+    .promo-section input { flex: 1; padding: 8px; border: 1px solid #ffc107; border-radius: 6px; background: var(--card-bg); color: var(--text); }
+    .promo-apply-btn { background: var(--warning); color: #333; border: none; border-radius: 6px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
+    .order-form input, .order-form select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; font-size: 14px; }
+    .console-textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; resize: vertical; font-family: inherit; }
+    .order-btn { width: 100%; padding: 14px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .admin-toggle-btn { position: fixed; bottom: 80px; right: 16px; width: 52px; height: 52px; background: linear-gradient(135deg, #ffd700, #ffaa00); border: none; border-radius: 50%; color: #333; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(255,170,0,0.4); z-index: 99; font-size: 24px; }
+    .theme-switcher { position: fixed; bottom: 16px; left: 16px; display: flex; gap: 6px; z-index: 99; background: var(--card-bg); padding: 6px; border-radius: 20px; border: 1px solid var(--border); }
+    .theme-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text); }
+    .theme-btn.active { border-color: var(--accent); }
+    .admin-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); margin-bottom: 8px; font-family: inherit; }
+    .admin-btn { padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .admin-action-btn { width: 100%; padding: 10px; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; font-weight: 600; font-size: 13px; }
+    .btn-dark { background: #333; } .btn-red { background: var(--danger); } .btn-orange { background: var(--warning); } .btn-green { background: var(--success); } .btn-purple { background: #8b5cf6; } .btn-cyan { background: #06b6d4; }
+    .delete-select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--card-bg); color: var(--text); font-family: inherit; }
+    .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 101; display: none; }
+    .admin-indicator.active { display: block; }
+    .user-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .stat-card { background: var(--card-bg); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+    .stat-number { font-size: 24px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 11px; opacity: 0.7; }
+    .earnings-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .earning-card { background: linear-gradient(135deg, rgba(46,204,113,0.1), rgba(94,163,217,0.1)); padding: 10px 6px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
+    .earning-amount { font-size: 16px; font-weight: 700; color: var(--success); }
+    .earning-label { font-size: 10px; opacity: 0.7; }
+    #verify-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0a0e17; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #verify-overlay .verify-card { background: #111827; border: 1px solid #1e293b; border-radius: 20px; padding: 28px 22px; max-width: 400px; width: 100%; text-align: center; color: #fff; }
+    #verify-overlay .v-title { font-size: 24px; font-weight: 800; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    #verify-overlay .v-code-display { background: #1a2235; border: 2px dashed #5ea3d9; border-radius: 12px; padding: 14px; margin: 14px 0; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #5ea3d9; cursor: pointer; font-family: 'Courier New', monospace; }
+    #verify-overlay .v-input { width: 100%; padding: 12px; background: #1a2235; border: 2px solid #1e293b; border-radius: 12px; color: #fff; font-size: 18px; text-align: center; letter-spacing: 6px; font-family: 'Courier New', monospace; outline: none; margin-bottom: 14px; }
+    #verify-overlay .v-btn { width: 100%; padding: 13px; background: linear-gradient(135deg,#5ea3d9,#8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .slot-container { text-align: center; padding: 20px; background: var(--card-bg); border-radius: 16px; margin: 10px 0; }
+    .slot-machine { width: 200px; height: 120px; margin: 0 auto 20px; overflow: hidden; position: relative; background: #0a0e17; border-radius: 16px; border: 3px solid var(--accent); }
+    .slot-reel { position: absolute; width: 100%; top: 0; left: 0; transition: transform 5s cubic-bezier(0.15, 0.55, 0.35, 1); }
+    .slot-item { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 800; color: #ffd700; }
+    .spin-btn { display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ff6b6b, #ffd93d); color: #333; border: none; border-radius: 30px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(255,107,107,0.4); }
+    .spin-btn:active { transform: scale(0.95); }
+    .spin-btn:disabled { opacity: 0.5; cursor: default; }
+    .roulette-result { margin-top: 16px; font-size: 16px; font-weight: 600; min-height: 40px; }
+    .roulette-timer { text-align: center; font-size: 14px; color: var(--warning); margin-top: 8px; }
+    .admin-roulette-note { font-size: 12px; color: #10b981; margin-top: 4px; }
+    .order-detail-card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .order-detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
+    .order-detail-total { font-size: 18px; font-weight: 700; text-align: right; color: var(--accent); margin-top: 12px; }
   </style>
 </head>
-<body>
-
-  <!-- ВЕРИФИКАЦИЯ -->
+<body class="telegram">
   <div id="verify-overlay">
     <div class="verify-card">
-      <div class="v-icon">🛡️</div>
+      <div style="font-size:28px;margin-bottom:10px;">🛡️</div>
       <div class="v-title">SWWSHOP</div>
-      <div class="v-sub">ПОДТВЕРЖДЕНИЕ ВХОДА</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:16px;">ПОДТВЕРЖДЕНИЕ ВХОДА</div>
       <div class="v-code-display" id="code-display" onclick="copyVerifyCode()">------</div>
-      <input type="text" class="v-input" id="v-input" placeholder="Введите код" maxlength="6" autocomplete="off" />
-      <button class="v-btn" id="v-btn" onclick="verifyCode()">🔓 Подтвердить и войти</button>
-      <div class="v-msg" id="v-msg"></div>
-      <div class="v-timer">⏳ Код действителен: <span id="v-countdown">05:00</span></div>
+      <input type="text" class="v-input" id="v-input" placeholder="Вставьте код" maxlength="6" />
+      <button class="v-btn" id="v-btn" onclick="verifyCode()">Подтвердить и войти</button>
     </div>
   </div>
 
-  <!-- ГЛАВНАЯ СТРАНИЦА - ТЕХНИЧЕСКИЕ РАБОТЫ -->
   <div id="main-app">
-    <div class="maintenance-card">
-      <div class="maintenance-icon">🔧</div>
-      <div class="maintenance-title">Технические работы</div>
-      <div class="maintenance-sub">Магазин временно недоступен</div>
-      <div class="maintenance-divider"></div>
-      <div class="maintenance-text">
-        <strong>SWWSHOP</strong> временно закрыт на техническое обслуживание.<br><br>
-        Мы работаем над улучшением сервиса, чтобы вам было ещё удобнее.<br><br>
-        🕐 Ориентировочное время восстановления: <strong>скоро</strong>
+    <div class="admin-indicator" id="admin-indicator">АДМИН</div>
+    <div class="header-menu">
+      <button class="menu-toggle-btn" id="menu-toggle" onclick="toggleMenu()">▼</button>
+      <div class="menu-items" id="menu-items">
+        <button class="icon-btn roulette-btn" onclick="openPanel('roulette');toggleMenu();">🎰</button>
+        <button class="icon-btn mypromos-btn" onclick="openPanel('mypromos');toggleMenu();">🎫</button>
+        <button class="icon-btn orders-btn" onclick="openPanel('orders');toggleMenu();">📋</button>
+        <button class="icon-btn cart-btn" onclick="openPanel('cart');toggleMenu();">🛒</button>
+        <button class="icon-btn users-btn" id="users-icon" style="display:none;" onclick="openPanel('users');toggleMenu();">👥</button>
+        <button class="icon-btn console-btn" id="console-icon" style="display:none;" onclick="openPanel('console');toggleMenu();">💬</button>
       </div>
-      <div class="maintenance-divider"></div>
-      <div class="maintenance-text" style="font-size:13px;">
-        По всем вопросам обращайтесь к администратору:
+    </div>
+    <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
+
+    <div id="orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div><div id="orders-list"></div></div>
+    <div id="all-orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div><div id="all-orders-list"></div></div>
+    <div id="order-detail-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Детали заказа</h2><button class="panel-close-btn" onclick="closePanel('order-detail');showAllOrders();">✕</button></div><div id="order-detail-content"></div></div>
+    <div id="mypromos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎫 Мои промокоды</h2><button class="panel-close-btn" onclick="closePanel('mypromos')">✕</button></div><div id="mypromos-list"></div></div>
+    <div id="all-promos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Все промокоды</h2><button class="panel-close-btn" onclick="closePanel('all-promos')">✕</button></div><div id="all-promos-list"></div></div>
+    <div id="users-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Пользователи</h2><button class="panel-close-btn" onclick="closePanel('users')">✕</button></div><div class="user-stats" id="user-stats"></div><div id="users-list"></div></div>
+    <div id="cart-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div><div id="cart-items"></div><div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div><div id="promo-message"></div><div class="cart-discount" id="cart-discount"></div><div class="cart-total" id="cart-total"></div><div class="order-form" id="order-form" style="display:none;"><input type="text" id="customer-name" placeholder="Ваше имя *" /><input type="text" id="customer-contact" placeholder="Телефон или @username *" /><select id="payment-method"><option value="">Способ оплаты *</option><option value="Наличные">Наличные</option><option value="Безналичные">Безналичные</option><option value="Смешанная">Смешанная</option></select><button class="order-btn" onclick="sendOrder()">Оформить заказ</button></div><div class="order-success" id="order-success" style="display:none;"></div></div>
+    
+    <div id="roulette-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎰 Колесо удачи</h2><button class="panel-close-btn" onclick="closePanel('roulette')">✕</button></div>
+      <div class="slot-container">
+        <div class="slot-machine"><div class="slot-reel" id="slot-reel"><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">0%</div><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div></div></div>
+        <button class="spin-btn" id="spin-btn" onclick="spinRoulette()">🎰 КРУТИТЬ</button>
+        <div class="roulette-timer" id="roulette-timer"></div>
+        <div class="roulette-result" id="roulette-result"></div>
+        <div class="admin-roulette-note" id="admin-roulette-note" style="display:none;">🔑 Админ: безлимитные вращения</div>
       </div>
-      <a href="https://t.me/SWWSHOPBOT" class="maintenance-contact" target="_blank">📨 @SWWSHOPBOT</a>
-      <div class="maintenance-shop">
-        <strong>SWWSHOP</strong> — скоро вернёмся! 🚀
+    </div>
+    
+    <div id="console-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Консоль</h2><button class="panel-close-btn" onclick="closePanel('console')">✕</button></div><div><strong>Отправить:</strong><select id="console-user" class="admin-input" style="margin-top:8px;"><option value="">-- Выберите --</option></select><textarea id="console-message" class="console-textarea" placeholder="Текст..."></textarea><button class="admin-action-btn btn-purple" onclick="sendMessageToUser()">📨 Отправить</button></div><div style="border-top:2px solid var(--border);padding-top:16px;margin-top:16px;"><strong>Рассылка:</strong><textarea id="console-broadcast" class="console-textarea" placeholder="Текст..."></textarea><button class="admin-action-btn btn-orange" onclick="sendBroadcast()">📢 Отправить всем</button></div></div>
+
+    <button class="admin-toggle-btn" onclick="toggleAdminPanel()">🔑</button>
+    <div class="theme-switcher"><button class="theme-btn active" onclick="setTheme('telegram')">🌙</button><button class="theme-btn" onclick="setTheme('light')">☀️</button><button class="theme-btn" onclick="setTheme('dark')">🌑</button></div>
+
+    <div id="admin-panel" class="overlay-panel" style="top:auto;bottom:0;max-height:65vh;border-radius:12px 12px 0 0;">
+      <div class="panel-header"><h2 class="shop-title">Админ-панель</h2><button class="panel-close-btn" onclick="closePanel('admin')">✕</button></div>
+      <div id="admin-login-area"><div style="display:flex;gap:8px;"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div></div>
+      <div id="admin-controls-area" style="display:none;">
+        <div class="earnings-stats" id="admin-earnings"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
+          <button class="admin-action-btn btn-green" onclick="openPanel('all-orders')">📋 Заказы</button>
+          <button class="admin-action-btn btn-orange" onclick="openPanel('all-promos')">🎫 Промокоды</button>
+          <button class="admin-action-btn btn-cyan" onclick="openPanel('users')">👥 Пользователи</button>
+          <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬 Консоль</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить линейку</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button></div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0=нет)" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button></div>
+        </div>
+        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Создать промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><input type="text" id="promo-user-id" class="admin-input" placeholder="User ID получателя (пусто=для всех)" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать промокод</button></div>
+        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление товаров</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить выбранный</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
+        <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">🚪 Выйти из админки</button>
       </div>
     </div>
   </div>
 
 <script>
-// ============ ВЕРИФИКАЦИЯ ============
-let vc = '';
-let vt = null;
-let vtl = 300;
+// ВЕРИФИКАЦИЯ
+let vc='',vt,vtl=300;
+localStorage.removeItem('swwshop_verified');
+if(localStorage.getItem('swwshop_verified')==='true'){document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}
+else{document.getElementById('verify-overlay').style.display='flex';document.getElementById('main-app').style.display='none';vc=Math.floor(100000+Math.random()*900000).toString();document.getElementById('code-display').textContent=vc;vtl=300;vt=setInterval(()=>{vtl--;const m=Math.floor(vtl/60),s=vtl%60;const el=document.getElementById('v-countdown');if(el)el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');if(vtl<=0)clearInterval(vt);},1000);}
+function copyVerifyCode(){navigator.clipboard.writeText(vc).then(()=>{const d=document.getElementById('code-display');d.textContent='✓';setTimeout(()=>d.textContent=vc,1500);}).catch(()=>{});}
+function verifyCode(){if(document.getElementById('v-input').value.trim()===vc){clearInterval(vt);localStorage.setItem('swwshop_verified','true');document.getElementById('verify-overlay').style.display='none';document.getElementById('main-app').style.display='block';initShop();}else{alert('Неверный код');}}
+document.getElementById('v-input').addEventListener('input',function(e){this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)verifyCode();});
 
-// Генерация кода при загрузке
-vc = Math.floor(100000 + Math.random() * 900000).toString();
-document.getElementById('code-display').textContent = vc;
+window.toggleMenu=function(){const items=document.getElementById('menu-items');const btn=document.getElementById('menu-toggle');items.classList.toggle('open');btn.classList.toggle('open');};
 
-// Таймер обратного отсчёта
-vt = setInterval(() => {
-  vtl--;
-  const el = document.getElementById('v-countdown');
-  if (el) {
-    el.textContent = String(Math.floor(vtl / 60)).padStart(2, '0') + ':' + String(vtl % 60).padStart(2, '0');
-  }
-  if (vtl <= 0) {
-    clearInterval(vt);
-    document.getElementById('v-msg').innerHTML = '<span style="color:#ef4444;">⏰ Код истёк. Обновите страницу.</span>';
-    document.getElementById('v-btn').disabled = true;
-  }
-}, 1000);
+function initShop(){
+const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',CHAT_ID='5993502384';
+firebase.initializeApp({apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",authDomain:"swwshop.firebaseapp.com",databaseURL:"https://swwshop-default-rtdb.firebaseio.com",projectId:"swwshop",storageBucket:"swwshop.firebasestorage.app",messagingSenderId:"698268675105",appId:"1:698268675105:web:15814d169ee2e74c8e4760"});
+const db=firebase.database();
+let lastUpdateId=0;
+async function checkBot(){try{const resp=await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId+1}&timeout=30`);const data=await resp.json();if(data.ok&&data.result.length){for(const u of data.result){lastUpdateId=u.update_id;if(u.message?.text){const m=u.message,chatId=m.chat.id,text=m.text;let r='';if(text==='/start')r=`🛍 *SWWSHOP*\n\nМагазин жидкостей, шайб, испарителей.\n🎁 Заказ от 800₽ = промокод 15%\n🎰 Рулетка раз в неделю!\n\n/s — статистика`;else if(text==='/s'){const us=await db.ref('users').once('value'),os=await db.ref('orders').once('value');const users=us.val()||{},orders=os.val()||{};r=`📊 *Статистика*\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${Object.values(orders).length}*`;}if(r)await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,text:r,parse_mode:'Markdown'})});}}}}catch(e){}setTimeout(checkBot,2000);}
+checkBot();
+window.setTheme=function(t){document.body.className=t;localStorage.setItem('swwshop_theme',t);};
+setTheme(localStorage.getItem('swwshop_theme')||'telegram');
 
-// Копирование кода
-function copyVerifyCode() {
-  navigator.clipboard.writeText(vc)
-    .then(() => {
-      const d = document.getElementById('code-display');
-      d.textContent = '✓';
-      d.style.borderColor = '#22c55e';
-      d.style.color = '#22c55e';
-      setTimeout(() => {
-        d.textContent = vc;
-        d.style.borderColor = '#5ea3d9';
-        d.style.color = '#5ea3d9';
-      }, 1500);
-    })
-    .catch(() => {});
+let data={liquids:[],pouches:[],coils:[],devices:[]},orders=[],promos={},users={};
+let isAdmin=false,currentView='main',currentCategory='',currentIndex=0;
+let cart=JSON.parse(localStorage.getItem('swwshop_cart')||'[]'),appliedPromo=null,activePanel=null,initialized=false;
+let spinning=false,lastSpin=parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
+
+function updateRouletteTimer(){
+  const el=document.getElementById('roulette-timer'),btn=document.getElementById('spin-btn');
+  const adminNote=document.getElementById('admin-roulette-note');
+  if(!el||!btn)return;
+  if(isAdmin){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';if(adminNote)adminNote.style.display='block';return;}
+  if(adminNote)adminNote.style.display='none';
+  const now=Date.now(),week=7*24*60*60*1000;
+  if(now-lastSpin>=week){el.innerHTML='<span style="color:#10b981;">✅ Можно крутить!</span>';btn.disabled=false;btn.textContent='🎰 КРУТИТЬ';}
+  else{const rem=week-(now-lastSpin);const d=Math.floor(rem/86400000),h=Math.floor((rem%86400000)/3600000),m=Math.floor((rem%3600000)/60000);el.innerHTML=`⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;btn.disabled=true;btn.textContent='⏳ Ждите';}
 }
 
-// Проверка кода
-function verifyCode() {
-  const input = document.getElementById('v-input');
-  const msg = document.getElementById('v-msg');
-  const btn = document.getElementById('v-btn');
-  
-  if (btn.disabled) {
-    msg.innerHTML = '<span style="color:#ef4444;">⏰ Время вышло. Обновите страницу.</span>';
-    return;
+window.spinRoulette=function(){
+  if(spinning)return;
+  if(!isAdmin){const now=Date.now();if(now-lastSpin<7*24*60*60*1000){updateRouletteTimer();return;}}
+  spinning=true;
+  const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='🎰 Крутится...';
+  document.getElementById('roulette-result').innerHTML='';
+  const rand=Math.random();let prize={d:0,l:'0%'};
+  if(rand<0.005)prize={d:15,l:'15%'};else if(rand<0.05)prize={d:5,l:'5%'};else if(rand<0.15)prize={d:1,l:'1%'};
+  const reel=document.getElementById('slot-reel');const itemH=120,totalItems=15;
+  const target=prize.d===15?4:prize.d===5?3:prize.d===1?2:(Math.floor(Math.random()*5)+10);
+  const extraRounds=isAdmin?5:4;
+  const distance=(extraRounds*totalItems+target)*itemH;
+  reel.style.transition='none';reel.style.transform='translateY(0px)';
+  setTimeout(()=>{reel.style.transition='transform '+(isAdmin?6:5)+'s cubic-bezier(0.15, 0.55, 0.35, 1)';reel.style.transform=`translateY(-${distance}px)`;},30);
+  if(!isAdmin){lastSpin=Date.now();localStorage.setItem('swwshop_roulette_time',lastSpin.toString());db.ref('settings/lastRouletteTime').set(lastSpin);}
+  const duration=isAdmin?6500:5500;
+  setTimeout(()=>{
+    spinning=false;reel.style.transition='none';reel.style.transform='translateY(0px)';updateRouletteTimer();
+    if(prize.d>0){const code='RLT-'+Math.random().toString(36).substring(2,6).toUpperCase();promos[code]={discount:prize.d,used:false,created:Date.now(),type:'roulette',userId:getUserId()};db.ref('promos/'+code).set(promos[code]);document.getElementById('roulette-result').innerHTML=`<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;const tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgUser?.id){fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgUser.id,text:`🎰 *Рулетка!*\n\nВы выиграли скидку *${prize.l}*!\nПромокод: \`${code}\`\n\n⚠️ Промокод привязан к вашему аккаунту.`,parse_mode:'Markdown'})});}}
+    else{document.getElementById('roulette-result').innerHTML='<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';}
+  },duration);
+};
+
+function showMyPromos(){
+  const userId=getUserId();
+  const myPromos=Object.entries(promos).filter(([c,p])=>p.userId===userId);
+  const myCompletedOrders=orders.filter(o=>o.userId===userId&&o.status==='completed'&&o.promoCode);
+  let h='';
+  if(myCompletedOrders.length){
+    h+='<h4>🎁 От выполненных заказов:</h4>';
+    myCompletedOrders.forEach(o=>{
+      if(o.promoCode&&promos[o.promoCode]&&promos[o.promoCode].userId===userId){
+        const p=promos[o.promoCode];
+        h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${o.promoCode}</strong> - ${p.discount}%<br><small>Заказ #${o.id}</small></div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;
+      }
+    });
   }
-  
-  const code = input.value.trim();
-  
-  if (code.length !== 6) {
-    msg.innerHTML = '<span style="color:#ef4444;">❌ Введите 6 цифр</span>';
-    return;
+  const myRoulette=myPromos.filter(([c,p])=>p.type==='roulette');
+  if(myRoulette.length){
+    h+='<h4>🎰 От рулетки:</h4>';
+    myRoulette.forEach(([c,p])=>{
+      h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;
+    });
   }
-  
-  if (code === vc) {
-    clearInterval(vt);
-    msg.innerHTML = '<span style="color:#22c55e;">✅ Доступ разрешён!</span>';
-    btn.disabled = true;
-    
-    // Плавное переключение на страницу с тех. работами
-    setTimeout(() => {
-      document.getElementById('verify-overlay').style.opacity = '0';
-      document.getElementById('verify-overlay').style.transition = 'opacity 0.5s';
-      setTimeout(() => {
-        document.getElementById('verify-overlay').style.display = 'none';
-        document.getElementById('main-app').classList.add('active');
-        document.getElementById('main-app').style.animation = 'fadeIn 0.5s ease';
-      }, 500);
-    }, 500);
-  } else {
-    msg.innerHTML = '<span style="color:#ef4444;">❌ Неверный код. Попробуйте снова.</span>';
-    input.value = '';
-    input.focus();
+  const myAdmin=myPromos.filter(([c,p])=>p.type==='admin');
+  if(myAdmin.length){
+    h+='<h4>👤 От администратора:</h4>';
+    myAdmin.forEach(([c,p])=>{
+      h+=`<div class="promo-card" style="display:flex;justify-content:space-between;"><div><strong>${c}</strong> - ${p.discount}%</div><span style="color:${p.used?'var(--danger)':'var(--success)'};">${p.used?'Использован':'Доступен'}</span></div>`;
+    });
   }
+  document.getElementById('mypromos-list').innerHTML=h||'<p style="text-align:center;opacity:0.5;">У вас пока нет промокодов</p>';
 }
 
-// Автоматическая проверка при вводе 6 цифр
-document.getElementById('v-input').addEventListener('input', function(e) {
-  this.value = this.value.replace(/[^0-9]/g, '');
-  if (this.value.length === 6) {
-    verifyCode();
-  }
-});
+function showAllPromos(){
+  if(!isAdmin)return;
+  const el=document.getElementById('all-promos-list');
+  const codes=Object.entries(promos);
+  if(!codes.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет промокодов</p>';return;}
+  el.innerHTML=codes.sort((a,b)=>b[1].created-a[1].created).map(([c,p])=>{
+    const usedInfo=p.used?`❌ Использован${p.usedBy?' | 👤 '+p.usedBy:''}${p.usedAt?' | 📅 '+new Date(p.usedAt).toLocaleDateString():''}`:'✅ Доступен';
+    const type=p.type==='roulette'?'🎰 Рулетка':p.type==='auto'?'🎁 Авто':'👤 Админ';
+    const owner=p.userId?` | 👤 ${p.userId}`:'';
+    return `<div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;"><div><strong>${c}</strong> - ${p.discount}%<br><small>${usedInfo}${owner}</small><br><small>${type} | Создан: ${new Date(p.created).toLocaleDateString()}</small></div><button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button></div>`;
+  }).join('');
+}
+window.deletePromo=function(c){if(!isAdmin||!confirm('Удалить?'))return;db.ref('promos/'+c).remove();};
+window.createPromo=function(){
+  if(!isAdmin)return;
+  const c=document.getElementById('promo-code').value.trim()||'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
+  const discount=parseInt(document.getElementById('promo-discount').value)||15;
+  const targetUserId=document.getElementById('promo-user-id')?.value.trim();
+  db.ref('promos/'+c).set({discount:discount,used:false,created:Date.now(),type:'admin',userId:targetUserId||null});
+  alert('✅ Промокод создан!');
+  document.getElementById('promo-code').value='';
+  document.getElementById('promo-user-id').value='';
+};
 
-// Обработка нажатия Enter
-document.getElementById('v-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    verifyCode();
-  }
-});
+function getEarnings(){const ds=new Date();ds.setHours(0,0,0,0);const ws=new Date();ws.setDate(ws.getDate()-ws.getDay());ws.setHours(0,0,0,0);const ms=new Date();ms.setDate(1);ms.setHours(0,0,0,0);const ys=new Date();ys.setMonth(0,1);ys.setHours(0,0,0,0);const comp=orders.filter(o=>o.status==='completed');return{day:comp.filter(o=>o.completedAt>=ds.getTime()).reduce((s,o)=>s+o.total,0),week:comp.filter(o=>o.completedAt>=ws.getTime()).reduce((s,o)=>s+o.total,0),month:comp.filter(o=>o.completedAt>=ms.getTime()).reduce((s,o)=>s+o.total,0),year:comp.filter(o=>o.completedAt>=ys.getTime()).reduce((s,o)=>s+o.total,0)};}
+function registerUser(){const tgU=window.Telegram?.WebApp?.initDataUnsafe?.user;const uid=getUserId();const ud={id:uid,firstSeen:Date.now(),lastSeen:Date.now(),visitCount:1};if(tgU){ud.telegramId=tgU.id;ud.firstName=tgU.first_name;ud.username=tgU.username||'';}db.ref('users/'+uid).once('value').then(s=>{const ex=s.val();if(ex)db.ref('users/'+uid).update({lastSeen:Date.now(),visitCount:(ex.visitCount||1)+1});else db.ref('users/'+uid).set(ud);});}
 
-// Добавляем стиль анимации
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-`;
-document.head.appendChild(style);
+db.ref('assortment').once('value').then(s=>{const v=s.val();if(v?.liquids)data=v;else db.ref('assortment').set({liquids:[],pouches:[],coils:[],devices:[]});if(!initialized){initialized=true;showMain();updateRouletteTimer();}});
+db.ref('orders').on('value',s=>{orders=s.val()?Object.values(s.val()):[];console.log('📋 Заказы:',orders.length);updateUI();});
+db.ref('promos').on('value',s=>{promos=s.val()||{};updateUI();});
+db.ref('users').on('value',s=>{users=s.val()||{};updateUI();});
+db.ref('settings/lastRouletteTime').on('value',s=>{const v=s.val();if(v&&v>lastSpin){lastSpin=v;localStorage.setItem('swwshop_roulette_time',v.toString());updateRouletteTimer();}});
 
-// Фокус на поле ввода при загрузке
-window.addEventListener('load', function() {
-  document.getElementById('v-input').focus();
-});
+function refreshView(){if(currentView==='main')showMain();else if(currentView==='category')showCategory(currentCategory);else if(currentView==='detail')showDetail(currentCategory,currentIndex);}
+function updateUI(){if(activePanel==='orders')showOrders();if(activePanel==='all-orders')showAllOrders();if(activePanel==='mypromos')showMyPromos();if(activePanel==='all-promos')showAllPromos();if(activePanel==='roulette')updateRouletteTimer();if(activePanel==='users')showUsers();if(activePanel==='console')updateConsoleUsers();if(currentView==='main')showMain();if(isAdmin)updateAdminEarnings();}
+function updateAdminEarnings(){const e=getEarnings();const el=document.getElementById('admin-earnings');if(el)el.innerHTML=`<div class="earning-card"><div class="earning-amount">${e.day} ₽</div><div class="earning-label">Сегодня</div></div><div class="earning-card"><div class="earning-amount">${e.week} ₽</div><div class="earning-label">Неделя</div></div><div class="earning-card"><div class="earning-amount">${e.month} ₽</div><div class="earning-label">Месяц</div></div><div class="earning-card"><div class="earning-amount">${e.year} ₽</div><div class="earning-label">Год</div></div>`;}
+
+window.openPanel=function(n){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));const p=document.getElementById(n+'-panel');if(p){p.classList.add('active');activePanel=n;}if(n==='orders')showOrders();if(n==='all-orders')showAllOrders();if(n==='mypromos')showMyPromos();if(n==='all-promos')showAllPromos();if(n==='roulette')updateRouletteTimer();if(n==='cart')showCart();if(n==='users')showUsers();if(n==='console')updateConsoleUsers();};
+window.closePanel=function(n){const p=document.getElementById(n+'-panel');if(p)p.classList.remove('active');activePanel=null;};
+window.toggleAdminPanel=function(){
+  if(isAdmin){const p=document.getElementById('admin-panel');if(p.classList.contains('active')){p.classList.remove('active');activePanel=null;}else{document.querySelectorAll('.overlay-panel').forEach(x=>x.classList.remove('active'));p.classList.add('active');activePanel='admin';updateAdminEarnings();}}
+  else{const p=document.getElementById('admin-panel');p.classList.toggle('active');if(p.classList.contains('active'))activePanel='admin';else activePanel=null;}
+};
+
+function updateAdminUI(){
+  document.getElementById('admin-indicator').className=isAdmin?'admin-indicator active':'admin-indicator';
+  document.getElementById('console-icon').style.display=isAdmin?'flex':'none';
+  document.getElementById('users-icon').style.display=isAdmin?'flex':'none';
+  if(!isAdmin){document.getElementById('admin-login-area').style.display='block';document.getElementById('admin-controls-area').style.display='none';}
+  else{document.getElementById('admin-login-area').style.display='none';document.getElementById('admin-controls-area').style.display='block';}
+}
+
+function stText(s){return s?'В наличии':'Нет';}function stClass(s){return s?'status-in-stock':'status-out-stock';}
+function getUserId(){const tgU=window.Telegram?.WebApp?.initDataUnsafe?.user;if(tgU)return'tg_'+tgU.id;let id=localStorage.getItem('swwshop_userId');if(!id){id='web_'+Date.now();localStorage.setItem('swwshop_userId',id);}return id;}
+function getTotalUsers(){return Object.keys(users).length;}
+
+function showUsers(){if(!isAdmin)return;const ul=Object.values(users);document.getElementById('user-stats').innerHTML=`<div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div><div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>`;const el=document.getElementById('users-list');if(!ul.length){el.innerHTML='<p>Нет</p>';return;}el.innerHTML=ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`<div class="user-card"><div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div><div style="font-size:12px;opacity:0.7;">ID: ${u.id}</div></div>`).join('');}
+function updateConsoleUsers(){if(!isAdmin)return;const sel=document.getElementById('console-user');sel.innerHTML='<option value="">-- Выберите --</option>';Object.values(users).forEach(u=>{sel.innerHTML+=`<option value="${u.id}">${u.firstName||'Пользователь'}</option>`;});}
+
+window.sendMessageToUser=async function(){if(!isAdmin)return;const uid=document.getElementById('console-user').value,msg=document.getElementById('console-message').value.trim();if(!uid||!msg)return alert('Заполните!');const user=users[uid];if(!user?.telegramId)return alert('Не в Telegram');await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:'📨 SWWSHOP:\n\n'+msg})});alert('✅');};
+window.sendBroadcast=async function(){if(!isAdmin)return;const msg=document.getElementById('console-broadcast').value.trim();if(!msg||!confirm('Всем?'))return;let sent=0;for(const u of Object.values(users)){if(u.telegramId){try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:u.telegramId,text:'📢 SWWSHOP:\n\n'+msg})});sent++;}catch(e){}}}alert(`✅ ${sent} чел.`);};
+
+function showOrders(){const my=orders.filter(o=>o.userId===getUserId()&&o.status==='completed');const el=document.getElementById('orders-list');if(!my.length){el.innerHTML='<p style="text-align:center;opacity:0.5;">Нет выполненных заказов</p>';return;}el.innerHTML=my.reverse().map(o=>`<div class="order-card"><div><strong>#${o.id}</strong></div><div style="font-size:12px;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB</div>${o.promoCode&&promos[o.promoCode]&&!promos[o.promoCode].used?`<div class="promo-code-display">🎁 ${o.promoCode}</div>`:''}</div>`).join('');}
+
+function showAllOrders(){
+  if(!isAdmin)return;
+  const el=document.getElementById('all-orders-list');
+  if(!orders.length){el.innerHTML='<p style="text-align:center;opacity:0.5;padding:20px;">Нет заказов</p>';return;}
+  const sortedOrders=[...orders].sort((a,b)=>(b.date||0)-(a.date||0));
+  el.innerHTML=sortedOrders.map(o=>{
+    const statusNames={pending:'⏳ Ожидает',completed:'✅ Выполнен',cancelled:'❌ Отменён'};
+    const statusClasses={pending:'status-pending',completed:'status-completed',cancelled:'status-cancelled'};
+    const itemCount=o.items?o.items.length:0;
+    const total=o.total||0;
+    const payment=o.payment||'Не указано';
+    const contact=o.userContact||'Нет контакта';
+    const username=o.userUsername?' | @'+o.userUsername:'';
+    return `<div class="order-card" style="cursor:pointer;" onclick="showOrderDetail('${o.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div><strong>#${o.id}</strong> | ${o.userName||'Без имени'}</div>
+          <div style="font-size:12px;opacity:0.7;">${new Date(o.date||Date.now()).toLocaleString()} | ${itemCount} поз. | ${total} RUB</div>
+          <div style="font-size:12px;opacity:0.6;">📱 ${contact}${username} | 💳 ${payment}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <span class="order-status ${statusClasses[o.status]||'status-pending'}">${statusNames[o.status]||'Ожидает'}</span>
+          <div style="margin-top:6px;">
+            <button class="btn-sm btn-view" onclick="event.stopPropagation();showOrderDetail('${o.id}')">👁</button>
+            ${o.status==='pending'?`<button class="btn-sm btn-complete" onclick="event.stopPropagation();completeOrder('${o.id}',${o.subtotal||0})">✅</button> <button class="btn-sm btn-delete" onclick="event.stopPropagation();cancelOrder('${o.id}')">❌</button>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.showOrderDetail=function(orderId){
+  const order=orders.find(o=>o.id===orderId);
+  if(!order)return alert('Заказ не найден');
+  const el=document.getElementById('order-detail-content');
+  const statusNames={pending:'⏳ Ожидает',completed:'✅ Выполнен',cancelled:'❌ Отменён'};
+  const statusClasses={pending:'status-pending',completed:'status-completed',cancelled:'status-cancelled'};
+  let html=`<div class="order-detail-card"><h3 style="margin-top:0;">Заказ #${order.id}</h3><div style="font-size:13px;opacity:0.8;margin-bottom:12px;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}${order.userUsername?' | 💬 @'+order.userUsername:''}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}<br>💳 ${order.payment||'Не указано'}</div><div style="font-weight:600;margin-bottom:8px;">📋 Товары (${order.items?order.items.length:0}):</div>`;
+  if(order.items&&order.items.length>0){order.items.forEach((item,i)=>{html+=`<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;});}else{html+='<p style="opacity:0.5;">Нет товаров</p>';}
+  if(order.discount>0){html+=`<div class="order-detail-item"><span>🎫 Скидка</span><span>-${order.discount} ₽</span></div>`;}
+  html+=`<div class="order-detail-total">Итого: ${order.total||0} ₽</div>`;
+  html+=`<div style="text-align:center;margin-top:12px;"><span class="order-status ${statusClasses[order.status]||'status-pending'}">${statusNames[order.status]||'Ожидает'}</span></div>`;
+  if(order.status==='pending'){html+=`<div style="display:flex;gap:8px;margin-top:16px;"><button class="admin-action-btn btn-green" onclick="completeOrder('${order.id}',${order.subtotal||0});closePanel('order-detail');showAllOrders();">✅ Выполнить</button><button class="admin-action-btn btn-red" onclick="cancelOrder('${order.id}');closePanel('order-detail');showAllOrders();">❌ Отменить</button></div>`;}
+  html+=`</div>`;
+  el.innerHTML=html;
+  document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('order-detail-panel').classList.add('active');
+  activePanel='order-detail';
+};
+
+window.completeOrder=async function(oid,sub){
+  if(!isAdmin||!confirm('Выполнить?'))return;
+  const up={status:'completed',completedAt:Date.now()};
+  let promo=null;
+  if(sub>=800){
+    promo='SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
+    up.promoCode=promo;
+    const orderData=(await db.ref('orders/'+oid).once('value')).val();
+    db.ref('promos/'+promo).set({discount:15,used:false,created:Date.now(),type:'auto',userId:orderData.userId});
+  }
+  await db.ref('orders/'+oid).update(up);
+  const order=(await db.ref('orders/'+oid).once('value')).val();
+  if(order){
+    const user=(await db.ref('users/'+order.userId).once('value')).val();
+    if(user?.telegramId){
+      let txt='🎉 *Заказ #'+oid+' выполнен!*';
+      if(promo)txt+='\n\n🎁 *Ваш личный промокод 15%:* `'+promo+'`\n\n⚠️ Промокод привязан к вашему аккаунту.';
+      try{await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:user.telegramId,text:txt,parse_mode:'Markdown'})});}catch(e){}
+    }
+  }
+  alert('✅'+(promo?' Промокод: '+promo:''));
+  showAllOrders();updateAdminEarnings();
+};
+window.cancelOrder=function(oid){if(!isAdmin||!confirm('Отменить?'))return;db.ref('orders/'+oid).update({status:'cancelled'});showAllOrders();};
+
+window.applyPromo=function(){
+  const input=document.getElementById('promo-input').value.trim().toUpperCase();
+  if(!input)return;
+  const userId=getUserId();
+  if(promos[input]){
+    const promo=promos[input];
+    if(promo.used){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Промокод уже использован</span>';return;}
+    if(promo.userId&&promo.userId!==userId){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Этот промокод не принадлежит вам</span>';return;}
+    if(promo.expiresAt&&Date.now()>promo.expiresAt){document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Промокод просрочен</span>';return;}
+    appliedPromo={code:input,discount:promo.discount};
+    document.getElementById('promo-message').innerHTML='<span style="color:var(--success);">Скидка -'+promo.discount+'% применена!</span>';
+    showCart();
+  }else{document.getElementById('promo-message').innerHTML='<span style="color:var(--danger);">Промокод не найден</span>';appliedPromo=null;}
+};
+
+function saveCart(){localStorage.setItem('swwshop_cart',JSON.stringify(cart));updateCartBadge();}
+function updateCartBadge(){const c=cart.reduce((s,i)=>s+(i.quantity||1),0);const el=document.getElementById('cart-count');el.style.display=c>0?'flex':'none';if(c>0)el.textContent=c;}
+
+window.addToCart=function(n,p,ln,fn){if(!fn){alert('❌ Выберите вкус!');return;}const line=data[currentCategory]?.find(l=>l.name===ln);if(line){const f=line.flavors.find(f=>f.name===fn);if(f&&!f.inStock){alert('❌ Нет в наличии!');return;}}cart.push({name:fn+' ('+ln+')',price:p});saveCart();alert('✅ Добавлено!');};
+window.addToCartSimple=function(n,p){const item=data[currentCategory]?.find(i=>i.name===n);if(item&&!item.inStock){alert('❌ Нет в наличии!');return;}cart.push({name:n,price:p});saveCart();alert('✅ Добавлено!');};
+window.removeFromCart=function(i){cart.splice(i,1);saveCart();showCart();};
+
+function showCart(){if(!cart.length){document.getElementById('cart-items').innerHTML='<p>Пусто</p>';document.getElementById('cart-total').textContent='';document.getElementById('order-form').style.display='none';return;}let sub=cart.reduce((s,i)=>s+i.price,0);let disc=appliedPromo?Math.round(sub*appliedPromo.discount/100):0;document.getElementById('cart-items').innerHTML=cart.map((item,i)=>`<div class="cart-item"><div>${item.name}</div><span>${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>`).join('');document.getElementById('cart-total').textContent='Итого: '+(sub-disc)+' RUB';document.getElementById('order-form').style.display='block';}
+
+window.sendOrder=async function(){
+  const name=document.getElementById('customer-name').value.trim();
+  const contact=document.getElementById('customer-contact').value.trim();
+  const payment=document.getElementById('payment-method').value;
+  if(!name||!contact||!payment)return alert('Заполните все поля!');
+  if(!cart.length)return alert('❌ Корзина пуста! Добавьте товары.');
+  let sub=cart.reduce((s,i)=>s+i.price,0),disc=0;
+  if(appliedPromo&&promos[appliedPromo.code]&&!promos[appliedPromo.code].used){
+    disc=Math.round(sub*appliedPromo.discount/100);
+    db.ref('promos/'+appliedPromo.code).update({used:true,usedBy:getUserId(),usedAt:Date.now()});
+  }
+  const total=sub-disc,oid='SWW-'+Date.now().toString(36).toUpperCase().slice(-6),uid=getUserId(),tgU=window.Telegram?.WebApp?.initDataUnsafe?.user;
+  await db.ref('orders/'+oid).set({id:oid,userId:uid,userName:name,userContact:contact,userUsername:tgU?.username||contact,items:[...cart],subtotal:sub,discount:disc,total,payment,status:'pending',date:Date.now()});
+  let atxt='🛒 НОВЫЙ ЗАКАЗ #'+oid+'\n\n👤 '+name+'\n📱 '+contact+'\n💳 '+payment+'\n\n📋 Товары:\n';
+  cart.forEach((item,i)=>{atxt+=(i+1)+'. '+item.name+' - '+item.price+'₽\n';});
+  if(disc>0)atxt+='\n🎫 Промокод: '+appliedPromo.code+' (-'+disc+'₽)';
+  atxt+='\n💰 Итого: '+total+'₽';
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:CHAT_ID,text:atxt})});
+  cart=[];appliedPromo=null;saveCart();
+  document.getElementById('cart-items').innerHTML='';document.getElementById('cart-total').textContent='';
+  document.getElementById('order-form').style.display='none';document.getElementById('order-success').style.display='block';
+  document.getElementById('order-success').innerHTML='✅ Заказ #'+oid+' оформлен!';
+};
+
+const ci={liquids:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="8" y="4" width="24" height="32" rx="6" fill="url(#l1)" stroke="#0096ff" stroke-width="1.5"/><defs><linearGradient id="l1"><stop offset="0%" stop-color="#0096ff" stop-opacity="0.3"/><stop offset="100%" stop-color="#0056b3" stop-opacity="0.5"/></linearGradient></defs></svg>`,pouches:`<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="16" r="10" fill="url(#p1)" stroke="#ff9600" stroke-width="1.5"/><circle cx="20" cy="16" r="3" fill="#ff9600"/><defs><linearGradient id="p1"><stop offset="0%" stop-color="#ff9600" stop-opacity="0.2"/><stop offset="100%" stop-color="#cc7a00" stop-opacity="0.4"/></linearGradient></defs></svg>`,coils:`<svg class="section-icon" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="url(#c1)" stroke="#888" stroke-width="1.5"/><defs><linearGradient id="c1"><stop offset="0%" stop-color="#aaa" stop-opacity="0.2"/><stop offset="100%" stop-color="#555" stop-opacity="0.4"/></linearGradient></defs></svg>`,devices:`<svg class="section-icon" viewBox="0 0 40 40"><rect x="6" y="4" width="28" height="22" rx="4" fill="url(#d1)" stroke="#64c864" stroke-width="1.5"/><defs><linearGradient id="d1"><stop offset="0%" stop-color="#64c864" stop-opacity="0.2"/><stop offset="100%" stop-color="#3a8a3a" stop-opacity="0.4"/></linearGradient></defs></svg>`};
+
+window.showMain=function(){currentView='main';const e=getEarnings();document.getElementById('app').innerHTML=`<h1 class="shop-title">SWWSHOP</h1><div style="text-align:center;"><div class="users-counter">👥 Пользователей: <span>${getTotalUsers()}</span></div></div>${isAdmin?`<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${e.day} ₽</div></div></div>`:''}<p style="text-align:center;opacity:0.7;">Выберите категорию:</p><button class="category-btn" onclick="showCategory('liquids')">${ci.liquids} Жидкости</button><button class="category-btn" onclick="showCategory('pouches')">${ci.pouches} Шайбы</button><button class="category-btn" onclick="showCategory('coils')">${ci.coils} Испарители</button><button class="category-btn" onclick="showCategory('devices')">${ci.devices} Устройства</button>`;};
+
+window.showCategory=function(cat){currentView='category';currentCategory=cat;const t={liquids:'Жидкости',pouches:'Шайбы',coils:'Испарители',devices:'Устройства'};let h='<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">'+t[cat]+'</h1>';if(!data[cat]?.length){h+='<p>Нет товаров</p>';}else if(cat==='liquids'||cat==='pouches'){data[cat].forEach((l,i)=>{h+='<div style="margin-bottom:8px;"><button class="category-btn" onclick="showDetail(\''+cat+'\','+i+')"><span>'+l.name+'</span><span style="font-size:13px;opacity:0.7;">'+l.price+' RUB | '+l.flavors.length+' вкусов</span></button>';if(isAdmin)h+='<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine(\''+cat+'\','+i+')">Удалить линейку</button>';h+='</div>';});}else{data[cat].forEach((item,i)=>{h+='<div class="product-row"><span class="product-name">'+item.name+'</span><span class="product-price">'+item.price+' RUB</span><span class="status-badge '+stClass(item.inStock)+'">'+stText(item.inStock)+'</span><div class="product-actions">';h+=item.inStock?'<button class="add-to-cart-btn" onclick="addToCartSimple(\''+item.name+'\','+item.price+')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';if(isAdmin)h+='<button class="btn-sm btn-toggle" onclick="toggleItem(\''+cat+'\','+i+')">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem(\''+cat+'\','+i+')">Удалить</button>';h+='</div></div>';});}document.getElementById('app').innerHTML=h;};
+
+window.showDetail=function(cat,idx){currentView='detail';currentCategory=cat;currentIndex=idx;const line=data[cat][idx];let h='<button class="back-btn" onclick="showCategory(\''+cat+'\')">← Назад</button><h1 class="shop-title">'+line.name+'</h1><p style="text-align:center;color:var(--accent);font-weight:600;">'+line.price+' RUB</p>';h+='<div class="section-title">Выберите вкус ('+line.flavors.length+'):</div>';line.flavors.forEach((f,fi)=>{h+='<div class="flavor-row"><span class="flavor-name">'+f.name+'</span><div class="flavor-actions"><span class="status-badge '+stClass(f.inStock)+'">'+stText(f.inStock)+'</span>';h+=f.inStock?'<button class="add-to-cart-btn" onclick="addToCart(\''+line.name+'\','+line.price+',\''+line.name+'\',\''+f.name+'\')">🛒</button>':'<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>';if(isAdmin)h+='<button class="btn-sm btn-toggle" onclick="toggleFlavor(\''+cat+'\','+idx+','+fi+')">Сменить</button>';h+='</div></div>';});document.getElementById('app').innerHTML=h;};
+
+window.deleteLine=function(c,i){if(!isAdmin)return;if(confirm('Удалить линейку?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
+window.deleteItem=function(c,i){if(!isAdmin)return;if(confirm('Удалить товар?')){data[c].splice(i,1);db.ref('assortment').set(data);showCategory(c);}};
+window.toggleItem=function(c,i){if(!isAdmin)return;data[c][i].inStock=!data[c][i].inStock;db.ref('assortment').set(data);showCategory(c);};
+window.toggleFlavor=function(c,l,f){if(!isAdmin)return;data[c][l].flavors[f].inStock=!data[c][l].flavors[f].inStock;db.ref('assortment').set(data);showDetail(c,l);};
+window.updateDelSelect=function(){const c=document.getElementById('del-category')?.value;const s=document.getElementById('del-item');if(!s||!data[c])return;s.innerHTML='<option value="">-- Выберите --</option>';data[c].forEach((item,i)=>{s.innerHTML+='<option value="'+i+'">'+item.name+'</option>';});};
+
+window.adminLogin=function(){if(document.getElementById('admin-password').value==='SWWADMIN_SWQ35YTF'){isAdmin=true;document.getElementById('admin-login-area').style.display='none';document.getElementById('admin-controls-area').style.display='block';updateAdminUI();updateAdminEarnings();showMain();updateRouletteTimer();}else alert('Неверный пароль!');};
+window.adminLogout=function(){isAdmin=false;document.getElementById('admin-login-area').style.display='block';document.getElementById('admin-controls-area').style.display='none';document.getElementById('admin-panel').classList.remove('active');activePanel=null;updateAdminUI();showMain();updateRouletteTimer();};
+window.addLine=function(){if(!isAdmin)return;const n=document.getElementById('line-name').value.trim(),p=parseInt(document.getElementById('line-price').value),c=document.getElementById('line-category').value,ft=document.getElementById('line-flavors').value.trim();if(!n||!p||!ft)return alert('Заполните!');const fl=ft.split('\n').filter(l=>l.trim()).map(l=>{const a=l.split(',');return{name:a[0].trim(),inStock:a[1]?.trim().toUpperCase()==='YES'};});if(!fl.length)return alert('Минимум 1 вкус!');data[c].push({name:n,price:p,flavors:fl});db.ref('assortment').set(data);alert('✅ Добавлено!');document.getElementById('line-name').value='';document.getElementById('line-price').value='';document.getElementById('line-flavors').value='';showMain();};
+window.addItem=function(){if(!isAdmin)return;const n=document.getElementById('item-name').value.trim(),p=parseInt(document.getElementById('item-price').value),c=document.getElementById('item-category').value,q=parseInt(document.getElementById('item-qty').value)||0;if(!n||!p)return alert('Заполните!');data[c].push({name:n,price:p,inStock:q>0});db.ref('assortment').set(data);alert('✅ Добавлено!');document.getElementById('item-name').value='';document.getElementById('item-price').value='';document.getElementById('item-qty').value='';showMain();};
+window.deleteSelected=function(){if(!isAdmin)return;const c=document.getElementById('del-category').value,i=parseInt(document.getElementById('del-item').value);if(isNaN(i))return alert('Выберите товар!');if(confirm('Удалить?')){data[c].splice(i,1);db.ref('assortment').set(data);showMain();}};
+window.deleteAllOutOfStock=function(){if(!isAdmin||!confirm('Удалить всё что закончилось?'))return;['liquids','pouches'].forEach(c=>{data[c]=data[c].filter(l=>l.flavors?.some(f=>f.inStock));});['coils','devices'].forEach(c=>{data[c]=data[c].filter(i=>i.inStock);});db.ref('assortment').set(data);alert('✅ Готово!');showMain();};
+
+const tg=window.Telegram.WebApp;tg.ready();tg.expand();
+registerUser();updateCartBadge();updateAdminUI();
+if(!initialized)showMain();
+}
 </script>
 </body>
 </html>
