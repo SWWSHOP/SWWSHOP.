@@ -189,7 +189,7 @@
     .admin-indicator { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; position: fixed; top: 10px; left: 10px; z-index: 101; display: none; }
     .admin-indicator.active { display: block; }
     
-    .user-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .user-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .stat-card { background: var(--card-bg); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
     .stat-number { font-size: 24px; font-weight: 700; color: var(--accent); }
     .stat-label { font-size: 11px; opacity: 0.7; }
@@ -400,6 +400,7 @@ function createFlyingItem(event) {
 function initShop(){
 const BOT_TOKEN='8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
 const CHAT_ID='5993502384';
+const BASE_USERS_COUNT = 79; // Базовое количество пользователей
 
 firebase.initializeApp({
   apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
@@ -431,7 +432,6 @@ db.ref('settings/season').on('value', (snapshot) => {
     currentSeason = seasonFromDB;
     applySeason(currentSeason);
     
-    // Обновляем текст кнопки в админ-панели
     const adminSeasonBtn = document.getElementById('admin-season-toggle');
     if (adminSeasonBtn && isAdmin) {
       adminSeasonBtn.textContent = currentSeason === 'winter' 
@@ -459,7 +459,6 @@ async function checkBot(){
           let inlineKeyboard = null;
           
           if (text === '/start') {
-            // Получаем имя пользователя из Telegram
             const userName = m.from?.first_name || 'Друг';
             const userUsername = m.from?.username ? `@${m.from.username}` : '';
             const displayName = userUsername || userName;
@@ -521,7 +520,8 @@ async function checkBot(){
             const os = await db.ref('orders').once('value');
             const users = us.val() || {};
             const orders = os.val() || {};
-            r = `📊 *Статистика*\n👥 Пользователей: *${Object.keys(users).length}*\n📋 Заказов: *${Object.values(orders).length}*`;
+            const totalUsers = BASE_USERS_COUNT + Object.keys(users).length;
+            r = `📊 *Статистика*\n👥 Пользователей: *${totalUsers}*\n📋 Заказов: *${Object.values(orders).length}*`;
           }
           
           if (r) {
@@ -586,14 +586,9 @@ window.toggleSeason = function() {
   }
   
   currentSeason = currentSeason === 'summer' ? 'winter' : 'summer';
-  
-  // Сохраняем в Firebase для всех пользователей
   db.ref('settings/season').set(currentSeason);
-  
-  // Применяем локально
   applySeason(currentSeason);
   
-  // Отправляем уведомление всем пользователям через бота
   if (currentSeason === 'winter') {
     broadcastSeasonChange('❄️ Включена зимняя тема оформления!');
     showNotification('❄️ Зимняя тема включена для всех');
@@ -916,6 +911,11 @@ function registerUser(){
   });
 }
 
+function getTotalUsers(){
+  const actualUsers = Object.keys(users).length;
+  return BASE_USERS_COUNT + actualUsers;
+}
+
 db.ref('assortment').once('value').then(s=>{
   const v=s.val();
   if(v?.liquids){
@@ -951,6 +951,10 @@ db.ref('promos').on('value',s=>{
 db.ref('users').on('value',s=>{
   users=s.val()||{};
   updateUI();
+  
+  // Обновляем счетчик в Firebase
+  const totalCount = BASE_USERS_COUNT + Object.keys(users).length;
+  db.ref('settings/totalUsersCount').set(totalCount);
 });
 
 db.ref('settings/lastRouletteTime').on('value',s=>{
@@ -1068,26 +1072,38 @@ function getUserId(){
   return id;
 }
 
-function getTotalUsers(){
-  return Object.keys(users).length;
-}
-
 function showUsers(){
   if(!isAdmin)return;
-  const ul=Object.values(users);
+  
+  const actualUsers = Object.values(users);
+  const totalCount = getTotalUsers();
+  
   document.getElementById('user-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-number">${ul.length}</div><div class="stat-label">Всего</div></div>
-    <div class="stat-card"><div class="stat-number">${ul.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div>
-    <div class="stat-card"><div class="stat-number">${ul.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>
+    <div class="stat-card">
+      <div class="stat-number">${totalCount}</div>
+      <div class="stat-label">Всего</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${actualUsers.length}</div>
+      <div class="stat-label">Реальных</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${actualUsers.filter(u=>u.username).length}</div>
+      <div class="stat-label">Telegram</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${actualUsers.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div>
+      <div class="stat-label">За 24ч</div>
+    </div>
   `;
   
   const el=document.getElementById('users-list');
-  if(!ul.length){
+  if(!actualUsers.length){
     el.innerHTML='<p>Нет</p>';
     return;
   }
   
-  el.innerHTML=ul.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`
+  el.innerHTML=actualUsers.sort((a,b)=>b.lastSeen-a.lastSeen).map(u=>`
     <div class="user-card">
       <div><strong>${u.firstName||'Пользователь'}</strong>${u.username?` @${u.username}`:''}</div>
       <div style="font-size:12px;opacity:0.7;">ID: ${u.id}</div>
