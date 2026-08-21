@@ -91,7 +91,7 @@
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
     
-    /* ОБВОДКА ДЛЯ ВСЕХ КАТЕГОРИЙ - единый стиль как у шапки */
+    /* ОБВОДКА ДЛЯ ВСЕХ КАТЕГОРИЙ */
     .category-gradient {
       background: linear-gradient(135deg, var(--accent), #8b5cf6);
       padding: 3px;
@@ -168,7 +168,7 @@
     .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); } .btn-view { background: #06b6d4; }
     .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; margin-top: 4px; }
     
-    /* НОВАЯ ШАПКА С КОНТУРОМ */
+    /* ШАПКА С КОНТУРОМ */
     .header-gradient {
       background: linear-gradient(135deg, var(--accent), #8b5cf6);
       padding: 4px;
@@ -227,7 +227,7 @@
     .header-hamburger span:nth-child(2) { width: 14px; }
     .header-hamburger span:nth-child(3) { width: 18px; }
 
-    /* НОВОЕ ВЫДВИЖНОЕ МЕНЮ (полупрозрачный оверлей) */
+    /* ВЫДВИЖНОЕ МЕНЮ */
     .menu-overlay {
       position: fixed;
       top: 0;
@@ -434,7 +434,7 @@
     .order-detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
     .order-detail-total { font-size: 18px; font-weight: 700; text-align: right; color: var(--accent); margin-top: 12px; }
 
-    /* ——— iOS‑стиль уведомления ——— */
+    /* iOS‑стиль уведомления */
     .ios-toast {
       position: fixed;
       bottom: 30px;
@@ -466,7 +466,7 @@
     .ios-toast .toast-icon { font-size: 20px; }
     .ios-toast .toast-text { letter-spacing: 0.2px; }
 
-    /* ——— переключатель техработ в админке ——— */
+    /* переключатель техработ в админке */
     .maintenance-toggle-row {
       display: flex;
       align-items: center;
@@ -520,7 +520,7 @@
     .maintenance-status-badge.on { background: rgba(94, 163, 217, 0.2); color: #5ea3d9; }
     .maintenance-status-badge.off { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
-    /* ——— СТРАНИЦА ТЕХРАБОТ (полноэкранная) ——— */
+    /* СТРАНИЦА ТЕХРАБОТ */
     #maintenance-page {
       position: fixed;
       top: 0;
@@ -714,7 +714,7 @@
     </div>
   </div>
 
-  <div id="main-app">
+  <div id="main-app" style="display:none;">
     <div class="admin-indicator" id="admin-indicator">АДМИН</div>
 
     <div class="header-gradient">
@@ -1190,7 +1190,7 @@ function updateCartBadge() {
   }
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо для объёма) =====
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
 function getUserId() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (tgU) return 'tg_' + tgU.id;
@@ -1315,7 +1315,6 @@ function adminLogout() {
   showIosToast('Вы вышли из админ-панели', '👋');
 }
 
-// ===== КОРОТКИЕ ЗАГОЛОВКИ ДЛЯ ДРУГИХ ФУНКЦИЙ =====
 function showOrders() {
   const my = orders.filter(o => o.userId === getUserId() && o.status === 'completed');
   const el = document.getElementById('orders-list');
@@ -1461,6 +1460,16 @@ function sendOrder() {
     items:[...cart], subtotal:sub, discount:disc, total:total,
     payment:payment, status:'pending', date:Date.now()
   });
+  
+  // Отправка в Telegram
+  let atxt = '🛒 НОВЫЙ ЗАКАЗ #'+oid+'\n\n👤 '+name+'\n📱 '+contact+'\n💳 '+payment+'\n\n📋 Товары:\n';
+  cart.forEach((item,i) => { atxt += (i+1)+'. '+item.name+' - '+item.price+'₽\n'; });
+  if (disc > 0) atxt += '\n🎫 Промокод: '+appliedPromo?.code+' (-'+disc+'₽)';
+  atxt += '\n💰 Итого: '+total+'₽';
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:CHAT_ID, text:atxt})
+  }).catch(() => {});
   
   cart = []; appliedPromo = null; saveCart();
   document.getElementById('cart-items').innerHTML = '';
@@ -1684,29 +1693,72 @@ function toggleSeason() {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 function initShop() {
-  // Загружаем данные
+  // Загружаем данные из Firebase
   db.ref('assortment').once('value').then(s => {
     const v = s.val();
-    if (v?.liquids) data = v;
-    else db.ref('assortment').set({liquids:[], pouches:[], coils:[], devices:[]});
-    if (!initialized) { initialized = true; showMain(); updateRouletteTimer(); }
+    if (v?.liquids) {
+      data = v;
+    } else {
+      // Если данных нет, создаём пустые категории
+      data = {liquids:[], pouches:[], coils:[], devices:[]};
+      db.ref('assortment').set(data);
+    }
+    // Показываем главную страницу
+    if (!initialized) {
+      initialized = true;
+      showMain();
+      updateRouletteTimer();
+    }
+  }).catch(err => {
+    console.error('Error loading data:', err);
+    // В случае ошибки всё равно показываем страницу с пустыми данными
+    if (!initialized) {
+      initialized = true;
+      showMain();
+      updateRouletteTimer();
+    }
   });
   
-  db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
-  db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
-  db.ref('users').on('value', s => { users = s.val() || {}; updateUI(); });
+  // Слушатели изменений
+  db.ref('orders').on('value', s => { 
+    orders = s.val() ? Object.values(s.val()) : []; 
+    updateUI(); 
+  });
+  db.ref('promos').on('value', s => { 
+    promos = s.val() || {}; 
+    updateUI(); 
+  });
+  db.ref('users').on('value', s => { 
+    users = s.val() || {}; 
+    updateUI(); 
+  });
   db.ref('settings/lastRouletteTime').on('value', s => {
     const v = s.val();
-    if (v && v > lastSpin) { lastSpin = v; localStorage.setItem('swwshop_roulette_time', v.toString()); updateRouletteTimer(); }
+    if (v && v > lastSpin) { 
+      lastSpin = v; 
+      localStorage.setItem('swwshop_roulette_time', v.toString()); 
+      updateRouletteTimer(); 
+    }
   });
   
   // Регистрация пользователя
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const uid = getUserId();
   db.ref('users/'+uid).once('value').then(s => {
-    if (s.val()) db.ref('users/'+uid).update({lastSeen: Date.now(), visitCount: (s.val().visitCount||1)+1});
-    else db.ref('users/'+uid).set({id:uid, firstSeen:Date.now(), lastSeen:Date.now(), visitCount:1, telegramId: tgU?.id, firstName: tgU?.first_name, username: tgU?.username});
-  });
+    if (s.val()) {
+      db.ref('users/'+uid).update({lastSeen: Date.now(), visitCount: (s.val().visitCount||1)+1});
+    } else {
+      db.ref('users/'+uid).set({
+        id:uid, 
+        firstSeen:Date.now(), 
+        lastSeen:Date.now(), 
+        visitCount:1, 
+        telegramId: tgU?.id, 
+        firstName: tgU?.first_name, 
+        username: tgU?.username
+      });
+    }
+  }).catch(() => {});
   
   // Инициализация состояния техработ
   try {
@@ -1715,7 +1767,7 @@ function initShop() {
   } catch (_) {}
   updateMaintenanceUI();
   
-  // Обработчики
+  // Обработчики событий
   document.getElementById('hamburgerBtn').addEventListener('click', toggleMenu);
   document.getElementById('menuCloseBtn').addEventListener('click', closeMenu);
   document.getElementById('menuOverlay').addEventListener('click', function(e) { if (e.target === this) closeMenu(); });
@@ -1748,9 +1800,23 @@ function updateUI() {
   if (isAdmin) updateAdminEarnings();
 }
 
-// Запуск
+// Запуск после загрузки страницы
+window.addEventListener('load', function() {
+  // Если верификация уже пройдена, запускаем магазин
+  if (localStorage.getItem('swwshop_verified') === 'true') {
+    document.getElementById('verify-overlay').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    initShop();
+  } else {
+    // Показываем верификацию
+    document.getElementById('verify-overlay').style.display = 'flex';
+  }
+});
+
+// Обработчик для верификации если она уже была пройдена до загрузки
 if (localStorage.getItem('swwshop_verified') === 'true') {
-  initShop();
+  document.getElementById('verify-overlay').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
 }
 </script>
 </body>
