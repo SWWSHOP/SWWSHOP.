@@ -16,7 +16,7 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; transition: background 0.5s ease; }
     
-    button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+    button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; cursor: pointer; }
     button:active { transform: scale(0.95); }
     
     button::after {
@@ -91,12 +91,52 @@
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
     .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
     
-    .category-btn { 
-      width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; 
-      background: var(--card-bg); text-align: left; font-size: 16px; color: var(--text); 
-      cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; 
+    /* ОБВОДКА ДЛЯ ВСЕХ КАТЕГОРИЙ - единый стиль как у шапки */
+    .category-gradient {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      padding: 3px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 16px rgba(94, 163, 217, 0.2);
+      transition: all 0.3s;
     }
-    .category-btn:hover { transform: translateX(5px); border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .category-gradient:hover {
+      transform: translateX(4px);
+      box-shadow: 0 6px 24px rgba(94, 163, 217, 0.35);
+    }
+    .category-gradient:active {
+      transform: scale(0.98);
+    }
+    .category-inner {
+      background: var(--card-bg);
+      border-radius: 17px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.3s;
+      width: 100%;
+      border: none;
+      color: var(--text);
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .category-inner .cat-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .category-inner .cat-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+    .category-inner .cat-icon {
+      font-size: 28px;
+    }
     
     .earnings-display { text-align: center; margin: 8px auto 16px; padding: 10px 16px; background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(94,163,217,0.15)); border-radius: 16px; display: inline-block; }
     .earnings-label { font-size: 11px; opacity: 0.7; }
@@ -557,7 +597,6 @@
       margin-top: 16px;
     }
     .maintenance-card .maintenance-shop strong { color: #94a3b8; }
-    /* ключик для входа в админку на странице техработ */
     .maintenance-admin-key {
       position: fixed;
       bottom: 30px;
@@ -583,7 +622,6 @@
       transform: translateX(-50%) scale(0.95);
     }
 
-    /* модалка для ввода пароля на странице техработ */
     .admin-key-modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -643,7 +681,6 @@
     </div>
   </div>
 
-  <!-- СТРАНИЦА ТЕХНИЧЕСКИХ РАБОТ -->
   <div id="maintenance-page">
     <div class="maintenance-card">
       <div class="maintenance-icon">🔧</div>
@@ -664,11 +701,9 @@
         <strong>SWWSHOP</strong> — скоро вернёмся! 🚀
       </div>
     </div>
-    <!-- Ключик для входа в админку -->
     <div class="maintenance-admin-key" id="maintenanceAdminKey">🔑 Вход для администратора</div>
   </div>
 
-  <!-- Модалка ввода пароля на странице техработ -->
   <div class="admin-key-modal" id="adminKeyModal">
     <div class="modal-box">
       <h3 style="color:#ffd700;">🔑 Вход в админку</h3>
@@ -682,7 +717,6 @@
   <div id="main-app">
     <div class="admin-indicator" id="admin-indicator">АДМИН</div>
 
-    <!-- НОВАЯ ШАПКА С КОНТУРОМ -->
     <div class="header-gradient">
       <div class="header-inner">
         <span class="header-title">🛍 SWWSHOP</span>
@@ -692,7 +726,6 @@
       </div>
     </div>
 
-    <!-- НОВОЕ ВЫДВИЖНОЕ МЕНЮ (оверлей) -->
     <div class="menu-overlay" id="menuOverlay">
       <div class="menu-overlay-content">
         <div class="menu-header">
@@ -770,7 +803,6 @@
       <div id="admin-controls-area" style="display:none;">
         <div class="earnings-stats" id="admin-earnings"></div>
         
-        <!-- ПЕРЕКЛЮЧАТЕЛЬ ТЕХНИЧЕСКИХ РАБОТ -->
         <div class="maintenance-toggle-row" id="maintenanceToggleWrap">
           <div class="toggle-label">
             <span>🔧 Технические работы</span>
@@ -797,7 +829,6 @@
       </div>
     </div>
 
-    <!-- iOS‑уведомление -->
     <div class="ios-toast" id="iosToast">
       <span class="toast-icon">✅</span>
       <span class="toast-text" id="toastText">Товар добавлен</span>
@@ -808,6 +839,35 @@
 // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
 let maintenanceMode = false;
 let isAdmin = false;
+let data = {liquids:[], pouches:[], coils:[], devices:[]};
+let orders = [];
+let promos = {};
+let users = {};
+let cart = JSON.parse(localStorage.getItem('swwshop_cart')||'[]');
+let appliedPromo = null;
+let activePanel = null;
+let currentView = 'main';
+let currentCategory = '';
+let currentIndex = 0;
+let spinning = false;
+let lastSpin = parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
+let initialized = false;
+
+const BOT_TOKEN = '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
+const CHAT_ID = '5993502384';
+const BASE_USERS_COUNT = 79;
+
+// ===== FIREBASE ИНИЦИАЛИЗАЦИЯ =====
+firebase.initializeApp({
+  apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
+  authDomain:"swwshop.firebaseapp.com",
+  databaseURL:"https://swwshop-default-rtdb.firebaseio.com",
+  projectId:"swwshop",
+  storageBucket:"swwshop.firebasestorage.app",
+  messagingSenderId:"698268675105",
+  appId:"1:698268675105:web:15814d169ee2e74c8e4760"
+});
+const db = firebase.database();
 
 // ===== ФУНКЦИИ УПРАВЛЕНИЯ ТЕХРАБОТАМИ =====
 function updateMaintenanceUI() {
@@ -821,7 +881,6 @@ function updateMaintenanceUI() {
     sw.classList.add('active');
     badge.textContent = '🔧 Включено';
     badge.className = 'maintenance-status-badge on';
-    // Показываем страницу техработ
     document.getElementById('maintenance-page').classList.add('active');
     document.getElementById('main-app').style.display = 'none';
   } else {
@@ -835,6 +894,10 @@ function updateMaintenanceUI() {
 }
 
 function toggleMaintenance() {
+  if (!isAdmin) {
+    showIosToast('❌ Только для администратора!', '❌');
+    return;
+  }
   maintenanceMode = !maintenanceMode;
   updateMaintenanceUI();
   localStorage.setItem('sww_maintenance_mode', String(maintenanceMode));
@@ -860,11 +923,9 @@ function adminKeyLogin() {
   if (pass === 'SWWADMIN_SWQ35YTF') {
     isAdmin = true;
     closeAdminKeyModal();
-    // Снимаем техработы
     maintenanceMode = false;
     updateMaintenanceUI();
     localStorage.setItem('sww_maintenance_mode', 'false');
-    // Входим в админку
     document.getElementById('admin-login-area').style.display = 'none';
     document.getElementById('admin-controls-area').style.display = 'block';
     updateAdminUI();
@@ -872,7 +933,6 @@ function adminKeyLogin() {
     showMain();
     updateRouletteTimer();
     showIosToast('✅ Добро пожаловать в админку!', '👑');
-    // Открываем админ-панель
     document.getElementById('admin-panel').classList.add('active');
     activePanel = 'admin';
   } else {
@@ -882,22 +942,11 @@ function adminKeyLogin() {
   }
 }
 
-// ===== ИНИЦИАЛИЗАЦИЯ ТЕХРАБОТ =====
-try {
-  const saved = localStorage.getItem('sww_maintenance_mode');
-  if (saved !== null) {
-    maintenanceMode = saved === 'true';
-  }
-} catch (_) {}
-
-// ===== ОСТАЛЬНОЙ КОД =====
-// ВЕРИФИКАЦИЯ
+// ===== ВЕРИФИКАЦИЯ =====
 let vc='',vt,vtl=300;
-localStorage.removeItem('swwshop_verified');
 if(localStorage.getItem('swwshop_verified')==='true'){
   document.getElementById('verify-overlay').style.display='none';
   document.getElementById('main-app').style.display='block';
-  initShop();
 }else{
   document.getElementById('verify-overlay').style.display='flex';
   document.getElementById('main-app').style.display='none';
@@ -950,39 +999,6 @@ function closeMenu() {
   document.body.style.overflow = '';
 }
 
-// Обработчики меню
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('hamburgerBtn').addEventListener('click', toggleMenu);
-  document.getElementById('menuCloseBtn').addEventListener('click', closeMenu);
-  document.getElementById('menuOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeMenu();
-  });
-  
-  // Ключик на странице техработ
-  document.getElementById('maintenanceAdminKey').addEventListener('click', openAdminKeyModal);
-  // Закрытие модалки по клику вне
-  document.getElementById('adminKeyModal').addEventListener('click', function(e) {
-    if (e.target === this) closeAdminKeyModal();
-  });
-  // Enter в поле пароля
-  document.getElementById('adminKeyInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') adminKeyLogin();
-  });
-  
-  // Переключатель техработ
-  const sw = document.getElementById('maintenanceToggleSwitch');
-  if (sw) {
-    sw.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (!isAdmin) {
-        showIosToast('❌ Только для администратора!', '❌');
-        return;
-      }
-      toggleMaintenance();
-    });
-  }
-});
-
 // ===== iOS УВЕДОМЛЕНИЕ =====
 function showIosToast(message, icon = '✅') {
   const toast = document.getElementById('iosToast');
@@ -1002,21 +1018,166 @@ function showNotification(message) {
   showIosToast(message, 'ℹ️');
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ МАГАЗИНА =====
-function createFlyingItem(event) {
-  if (!event) return;
-  const flyingItem = document.createElement('div');
-  flyingItem.className = 'flying-item';
-  flyingItem.textContent = '🛒';
-  flyingItem.style.left = event.clientX + 'px';
-  flyingItem.style.top = event.clientY + 'px';
-  flyingItem.style.fontSize = '24px';
-  document.body.appendChild(flyingItem);
-  setTimeout(() => { flyingItem.remove(); }, 1000);
+// ===== ОБНОВЛЁННЫЙ ПОКАЗ ГЛАВНОЙ =====
+function showMain() {
+  currentView = 'main';
+  const e = getEarnings();
+  const totalUsers = getTotalUsers();
+  
+  const categories = [
+    { id: 'liquids', icon: '💧', label: 'Жидкости' },
+    { id: 'pouches', icon: '👝', label: 'Шайбы' },
+    { id: 'coils', icon: '🔧', label: 'Испарители' },
+    { id: 'devices', icon: '📱', label: 'Устройства' }
+  ];
+  
+  let html = `
+    <h1 class="shop-title">SWWSHOP</h1>
+    <div style="text-align:center;">
+      <div class="users-counter">👥 Пользователей: <span>${totalUsers}</span></div>
+    </div>
+    ${isAdmin ? `<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${e.day} ₽</div></div></div>` : ''}
+    <p style="text-align:center;opacity:0.7;margin-bottom:16px;">Выберите категорию:</p>
+  `;
+  
+  categories.forEach(cat => {
+    const count = data[cat.id]?.length || 0;
+    html += `
+      <div class="category-gradient">
+        <button class="category-inner" onclick="showCategory('${cat.id}')">
+          <span class="cat-left">
+            <span class="cat-icon">${cat.icon}</span>
+            <span>${cat.label}</span>
+          </span>
+          <span class="cat-right">
+            <span>${count} товаров</span>
+            <span>›</span>
+          </span>
+        </button>
+      </div>
+    `;
+  });
+  
+  document.getElementById('app').innerHTML = html;
+}
+
+// ===== ПОКАЗ КАТЕГОРИИ =====
+function showCategory(cat) {
+  currentView = 'category';
+  currentCategory = cat;
+  const t = {liquids:'Жидкости', pouches:'Шайбы', coils:'Испарители', devices:'Устройства'};
+  const icons = {liquids:'💧', pouches:'👝', coils:'🔧', devices:'📱'};
+  
+  let html = `<button class="back-btn" onclick="showMain()">← Назад</button>`;
+  html += `<h1 class="shop-title">${icons[cat]} ${t[cat]}</h1>`;
+  
+  if (!data[cat]?.length) {
+    html += '<p style="text-align:center;opacity:0.5;padding:40px;">Нет товаров</p>';
+  } else if (cat === 'liquids' || cat === 'pouches') {
+    data[cat].forEach((l, i) => {
+      html += `
+        <div class="category-gradient" style="margin-bottom:8px;">
+          <button class="category-inner" onclick="showDetail('${cat}', ${i})">
+            <span class="cat-left">
+              <span style="font-weight:600;">${l.name}</span>
+            </span>
+            <span class="cat-right">
+              <span>${l.price} RUB</span>
+              <span>${l.flavors.length} вкусов</span>
+              <span>›</span>
+            </span>
+          </button>
+        </div>
+      `;
+      if (isAdmin) {
+        html += `<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine('${cat}',${i})">Удалить линейку</button>`;
+      }
+    });
+  } else {
+    data[cat].forEach((item, i) => {
+      html += `
+        <div class="product-row">
+          <span class="product-name">${item.name}</span>
+          <span class="product-price">${item.price} RUB</span>
+          <span class="status-badge ${item.inStock ? 'status-in-stock' : 'status-out-stock'}">${item.inStock ? 'В наличии' : 'Нет'}</span>
+          <div class="product-actions">
+            ${item.inStock ? `<button class="add-to-cart-btn" onclick="addToCartSimple('${item.name}', ${item.price})">🛒</button>` : `<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>`}
+            ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  document.getElementById('app').innerHTML = html;
+}
+
+// ===== ПОКАЗ ДЕТАЛЕЙ =====
+function showDetail(cat, idx) {
+  currentView = 'detail';
+  currentCategory = cat;
+  currentIndex = idx;
+  const line = data[cat][idx];
+  if (!line) { showCategory(cat); return; }
+  
+  let html = `<button class="back-btn" onclick="showCategory('${cat}')">← Назад</button>`;
+  html += `<h1 class="shop-title">${line.name}</h1>`;
+  html += `<p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>`;
+  html += `<div style="margin:12px 0 8px;font-weight:600;">Выберите вкус (${line.flavors.length}):</div>`;
+  
+  line.flavors.forEach((f, fi) => {
+    html += `
+      <div class="flavor-row">
+        <span class="flavor-name">${f.name}</span>
+        <div class="flavor-actions">
+          <span class="status-badge ${f.inStock ? 'status-in-stock' : 'status-out-stock'}">${f.inStock ? 'В наличии' : 'Нет'}</span>
+          ${f.inStock ? `<button class="add-to-cart-btn" onclick="addToCart('${line.name}', ${line.price}, '${line.name}', '${f.name}')">🛒</button>` : `<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>`}
+          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('app').innerHTML = html;
+}
+
+// ===== ДОБАВЛЕНИЕ В КОРЗИНУ =====
+function addToCart(n, p, ln, fn) {
+  if (!fn) {
+    showIosToast('❌ Выберите вкус!', '❌');
+    return;
+  }
+  const line = data[currentCategory]?.find(l => l.name === ln);
+  if (line) {
+    const f = line.flavors.find(f => f.name === fn);
+    if (f && !f.inStock) {
+      showIosToast('❌ Нет в наличии!', '❌');
+      return;
+    }
+  }
+  cart.push({name: fn + ' (' + ln + ')', price: p});
+  saveCart();
+  showIosToast('✅ Добавлено в корзину!', '✅');
+}
+
+function addToCartSimple(n, p) {
+  const item = data[currentCategory]?.find(i => i.name === n);
+  if (item && !item.inStock) {
+    showIosToast('❌ Нет в наличии!', '❌');
+    return;
+  }
+  cart.push({name: n, price: p});
+  saveCart();
+  showIosToast('✅ Добавлено в корзину!', '✅');
+}
+
+function saveCart() {
+  localStorage.setItem('swwshop_cart', JSON.stringify(cart));
+  updateCartBadge();
 }
 
 function updateCartBadge() {
-  const c = cart ? cart.reduce((s,i) => s + (i.quantity||1), 0) : 0;
+  const c = cart.reduce((s, i) => s + (i.quantity || 1), 0);
   const el = document.getElementById('cart-count');
   const menuBadge = document.getElementById('menuCartBadge');
   if (el) {
@@ -1029,67 +1190,568 @@ function updateCartBadge() {
   }
 }
 
-// ===== ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ =====
-function initShop(){
-// ... (весь остальной код магазина с Firebase, но с заменой showNotification на showIosToast для корзины)
-// Чтобы не дублировать огромный код, используем уже существующий код из предыдущей версии,
-// но заменяем вызовы showNotification на showIosToast внутри addToCart и addToCartSimple
-
-// Для краткости — вставляем только изменённые функции, остальное берётся из оригинального кода
-
-// Переопределяем функции добавления в корзину с iOS-уведомлениями
-window.addToCart = function(n,p,ln,fn){
-  if(!fn){
-    showIosToast('❌ Выберите вкус!', '❌');
-    return;
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо для объёма) =====
+function getUserId() {
+  const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (tgU) return 'tg_' + tgU.id;
+  let id = localStorage.getItem('swwshop_userId');
+  if (!id) {
+    id = 'web_' + Date.now();
+    localStorage.setItem('swwshop_userId', id);
   }
-  const line = data[currentCategory]?.find(l => l.name === ln);
-  if(line){
-    const f = line.flavors.find(f => f.name === fn);
-    if(f && !f.inStock){
-      showIosToast('❌ Нет в наличии!', '❌');
-      return;
+  return id;
+}
+
+function getTotalUsers() {
+  const actualUsers = Object.keys(users).length;
+  return BASE_USERS_COUNT + actualUsers;
+}
+
+function getEarnings() {
+  const ds = new Date(); ds.setHours(0,0,0,0);
+  const ws = new Date(); ws.setDate(ws.getDate()-ws.getDay()); ws.setHours(0,0,0,0);
+  const ms = new Date(); ms.setDate(1); ms.setHours(0,0,0,0);
+  const ys = new Date(); ys.setMonth(0,1); ys.setHours(0,0,0,0);
+  const comp = orders.filter(o => o.status === 'completed');
+  return {
+    day: comp.filter(o => o.completedAt >= ds.getTime()).reduce((s,o) => s + o.total, 0),
+    week: comp.filter(o => o.completedAt >= ws.getTime()).reduce((s,o) => s + o.total, 0),
+    month: comp.filter(o => o.completedAt >= ms.getTime()).reduce((s,o) => s + o.total, 0),
+    year: comp.filter(o => o.completedAt >= ys.getTime()).reduce((s,o) => s + o.total, 0)
+  };
+}
+
+function updateAdminEarnings() {
+  const e = getEarnings();
+  const el = document.getElementById('admin-earnings');
+  if (el) {
+    el.innerHTML = `
+      <div class="earning-card"><div class="earning-amount">${e.day} ₽</div><div class="earning-label">Сегодня</div></div>
+      <div class="earning-card"><div class="earning-amount">${e.week} ₽</div><div class="earning-label">Неделя</div></div>
+      <div class="earning-card"><div class="earning-amount">${e.month} ₽</div><div class="earning-label">Месяц</div></div>
+      <div class="earning-card"><div class="earning-amount">${e.year} ₽</div><div class="earning-label">Год</div></div>
+    `;
+  }
+}
+
+function updateAdminUI() {
+  document.getElementById('admin-indicator').className = isAdmin ? 'admin-indicator active' : 'admin-indicator';
+  document.getElementById('menuConsoleBtn').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('menuUsersBtn').style.display = isAdmin ? 'flex' : 'none';
+  if (!isAdmin) {
+    document.getElementById('admin-login-area').style.display = 'block';
+    document.getElementById('admin-controls-area').style.display = 'none';
+  } else {
+    document.getElementById('admin-login-area').style.display = 'none';
+    document.getElementById('admin-controls-area').style.display = 'block';
+  }
+}
+
+function openPanel(n) {
+  document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
+  const p = document.getElementById(n + '-panel');
+  if (p) {
+    p.classList.add('active');
+    activePanel = n;
+  }
+  if (n === 'orders') showOrders();
+  if (n === 'all-orders') showAllOrders();
+  if (n === 'mypromos') showMyPromos();
+  if (n === 'all-promos') showAllPromos();
+  if (n === 'roulette') updateRouletteTimer();
+  if (n === 'cart') showCart();
+  if (n === 'users') showUsers();
+  if (n === 'console') updateConsoleUsers();
+}
+
+function closePanel(n) {
+  const p = document.getElementById(n + '-panel');
+  if (p) p.classList.remove('active');
+  activePanel = null;
+}
+
+function toggleAdminPanel() {
+  if (isAdmin) {
+    const p = document.getElementById('admin-panel');
+    if (p.classList.contains('active')) {
+      p.classList.remove('active');
+      activePanel = null;
+    } else {
+      document.querySelectorAll('.overlay-panel').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      activePanel = 'admin';
+      updateAdminEarnings();
     }
+  } else {
+    document.getElementById('admin-panel').classList.toggle('active');
+    activePanel = document.getElementById('admin-panel').classList.contains('active') ? 'admin' : null;
   }
-  cart.push({name: fn + ' (' + ln + ')', price: p});
-  saveCart();
-  createFlyingItem(event);
-  showIosToast('✅ Добавлено в корзину!', '✅');
-};
+}
 
-window.addToCartSimple = function(n,p){
-  const item = data[currentCategory]?.find(i => i.name === n);
-  if(item && !item.inStock){
-    showIosToast('❌ Нет в наличии!', '❌');
+function adminLogin() {
+  if (document.getElementById('admin-password').value === 'SWWADMIN_SWQ35YTF') {
+    isAdmin = true;
+    document.getElementById('admin-login-area').style.display = 'none';
+    document.getElementById('admin-controls-area').style.display = 'block';
+    updateAdminUI();
+    updateAdminEarnings();
+    showMain();
+    updateRouletteTimer();
+    showIosToast('✅ Вы вошли как администратор', '👑');
+  } else {
+    alert('Неверный пароль!');
+  }
+}
+
+function adminLogout() {
+  isAdmin = false;
+  document.getElementById('admin-login-area').style.display = 'block';
+  document.getElementById('admin-controls-area').style.display = 'none';
+  document.getElementById('admin-panel').classList.remove('active');
+  activePanel = null;
+  updateAdminUI();
+  showMain();
+  updateRouletteTimer();
+  showIosToast('Вы вышли из админ-панели', '👋');
+}
+
+// ===== КОРОТКИЕ ЗАГОЛОВКИ ДЛЯ ДРУГИХ ФУНКЦИЙ =====
+function showOrders() {
+  const my = orders.filter(o => o.userId === getUserId() && o.status === 'completed');
+  const el = document.getElementById('orders-list');
+  if (!my.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет выполненных заказов</p>'; return; }
+  el.innerHTML = my.reverse().map(o => `
+    <div class="order-card">
+      <div><strong>#${o.id}</strong></div>
+      <div style="font-size:12px;">${new Date(o.date).toLocaleDateString()} | ${o.items.length} поз. | ${o.total} RUB</div>
+      ${o.promoCode && promos[o.promoCode] && !promos[o.promoCode].used ? `<div class="promo-code-display">🎁 ${o.promoCode}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function showAllOrders() {
+  if (!isAdmin) return;
+  const el = document.getElementById('all-orders-list');
+  if (!orders.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет заказов</p>'; return; }
+  const sorted = [...orders].sort((a,b) => (b.date||0) - (a.date||0));
+  el.innerHTML = sorted.map(o => `
+    <div class="order-card" style="cursor:pointer;" onclick="showOrderDetail('${o.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div><strong>#${o.id}</strong> | ${o.userName||'Без имени'}</div>
+          <div style="font-size:12px;opacity:0.7;">${new Date(o.date||Date.now()).toLocaleString()} | ${o.items?.length||0} поз. | ${o.total||0} RUB</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <span class="order-status ${o.status==='completed'?'status-completed':o.status==='cancelled'?'status-cancelled':'status-pending'}">${o.status==='completed'?'✅ Выполнен':o.status==='cancelled'?'❌ Отменён':'⏳ Ожидает'}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showOrderDetail(oid) {
+  const order = orders.find(o => o.id === oid);
+  if (!order) return;
+  const el = document.getElementById('order-detail-content');
+  let html = `
+    <div class="order-detail-card">
+      <h3>Заказ #${order.id}</h3>
+      <div style="font-size:13px;opacity:0.8;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}</div>
+      <div style="font-weight:600;margin:12px 0 8px;">Товары:</div>
+  `;
+  if (order.items) order.items.forEach((item,i) => {
+    html += `<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
+  });
+  html += `<div class="order-detail-total">Итого: ${order.total||0} ₽</div></div>`;
+  el.innerHTML = html;
+  document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('order-detail-panel').classList.add('active');
+}
+
+function showMyPromos() {
+  const el = document.getElementById('mypromos-list');
+  const myPromos = Object.entries(promos).filter(([c,p]) => p.userId === getUserId());
+  if (!myPromos.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">У вас пока нет промокодов</p>'; return; }
+  el.innerHTML = myPromos.map(([c,p]) => `
+    <div class="promo-card" style="display:flex;justify-content:space-between;">
+      <div><strong>${c}</strong> - ${p.discount}%</div>
+      <span style="color:${p.used ? 'var(--danger)' : 'var(--success)'};">${p.used ? 'Использован' : 'Доступен'}</span>
+    </div>
+  `).join('');
+}
+
+function showAllPromos() {
+  if (!isAdmin) return;
+  const el = document.getElementById('all-promos-list');
+  const codes = Object.entries(promos);
+  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
+  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => `
+    <div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
+      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
+
+function createPromo() {
+  if (!isAdmin) return;
+  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
+  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
+  db.ref('promos/'+c).set({discount, used:false, created:Date.now(), type:'admin', userId:null});
+  showIosToast('✅ Промокод создан: ' + c, '🎫');
+  document.getElementById('promo-code').value = '';
+}
+
+function applyPromo() {
+  const input = document.getElementById('promo-input').value.trim().toUpperCase();
+  if (!input) return;
+  if (promos[input] && !promos[input].used) {
+    appliedPromo = {code: input, discount: promos[input].discount};
+    document.getElementById('promo-message').innerHTML = '<span style="color:var(--success);">Скидка -'+promos[input].discount+'% применена!</span>';
+    showCart();
+  } else {
+    document.getElementById('promo-message').innerHTML = '<span style="color:var(--danger);">Промокод не найден или использован</span>';
+    appliedPromo = null;
+  }
+}
+
+function showCart() {
+  if (!cart.length) {
+    document.getElementById('cart-items').innerHTML = '<p>Пусто</p>';
+    document.getElementById('cart-total').textContent = '';
+    document.getElementById('order-form').style.display = 'none';
     return;
   }
-  cart.push({name: n, price: p});
-  saveCart();
-  createFlyingItem(event);
-  showIosToast('✅ Добавлено в корзину!', '✅');
-};
-
-// Инициализируем состояние
-updateMaintenanceUI();
-// Если техработы включены при старте, показываем страницу
-if (maintenanceMode) {
-  document.getElementById('maintenance-page').classList.add('active');
-  document.getElementById('main-app').style.display = 'none';
+  let sub = cart.reduce((s,i) => s + i.price, 0);
+  let disc = appliedPromo ? Math.round(sub * appliedPromo.discount / 100) : 0;
+  document.getElementById('cart-items').innerHTML = cart.map((item,i) => `
+    <div class="cart-item">
+      <div>${item.name}</div>
+      <span>${item.price} RUB</span>
+      <button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button>
+    </div>
+  `).join('');
+  document.getElementById('cart-total').textContent = 'Итого: ' + (sub - disc) + ' RUB';
+  document.getElementById('order-form').style.display = 'block';
 }
 
-// Запускаем основной код (имитация, т.к. он уже загружен ранее)
-// В реальном коде здесь будет полная инициализация Firebase и т.д.
-console.log('✅ SWWSHOP загружен');
-}
+function removeFromCart(i) { cart.splice(i,1); saveCart(); showCart(); }
 
-// Запуск после загрузки страницы
-window.addEventListener('load', function() {
-  // Если техработы включены — показываем страницу
-  if (maintenanceMode) {
-    document.getElementById('maintenance-page').classList.add('active');
-    document.getElementById('main-app').style.display = 'none';
+function sendOrder() {
+  const name = document.getElementById('customer-name').value.trim();
+  const contact = document.getElementById('customer-contact').value.trim();
+  const payment = document.getElementById('payment-method').value;
+  if (!name || !contact || !payment) return alert('Заполните все поля!');
+  if (!cart.length) return alert('❌ Корзина пуста!');
+  
+  let sub = cart.reduce((s,i) => s + i.price, 0);
+  let disc = 0;
+  if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
+    disc = Math.round(sub * appliedPromo.discount / 100);
+    db.ref('promos/'+appliedPromo.code).update({used:true, usedBy:getUserId(), usedAt:Date.now()});
   }
-});
+  const total = sub - disc;
+  const oid = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
+  const uid = getUserId();
+  
+  db.ref('orders/'+oid).set({
+    id:oid, userId:uid, userName:name, userContact:contact,
+    items:[...cart], subtotal:sub, discount:disc, total:total,
+    payment:payment, status:'pending', date:Date.now()
+  });
+  
+  cart = []; appliedPromo = null; saveCart();
+  document.getElementById('cart-items').innerHTML = '';
+  document.getElementById('cart-total').textContent = '';
+  document.getElementById('order-form').style.display = 'none';
+  document.getElementById('order-success').style.display = 'block';
+  document.getElementById('order-success').innerHTML = '✅ Заказ #'+oid+' оформлен!';
+  showIosToast('✅ Заказ оформлен!', '📦');
+}
+
+function updateRouletteTimer() {
+  const el = document.getElementById('roulette-timer'), btn = document.getElementById('spin-btn');
+  if (!el || !btn) return;
+  if (isAdmin) {
+    el.innerHTML = '<span style="color:#10b981;">✅ Можно крутить безлимитно!</span>';
+    btn.disabled = false; btn.textContent = '🎰 КРУТИТЬ';
+    document.getElementById('admin-roulette-note').style.display = 'block';
+    return;
+  }
+  document.getElementById('admin-roulette-note').style.display = 'none';
+  const now = Date.now(), week = 7*24*60*60*1000;
+  if (now - lastSpin >= week) {
+    el.innerHTML = '<span style="color:#10b981;">✅ Можно крутить!</span>';
+    btn.disabled = false; btn.textContent = '🎰 КРУТИТЬ';
+  } else {
+    const rem = week - (now - lastSpin);
+    const d = Math.floor(rem/86400000), h = Math.floor((rem%86400000)/3600000), m = Math.floor((rem%3600000)/60000);
+    el.innerHTML = `⏳ Следующая попытка через: <span>${d}д ${h}ч ${m}м</span>`;
+    btn.disabled = true; btn.textContent = '⏳ Ждите';
+  }
+}
+
+function spinRoulette() {
+  if (spinning) return;
+  if (!isAdmin && Date.now() - lastSpin < 7*24*60*60*1000) { updateRouletteTimer(); return; }
+  spinning = true;
+  const btn = document.getElementById('spin-btn');
+  btn.disabled = true; btn.textContent = '🎰 Крутится...';
+  const rand = Math.random();
+  let prize = {d:0, l:'0%'};
+  if (rand < 0.005) prize = {d:15, l:'15%'};
+  else if (rand < 0.05) prize = {d:5, l:'5%'};
+  else if (rand < 0.15) prize = {d:1, l:'1%'};
+  
+  const reel = document.getElementById('slot-reel');
+  const itemH = 120, totalItems = 15;
+  const target = prize.d === 15 ? 4 : prize.d === 5 ? 3 : prize.d === 1 ? 2 : (Math.floor(Math.random()*5)+10);
+  const extraRounds = isAdmin ? 5 : 4;
+  const distance = (extraRounds * totalItems + target) * itemH;
+  
+  reel.style.transition = 'none';
+  reel.style.transform = 'translateY(0px)';
+  setTimeout(() => {
+    reel.style.transition = 'transform ' + (isAdmin ? 6 : 5) + 's cubic-bezier(0.15, 0.55, 0.35, 1)';
+    reel.style.transform = `translateY(-${distance}px)`;
+  }, 30);
+  
+  if (!isAdmin) {
+    lastSpin = Date.now();
+    localStorage.setItem('swwshop_roulette_time', lastSpin.toString());
+    db.ref('settings/lastRouletteTime').set(lastSpin);
+  }
+  
+  setTimeout(() => {
+    spinning = false;
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateY(0px)';
+    updateRouletteTimer();
+    if (prize.d > 0) {
+      const code = 'RLT-' + Math.random().toString(36).substring(2,6).toUpperCase();
+      promos[code] = {discount:prize.d, used:false, created:Date.now(), type:'roulette', userId:getUserId()};
+      db.ref('promos/'+code).set(promos[code]);
+      document.getElementById('roulette-result').innerHTML = `<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;
+    } else {
+      document.getElementById('roulette-result').innerHTML = '<p style="color:#ff6b6b;">😔 Не повезло! Попробуйте снова.</p>';
+    }
+  }, isAdmin ? 6500 : 5500);
+}
+
+function showUsers() {
+  if (!isAdmin) return;
+  const actualUsers = Object.values(users);
+  const totalCount = getTotalUsers();
+  document.getElementById('user-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-number">${totalCount}</div><div class="stat-label">Всего</div></div>
+    <div class="stat-card"><div class="stat-number">${actualUsers.length}</div><div class="stat-label">Реальных</div></div>
+    <div class="stat-card"><div class="stat-number">${actualUsers.filter(u=>u.username).length}</div><div class="stat-label">Telegram</div></div>
+    <div class="stat-card"><div class="stat-number">${actualUsers.filter(u=>(Date.now()-u.lastSeen)<86400000).length}</div><div class="stat-label">За 24ч</div></div>
+  `;
+  const el = document.getElementById('users-list');
+  if (!actualUsers.length) { el.innerHTML = '<p>Нет</p>'; return; }
+  el.innerHTML = actualUsers.sort((a,b) => b.lastSeen - a.lastSeen).map(u => `
+    <div class="user-card">
+      <div><strong>${u.firstName||'Пользователь'}</strong>${u.username ? ' @'+u.username : ''}</div>
+      <div style="font-size:12px;opacity:0.7;">ID: ${u.id}</div>
+    </div>
+  `).join('');
+}
+
+function updateConsoleUsers() {
+  if (!isAdmin) return;
+  const sel = document.getElementById('console-user');
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  Object.values(users).forEach(u => {
+    sel.innerHTML += `<option value="${u.id}">${u.firstName||'Пользователь'}</option>`;
+  });
+}
+
+function sendMessageToUser() {
+  const uid = document.getElementById('console-user').value;
+  const msg = document.getElementById('console-message').value.trim();
+  if (!uid || !msg) return alert('Заполните!');
+  const user = users[uid];
+  if (!user?.telegramId) return alert('Не в Telegram');
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:user.telegramId, text:'📨 SWWSHOP:\n\n'+msg})
+  });
+  showIosToast('✅ Отправлено!', '📨');
+}
+
+function sendBroadcast() {
+  const msg = document.getElementById('console-broadcast').value.trim();
+  if (!msg || !confirm('Всем?')) return;
+  let sent = 0;
+  Object.values(users).forEach(u => {
+    if (u.telegramId) {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:u.telegramId, text:'📢 SWWSHOP:\n\n'+msg})
+      }).then(() => sent++).catch(() => {});
+    }
+  });
+  showIosToast(`✅ Отправлено ${sent} пользователям!`, '📢');
+}
+
+function toggleItem(c,i) { if (!isAdmin) return; data[c][i].inStock = !data[c][i].inStock; db.ref('assortment').set(data); showCategory(c); }
+function toggleFlavor(c,l,f) { if (!isAdmin) return; data[c][l].flavors[f].inStock = !data[c][l].flavors[f].inStock; db.ref('assortment').set(data); showDetail(c,l); }
+function deleteLine(c,i) { if (!isAdmin || !confirm('Удалить линейку?')) return; data[c].splice(i,1); db.ref('assortment').set(data); showCategory(c); }
+function deleteItem(c,i) { if (!isAdmin || !confirm('Удалить товар?')) return; data[c].splice(i,1); db.ref('assortment').set(data); showCategory(c); }
+
+function addLine() {
+  if (!isAdmin) return;
+  const n = document.getElementById('line-name').value.trim();
+  const p = parseInt(document.getElementById('line-price').value);
+  const c = document.getElementById('line-category').value;
+  const ft = document.getElementById('line-flavors').value.trim();
+  if (!n || !p || !ft) return alert('Заполните!');
+  const fl = ft.split('\n').filter(l=>l.trim()).map(l => {
+    const a = l.split(',');
+    return {name: a[0].trim(), inStock: a[1]?.trim().toUpperCase() === 'YES'};
+  });
+  if (!fl.length) return alert('Минимум 1 вкус!');
+  data[c].push({name:n, price:p, flavors:fl});
+  db.ref('assortment').set(data);
+  showIosToast('✅ Добавлено!', '➕');
+  document.getElementById('line-name').value = '';
+  document.getElementById('line-price').value = '';
+  document.getElementById('line-flavors').value = '';
+  showMain();
+}
+
+function addItem() {
+  if (!isAdmin) return;
+  const n = document.getElementById('item-name').value.trim();
+  const p = parseInt(document.getElementById('item-price').value);
+  const c = document.getElementById('item-category').value;
+  const q = parseInt(document.getElementById('item-qty').value) || 0;
+  if (!n || !p) return alert('Заполните!');
+  data[c].push({name:n, price:p, inStock: q > 0});
+  db.ref('assortment').set(data);
+  showIosToast('✅ Добавлено!', '➕');
+  document.getElementById('item-name').value = '';
+  document.getElementById('item-price').value = '';
+  document.getElementById('item-qty').value = '';
+  showMain();
+}
+
+function updateDelSelect() {
+  const c = document.getElementById('del-category')?.value;
+  const s = document.getElementById('del-item');
+  if (!s || !data[c]) return;
+  s.innerHTML = '<option value="">-- Выберите --</option>';
+  data[c].forEach((item,i) => {
+    s.innerHTML += '<option value="'+i+'">'+item.name+'</option>';
+  });
+}
+
+function deleteSelected() {
+  if (!isAdmin) return;
+  const c = document.getElementById('del-category').value;
+  const i = parseInt(document.getElementById('del-item').value);
+  if (isNaN(i)) return alert('Выберите товар!');
+  if (confirm('Удалить?')) { data[c].splice(i,1); db.ref('assortment').set(data); showMain(); }
+}
+
+function deleteAllOutOfStock() {
+  if (!isAdmin || !confirm('Удалить всё что закончилось?')) return;
+  ['liquids','pouches'].forEach(c => { data[c] = data[c].filter(l => l.flavors?.some(f => f.inStock)); });
+  ['coils','devices'].forEach(c => { data[c] = data[c].filter(i => i.inStock); });
+  db.ref('assortment').set(data);
+  showIosToast('✅ Готово!', '🧹');
+  showMain();
+}
+
+function setTheme(t) {
+  document.body.className = t;
+  localStorage.setItem('swwshop_theme', t);
+  document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+}
+
+function toggleSeason() {
+  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
+  const current = document.body.classList.contains('winter') ? 'summer' : 'winter';
+  document.body.classList.toggle('winter');
+  const btn = document.getElementById('admin-season-toggle');
+  if (btn) btn.textContent = current === 'winter' ? '☀️ Включить летнюю тему' : '❄️ Включить зимнюю тему';
+  showIosToast(current === 'winter' ? '☀️ Летняя тема' : '❄️ Зимняя тема', '🎨');
+}
+
+// ===== ИНИЦИАЛИЗАЦИЯ =====
+function initShop() {
+  // Загружаем данные
+  db.ref('assortment').once('value').then(s => {
+    const v = s.val();
+    if (v?.liquids) data = v;
+    else db.ref('assortment').set({liquids:[], pouches:[], coils:[], devices:[]});
+    if (!initialized) { initialized = true; showMain(); updateRouletteTimer(); }
+  });
+  
+  db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
+  db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
+  db.ref('users').on('value', s => { users = s.val() || {}; updateUI(); });
+  db.ref('settings/lastRouletteTime').on('value', s => {
+    const v = s.val();
+    if (v && v > lastSpin) { lastSpin = v; localStorage.setItem('swwshop_roulette_time', v.toString()); updateRouletteTimer(); }
+  });
+  
+  // Регистрация пользователя
+  const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const uid = getUserId();
+  db.ref('users/'+uid).once('value').then(s => {
+    if (s.val()) db.ref('users/'+uid).update({lastSeen: Date.now(), visitCount: (s.val().visitCount||1)+1});
+    else db.ref('users/'+uid).set({id:uid, firstSeen:Date.now(), lastSeen:Date.now(), visitCount:1, telegramId: tgU?.id, firstName: tgU?.first_name, username: tgU?.username});
+  });
+  
+  // Инициализация состояния техработ
+  try {
+    const saved = localStorage.getItem('sww_maintenance_mode');
+    if (saved !== null) maintenanceMode = saved === 'true';
+  } catch (_) {}
+  updateMaintenanceUI();
+  
+  // Обработчики
+  document.getElementById('hamburgerBtn').addEventListener('click', toggleMenu);
+  document.getElementById('menuCloseBtn').addEventListener('click', closeMenu);
+  document.getElementById('menuOverlay').addEventListener('click', function(e) { if (e.target === this) closeMenu(); });
+  document.getElementById('maintenanceAdminKey').addEventListener('click', openAdminKeyModal);
+  document.getElementById('adminKeyModal').addEventListener('click', function(e) { if (e.target === this) closeAdminKeyModal(); });
+  document.getElementById('adminKeyInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') adminKeyLogin(); });
+  document.getElementById('maintenanceToggleSwitch').addEventListener('click', function(e) { e.stopPropagation(); toggleMaintenance(); });
+  
+  updateCartBadge();
+  updateAdminUI();
+  const savedTheme = localStorage.getItem('swwshop_theme') || 'telegram';
+  document.body.className = savedTheme;
+  
+  // Telegram WebApp
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
+}
+
+function updateUI() {
+  if (activePanel === 'orders') showOrders();
+  if (activePanel === 'all-orders') showAllOrders();
+  if (activePanel === 'mypromos') showMyPromos();
+  if (activePanel === 'all-promos') showAllPromos();
+  if (activePanel === 'roulette') updateRouletteTimer();
+  if (activePanel === 'users') showUsers();
+  if (activePanel === 'console') updateConsoleUsers();
+  if (currentView === 'main') showMain();
+  if (isAdmin) updateAdminEarnings();
+}
+
+// Запуск
+if (localStorage.getItem('swwshop_verified') === 'true') {
+  initShop();
+}
 </script>
 </body>
 </html>
