@@ -34,7 +34,6 @@
       transition: transform 0.5s, opacity 1s;
       pointer-events: none;
     }
-    
     button:active::after {
       transform: scale(0, 0);
       opacity: 0.3;
@@ -47,52 +46,28 @@
       60% { transform: scale(0.9); }
       100% { transform: scale(1); }
     }
-    
-    .add-to-cart-btn.added {
-      animation: addToCartAnimation 0.6s ease;
-      background: #4CAF50 !important;
-    }
+    .add-to-cart-btn.added { animation: addToCartAnimation 0.6s ease; background: #4CAF50 !important; }
     
     @keyframes flyingToCart {
       0% { transform: translate(0, 0) scale(1); opacity: 1; }
       50% { transform: translate(-50px, -100px) scale(1.5); opacity: 0.8; }
       100% { transform: translate(-100px, -200px) scale(0); opacity: 0; }
     }
+    .flying-item { position: fixed; pointer-events: none; z-index: 9999; animation: flyingToCart 1s ease-in forwards; }
     
-    .flying-item {
-      position: fixed;
-      pointer-events: none;
-      z-index: 9999;
-      animation: flyingToCart 1s ease-in forwards;
-    }
-    
-    @keyframes slideDown {
-      from { transform: translate(-50%, -100%); opacity: 0; }
-      to { transform: translate(-50%, 0); opacity: 1; }
-    }
-    
-    @keyframes slideUp {
-      from { transform: translate(-50%, 0); opacity: 1; }
-      to { transform: translate(-50%, -100%); opacity: 0; }
-    }
-    
-    @keyframes snowfall {
-      0% { transform: translateY(-20px) rotate(0deg); }
-      100% { transform: translateY(100vh) rotate(360deg); }
-    }
-    
-    @keyframes slideIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
+    @keyframes slideDown { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+    @keyframes slideUp { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, -100%); opacity: 0; } }
+    @keyframes snowfall { 0% { transform: translateY(-20px) rotate(0deg); } 100% { transform: translateY(100vh) rotate(360deg); } }
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUpMenu { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
     .container { flex: 1; overflow-y: auto; padding: 12px 12px 100px; }
     h1 { margin: 16px 0 12px; font-size: 20px; text-align: center; }
     .shop-title { text-transform: uppercase; color: var(--accent); font-weight: 700; }
-    .section-icon { width: 40px; height: 40px; margin-right: 12px; flex-shrink: 0; }
     
-    /* ОБВОДКА ДЛЯ ВСЕХ КАТЕГОРИЙ */
-    .category-gradient {
+    /* ===== ЕДИНЫЙ СТИЛЬ "ОБВОДКА КАК В ШАПКЕ" ===== */
+    .gradient-wrap {
       background: linear-gradient(135deg, var(--accent), #8b5cf6);
       padding: 3px;
       border-radius: 20px;
@@ -100,14 +75,12 @@
       box-shadow: 0 4px 16px rgba(94, 163, 217, 0.2);
       transition: all 0.3s;
     }
-    .category-gradient:hover {
+    .gradient-wrap:hover {
       transform: translateX(4px);
       box-shadow: 0 6px 24px rgba(94, 163, 217, 0.35);
     }
-    .category-gradient:active {
-      transform: scale(0.98);
-    }
-    .category-inner {
+    .gradient-wrap:active { transform: scale(0.98); }
+    .gradient-inner {
       background: var(--card-bg);
       border-radius: 17px;
       padding: 14px 18px;
@@ -122,20 +95,126 @@
       font-size: 16px;
       font-family: inherit;
     }
-    .category-inner .cat-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .gradient-inner .left { display: flex; align-items: center; gap: 12px; }
+    .gradient-inner .right { display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0.7; }
+    .gradient-inner .icon-big { font-size: 28px; }
+    
+    /* Шапка */
+    .header-gradient {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      padding: 4px;
+      border-radius: 24px;
+      margin: 8px 12px 0;
+      box-shadow: 0 8px 24px rgba(94, 163, 217, 0.25);
     }
-    .category-inner .cat-right {
+    .header-inner {
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(4px);
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+    .header-hamburger {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: var(--card-bg); border: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .header-hamburger:hover { transform: scale(1.05); border-color: var(--accent); }
+    .header-hamburger:active { transform: scale(0.92); }
+    .header-hamburger span { display: block; width: 20px; height: 2.5px; background: var(--text); border-radius: 4px; transition: all 0.3s; }
+    .header-hamburger span:nth-child(2) { width: 14px; }
+    .header-hamburger span:nth-child(3) { width: 18px; }
+    
+    /* Меню оверлей */
+    .menu-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px); z-index: 300;
+      display: none; align-items: center; justify-content: center; padding: 20px;
+      animation: fadeInOverlay 0.3s ease;
+    }
+    .menu-overlay.open { display: flex; }
+    .menu-overlay-content {
+      background: var(--card-bg); border-radius: 28px; padding: 28px 20px;
+      max-width: 340px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      border: 1px solid var(--border); animation: slideUpMenu 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .menu-overlay-content .menu-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .menu-overlay-content .menu-header span {
+      font-size: 18px; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .menu-close-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border); background: transparent; color: var(--text);
+      font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s;
+    }
+    .menu-close-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+    .menu-grid { display: flex; flex-direction: column; gap: 10px; }
+    .menu-item-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px; border-radius: 16px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+      font-size: 16px; font-weight: 500; cursor: pointer;
+      transition: all 0.25s; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      width: 100%; text-align: left;
+    }
+    .menu-item-btn:hover { transform: translateX(6px); border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .menu-item-btn:active { transform: scale(0.96); }
+    .menu-item-btn .icon { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+    .menu-item-btn .label { flex: 1; }
+    .menu-item-btn .badge-menu { background: var(--danger); color: white; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 30px; min-width: 20px; text-align: center; }
+    .menu-item-btn .arrow { opacity: 0.4; font-size: 14px; }
+    
+    /* Панели оверлей (заказы, корзина и т.д.) */
+    .overlay-panel {
+      background: var(--admin-bg); padding: 16px; border-radius: 12px;
+      position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px;
+      overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: none;
+    }
+    .overlay-panel.active { display: block; animation: slideIn 0.3s ease; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .panel-close-btn { background: rgba(128,128,128,0.3); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
+    /* ===== ВСЕ ЭЛЕМЕНТЫ В СТИЛЕ ШАПКИ ===== */
+    .item-gradient {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      padding: 2px;
+      border-radius: 16px;
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
+    .item-gradient:hover { transform: translateX(3px); box-shadow: 0 4px 16px rgba(94, 163, 217, 0.25); }
+    .item-inner {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
       gap: 8px;
-      font-size: 13px;
-      opacity: 0.7;
-    }
-    .category-inner .cat-icon {
-      font-size: 28px;
     }
     
     .earnings-display { text-align: center; margin: 8px auto 16px; padding: 10px 16px; background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(94,163,217,0.15)); border-radius: 16px; display: inline-block; }
@@ -167,198 +246,6 @@
     .btn-sm { padding: 6px 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; color: white; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
     .btn-delete { background: var(--danger); } .btn-toggle { background: var(--warning); } .btn-complete { background: var(--success); } .btn-view { background: #06b6d4; }
     .btn-delete-line { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; margin-top: 4px; }
-    
-    /* ШАПКА С КОНТУРОМ */
-    .header-gradient {
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      padding: 4px;
-      border-radius: 24px;
-      margin: 8px 12px 0;
-      box-shadow: 0 8px 24px rgba(94, 163, 217, 0.25);
-    }
-    .header-inner {
-      background: var(--bg);
-      border-radius: 20px;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      backdrop-filter: blur(4px);
-    }
-    .header-title {
-      font-size: 22px;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: 1px;
-      text-shadow: none;
-    }
-    .header-hamburger {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .header-hamburger:hover {
-      transform: scale(1.05);
-      border-color: var(--accent);
-    }
-    .header-hamburger:active {
-      transform: scale(0.92);
-    }
-    .header-hamburger span {
-      display: block;
-      width: 20px;
-      height: 2.5px;
-      background: var(--text);
-      border-radius: 4px;
-      transition: all 0.3s;
-    }
-    .header-hamburger span:nth-child(2) { width: 14px; }
-    .header-hamburger span:nth-child(3) { width: 18px; }
-
-    /* ВЫДВИЖНОЕ МЕНЮ */
-    .menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      z-index: 300;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      animation: fadeInOverlay 0.3s ease;
-    }
-    .menu-overlay.open {
-      display: flex;
-    }
-    @keyframes fadeInOverlay {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    .menu-overlay-content {
-      background: var(--card-bg);
-      border-radius: 28px;
-      padding: 28px 20px;
-      max-width: 340px;
-      width: 100%;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
-      border: 1px solid var(--border);
-      animation: slideUpMenu 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    @keyframes slideUpMenu {
-      from { transform: translateY(30px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .menu-overlay-content .menu-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .menu-overlay-content .menu-header span {
-      font-size: 18px;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .menu-close-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text);
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s;
-    }
-    .menu-close-btn:hover {
-      background: var(--danger);
-      color: white;
-      border-color: var(--danger);
-    }
-    .menu-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .menu-item-btn {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 18px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.25s;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      width: 100%;
-      text-align: left;
-      position: relative;
-    }
-    .menu-item-btn:hover {
-      transform: translateX(6px);
-      border-color: var(--accent);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    .menu-item-btn:active {
-      transform: scale(0.96);
-    }
-    .menu-item-btn .icon {
-      font-size: 22px;
-      width: 36px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-    .menu-item-btn .label {
-      flex: 1;
-    }
-    .menu-item-btn .badge-menu {
-      background: var(--danger);
-      color: white;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 10px;
-      border-radius: 30px;
-      min-width: 20px;
-      text-align: center;
-    }
-    .menu-item-btn .arrow {
-      opacity: 0.4;
-      font-size: 14px;
-    }
-    
-    .overlay-panel { background: var(--admin-bg); padding: 16px; border-radius: 12px; position: fixed; top: 10px; left: 10px; right: 10px; bottom: 10px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
-    .overlay-panel.active { display: block; animation: slideIn 0.3s ease; }
-    
-    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .panel-close-btn { background: rgba(128,128,128,0.3); border: none; color: var(--text); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
     .cart-item, .order-card, .promo-card, .user-card { padding: 10px 0; border-bottom: 1px solid var(--border); }
     .cart-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -433,239 +320,119 @@
     .order-detail-card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
     .order-detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
     .order-detail-total { font-size: 18px; font-weight: 700; text-align: right; color: var(--accent); margin-top: 12px; }
-
+    
     /* iOS‑стиль уведомления */
     .ios-toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
+      position: fixed; bottom: 30px; left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: rgba(30, 35, 50, 0.92);
-      backdrop-filter: blur(14px) saturate(180%);
+      background: rgba(30, 35, 50, 0.92); backdrop-filter: blur(14px) saturate(180%);
       -webkit-backdrop-filter: blur(14px) saturate(180%);
-      padding: 14px 28px;
-      border-radius: 60px;
-      color: #fff;
-      font-weight: 500;
-      font-size: 16px;
+      padding: 14px 28px; border-radius: 60px; color: #fff; font-weight: 500; font-size: 16px;
       box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      z-index: 99999;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      pointer-events: none;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.08); z-index: 99999;
+      opacity: 0; transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none; white-space: nowrap; display: flex; align-items: center; gap: 10px;
     }
-    .ios-toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .ios-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .ios-toast .toast-icon { font-size: 20px; }
     .ios-toast .toast-text { letter-spacing: 0.2px; }
-
-    /* переключатель техработ в админке */
+    
+    /* Техработы */
     .maintenance-toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--card-bg);
-      border-radius: 14px;
-      padding: 14px 18px;
-      margin: 12px 0 8px;
-      border: 1px solid var(--border);
-      transition: border 0.2s;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card-bg); border-radius: 14px; padding: 14px 18px;
+      margin: 12px 0 8px; border: 1px solid var(--border); transition: border 0.2s;
     }
     .maintenance-toggle-row.active { border-color: #f59e0b; }
     .maintenance-toggle-row .toggle-label { display: flex; flex-direction: column; gap: 2px; }
     .maintenance-toggle-row .toggle-label span:first-child { font-weight: 600; font-size: 15px; }
     .maintenance-toggle-row .toggle-label small { font-size: 11px; opacity: 0.7; }
     .maintenance-toggle-row .toggle-switch {
-      position: relative;
-      width: 48px;
-      height: 28px;
-      background: #334155;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: background 0.3s;
-      flex-shrink: 0;
-      border: none;
-      padding: 0;
+      position: relative; width: 48px; height: 28px; background: #334155;
+      border-radius: 30px; cursor: pointer; transition: background 0.3s;
+      flex-shrink: 0; border: none; padding: 0;
     }
     .maintenance-toggle-row .toggle-switch.active { background: linear-gradient(135deg, #5ea3d9, #8b5cf6); }
     .maintenance-toggle-row .toggle-switch::after {
-      content: '';
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 22px;
-      height: 22px;
-      background: #fff;
-      border-radius: 50%;
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 22px; height: 22px; background: #fff; border-radius: 50%;
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
     .maintenance-toggle-row .toggle-switch.active::after { transform: translateX(20px); }
     .maintenance-status-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 12px;
-      border-radius: 30px;
-      background: #1e293b;
-      color: #94a3b8;
-      display: inline-block;
+      font-size: 11px; font-weight: 600; padding: 3px 12px;
+      border-radius: 30px; background: #1e293b; color: #94a3b8; display: inline-block;
     }
     .maintenance-status-badge.on { background: rgba(94, 163, 217, 0.2); color: #5ea3d9; }
     .maintenance-status-badge.off { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-
-    /* СТРАНИЦА ТЕХРАБОТ */
+    
     #maintenance-page {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #0a0e17;
-      z-index: 9998;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
-      flex-direction: column;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #0a0e17; z-index: 9998;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px; text-align: center; flex-direction: column;
     }
-    #maintenance-page.active {
-      display: flex;
-    }
+    #maintenance-page.active { display: flex; }
     .maintenance-card {
-      max-width: 420px;
-      width: 100%;
-      background: #111827;
-      border: 1px solid #1e293b;
-      border-radius: 32px;
-      padding: 32px 24px;
+      max-width: 420px; width: 100%; background: #111827;
+      border: 1px solid #1e293b; border-radius: 32px; padding: 32px 24px;
       box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
     }
     .maintenance-card .maintenance-icon { font-size: 72px; margin-bottom: 16px; }
     .maintenance-card .maintenance-title {
-      font-size: 32px;
-      font-weight: 800;
+      font-size: 32px; font-weight: 800;
       background: linear-gradient(135deg, #f59e0b, #ef4444);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       margin-bottom: 8px;
     }
-    .maintenance-card .maintenance-sub {
-      font-size: 18px;
-      font-weight: 600;
-      color: #e2e8f0;
-      margin-bottom: 12px;
-    }
-    .maintenance-card .maintenance-text {
-      color: #94a3b8;
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
+    .maintenance-card .maintenance-sub { font-size: 18px; font-weight: 600; color: #e2e8f0; margin-bottom: 12px; }
+    .maintenance-card .maintenance-text { color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
     .maintenance-card .maintenance-text strong { color: #e2e8f0; }
     .maintenance-card .maintenance-divider {
-      width: 60px;
-      height: 3px;
-      background: linear-gradient(135deg, #5ea3d9, #8b5cf6);
-      border-radius: 3px;
-      margin: 16px auto;
+      width: 60px; height: 3px; background: linear-gradient(135deg, #5ea3d9, #8b5cf6);
+      border-radius: 3px; margin: 16px auto;
     }
     .maintenance-card .maintenance-contact {
-      display: inline-block;
-      padding: 10px 24px;
-      background: rgba(94, 163, 217, 0.15);
-      border: 1px solid rgba(94, 163, 217, 0.3);
-      border-radius: 10px;
-      color: #5ea3d9;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s;
-      margin-top: 8px;
+      display: inline-block; padding: 10px 24px;
+      background: rgba(94, 163, 217, 0.15); border: 1px solid rgba(94, 163, 217, 0.3);
+      border-radius: 10px; color: #5ea3d9; font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: all 0.3s; margin-top: 8px;
     }
     .maintenance-card .maintenance-contact:hover { background: rgba(94, 163, 217, 0.25); }
-    .maintenance-card .maintenance-shop {
-      font-size: 13px;
-      color: #64748b;
-      margin-top: 16px;
-    }
+    .maintenance-card .maintenance-shop { font-size: 13px; color: #64748b; margin-top: 16px; }
     .maintenance-card .maintenance-shop strong { color: #94a3b8; }
     .maintenance-admin-key {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,215,0,0.15);
-      border: 1px solid rgba(255,215,0,0.3);
-      border-radius: 40px;
-      padding: 10px 24px;
-      color: #ffd700;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      z-index: 9999;
-      transition: all 0.3s;
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 40px; padding: 10px 24px; color: #ffd700; font-size: 13px;
+      font-weight: 600; cursor: pointer; z-index: 9999; transition: all 0.3s;
       backdrop-filter: blur(8px);
     }
-    .maintenance-admin-key:hover {
-      background: rgba(255,215,0,0.25);
-      transform: translateX(-50%) scale(1.05);
-    }
-    .maintenance-admin-key:active {
-      transform: translateX(-50%) scale(0.95);
-    }
-
+    .maintenance-admin-key:hover { background: rgba(255,215,0,0.25); transform: translateX(-50%) scale(1.05); }
+    .maintenance-admin-key:active { transform: translateX(-50%) scale(0.95); }
+    
     .admin-key-modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(6px);
-      z-index: 10000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+      z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .admin-key-modal.open { display: flex; }
     .admin-key-modal .modal-box {
-      background: #111827;
-      border: 1px solid #1e293b;
-      border-radius: 24px;
-      padding: 28px 24px;
-      max-width: 360px;
-      width: 100%;
-      text-align: center;
+      background: #111827; border: 1px solid #1e293b; border-radius: 24px;
+      padding: 28px 24px; max-width: 360px; width: 100%; text-align: center;
     }
     .admin-key-modal .modal-box input {
-      width: 100%;
-      padding: 12px;
-      background: #1a2235;
-      border: 2px solid #1e293b;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 16px;
-      text-align: center;
-      outline: none;
-      margin: 12px 0;
+      width: 100%; padding: 12px; background: #1a2235;
+      border: 2px solid #1e293b; border-radius: 12px; color: #fff;
+      font-size: 16px; text-align: center; outline: none; margin: 12px 0;
     }
     .admin-key-modal .modal-box input:focus { border-color: #ffd700; }
     .admin-key-modal .modal-box .modal-btn {
-      width: 100%;
-      padding: 13px;
+      width: 100%; padding: 13px;
       background: linear-gradient(135deg, #ffd700, #ffaa00);
-      color: #333;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
+      color: #333; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
     }
   </style>
 </head>
@@ -697,9 +464,7 @@
         По всем вопросам обращайтесь к администратору:
       </div>
       <a href="#" class="maintenance-contact">📨 @SWWSHOPBOT</a>
-      <div class="maintenance-shop">
-        <strong>SWWSHOP</strong> — скоро вернёмся! 🚀
-      </div>
+      <div class="maintenance-shop"><strong>SWWSHOP</strong> — скоро вернёмся! 🚀</div>
     </div>
     <div class="maintenance-admin-key" id="maintenanceAdminKey">🔑 Вход для администратора</div>
   </div>
@@ -740,29 +505,19 @@
             <span class="arrow">›</span>
           </button>
           <button class="menu-item-btn" onclick="openPanel('orders');closeMenu();">
-            <span class="icon">📋</span>
-            <span class="label">Мои заказы</span>
-            <span class="arrow">›</span>
+            <span class="icon">📋</span><span class="label">Мои заказы</span><span class="arrow">›</span>
           </button>
           <button class="menu-item-btn" onclick="openPanel('mypromos');closeMenu();">
-            <span class="icon">🎫</span>
-            <span class="label">Промокоды</span>
-            <span class="arrow">›</span>
+            <span class="icon">🎫</span><span class="label">Промокоды</span><span class="arrow">›</span>
           </button>
           <button class="menu-item-btn" onclick="openPanel('roulette');closeMenu();">
-            <span class="icon">🎰</span>
-            <span class="label">Колесо удачи</span>
-            <span class="arrow">›</span>
+            <span class="icon">🎰</span><span class="label">Колесо удачи</span><span class="arrow">›</span>
           </button>
           <button class="menu-item-btn" id="menuUsersBtn" style="display:none;" onclick="openPanel('users');closeMenu();">
-            <span class="icon">👥</span>
-            <span class="label">Пользователи</span>
-            <span class="arrow">›</span>
+            <span class="icon">👥</span><span class="label">Пользователи</span><span class="arrow">›</span>
           </button>
           <button class="menu-item-btn" id="menuConsoleBtn" style="display:none;" onclick="openPanel('console');closeMenu();">
-            <span class="icon">💬</span>
-            <span class="label">Консоль</span>
-            <span class="arrow">›</span>
+            <span class="icon">💬</span><span class="label">Консоль</span><span class="arrow">›</span>
           </button>
         </div>
       </div>
@@ -770,15 +525,50 @@
 
     <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-    <div id="orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div><div id="orders-list"></div></div>
-    <div id="all-orders-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div><div id="all-orders-list"></div></div>
-    <div id="order-detail-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Детали заказа</h2><button class="panel-close-btn" onclick="closePanel('order-detail');showAllOrders();">✕</button></div><div id="order-detail-content"></div></div>
-    <div id="mypromos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎫 Мои промокоды</h2><button class="panel-close-btn" onclick="closePanel('mypromos')">✕</button></div><div id="mypromos-list"></div></div>
-    <div id="all-promos-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Все промокоды</h2><button class="panel-close-btn" onclick="closePanel('all-promos')">✕</button></div><div id="all-promos-list"></div></div>
-    <div id="users-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Пользователи</h2><button class="panel-close-btn" onclick="closePanel('users')">✕</button></div><div class="user-stats" id="user-stats"></div><div id="users-list"></div></div>
-    <div id="cart-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div><div id="cart-items"></div><div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div><div id="promo-message"></div><div class="cart-discount" id="cart-discount"></div><div class="cart-total" id="cart-total"></div><div class="order-form" id="order-form" style="display:none;"><input type="text" id="customer-name" placeholder="Ваше имя *" /><input type="text" id="customer-contact" placeholder="Телефон или @username *" /><select id="payment-method"><option value="">Способ оплаты *</option><option value="Наличные">Наличные</option><option value="Безналичные">Безналичные</option><option value="Смешанная">Смешанная</option></select><button class="order-btn" onclick="sendOrder()">Оформить заказ</button></div><div class="order-success" id="order-success" style="display:none;"></div></div>
+    <!-- ===== ПАНЕЛИ ОВЕРЛЕЙ ===== -->
+    <div id="orders-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Мои заказы</h2><button class="panel-close-btn" onclick="closePanel('orders')">✕</button></div>
+      <div id="orders-list"></div>
+    </div>
+    <div id="all-orders-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Все заказы</h2><button class="panel-close-btn" onclick="closePanel('all-orders')">✕</button></div>
+      <div id="all-orders-list"></div>
+    </div>
+    <div id="order-detail-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Детали заказа</h2><button class="panel-close-btn" onclick="closePanel('order-detail');showAllOrders();">✕</button></div>
+      <div id="order-detail-content"></div>
+    </div>
+    <div id="mypromos-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">🎫 Мои промокоды</h2><button class="panel-close-btn" onclick="closePanel('mypromos')">✕</button></div>
+      <div id="mypromos-list"></div>
+    </div>
+    <div id="all-promos-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Все промокоды</h2><button class="panel-close-btn" onclick="closePanel('all-promos')">✕</button></div>
+      <div id="all-promos-list"></div>
+    </div>
+    <div id="users-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Пользователи</h2><button class="panel-close-btn" onclick="closePanel('users')">✕</button></div>
+      <div class="user-stats" id="user-stats"></div>
+      <div id="users-list"></div>
+    </div>
+    <div id="cart-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Корзина</h2><button class="panel-close-btn" onclick="closePanel('cart')">✕</button></div>
+      <div id="cart-items"></div>
+      <div class="promo-section"><input type="text" id="promo-input" placeholder="Промокод" /><button class="promo-apply-btn" onclick="applyPromo()">Применить</button></div>
+      <div id="promo-message"></div>
+      <div class="cart-discount" id="cart-discount"></div>
+      <div class="cart-total" id="cart-total"></div>
+      <div class="order-form" id="order-form" style="display:none;">
+        <input type="text" id="customer-name" placeholder="Ваше имя *" />
+        <input type="text" id="customer-contact" placeholder="Телефон или @username *" />
+        <select id="payment-method"><option value="">Способ оплаты *</option><option value="Наличные">Наличные</option><option value="Безналичные">Безналичные</option><option value="Смешанная">Смешанная</option></select>
+        <button class="order-btn" onclick="sendOrder()">Оформить заказ</button>
+      </div>
+      <div class="order-success" id="order-success" style="display:none;"></div>
+    </div>
     
-    <div id="roulette-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">🎰 Колесо удачи</h2><button class="panel-close-btn" onclick="closePanel('roulette')">✕</button></div>
+    <div id="roulette-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">🎰 Колесо удачи</h2><button class="panel-close-btn" onclick="closePanel('roulette')">✕</button></div>
       <div class="slot-container">
         <div class="slot-machine"><div class="slot-reel" id="slot-reel"><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">0%</div><div class="slot-item">🎰</div><div class="slot-item">0%</div><div class="slot-item">1%</div><div class="slot-item">5%</div><div class="slot-item">15%</div><div class="slot-item">0%</div></div></div>
         <button class="spin-btn" id="spin-btn" onclick="spinRoulette()">🎰 КРУТИТЬ</button>
@@ -788,7 +578,19 @@
       </div>
     </div>
     
-    <div id="console-panel" class="overlay-panel"><div class="panel-header"><h2 class="shop-title">Консоль</h2><button class="panel-close-btn" onclick="closePanel('console')">✕</button></div><div><strong>Отправить:</strong><select id="console-user" class="admin-input" style="margin-top:8px;"><option value="">-- Выберите --</option></select><textarea id="console-message" class="console-textarea" placeholder="Текст..."></textarea><button class="admin-action-btn btn-purple" onclick="sendMessageToUser()">📨 Отправить</button></div><div style="border-top:2px solid var(--border);padding-top:16px;margin-top:16px;"><strong>Рассылка:</strong><textarea id="console-broadcast" class="console-textarea" placeholder="Текст..."></textarea><button class="admin-action-btn btn-orange" onclick="sendBroadcast()">📢 Отправить всем</button></div></div>
+    <div id="console-panel" class="overlay-panel">
+      <div class="panel-header"><h2 class="shop-title">Консоль</h2><button class="panel-close-btn" onclick="closePanel('console')">✕</button></div>
+      <div><strong>Отправить:</strong>
+        <select id="console-user" class="admin-input" style="margin-top:8px;"><option value="">-- Выберите --</option></select>
+        <textarea id="console-message" class="console-textarea" placeholder="Текст..."></textarea>
+        <button class="admin-action-btn btn-purple" onclick="sendMessageToUser()">📨 Отправить</button>
+      </div>
+      <div style="border-top:2px solid var(--border);padding-top:16px;margin-top:16px;">
+        <strong>Рассылка:</strong>
+        <textarea id="console-broadcast" class="console-textarea" placeholder="Текст..."></textarea>
+        <button class="admin-action-btn btn-orange" onclick="sendBroadcast()">📢 Отправить всем</button>
+      </div>
+    </div>
 
     <button class="admin-toggle-btn" onclick="toggleAdminPanel()">🔑</button>
     <div class="theme-switcher">
@@ -797,6 +599,7 @@
       <button class="theme-btn" onclick="setTheme('dark')">🌑</button>
     </div>
 
+    <!-- АДМИН-ПАНЕЛЬ (оверлей) -->
     <div id="admin-panel" class="overlay-panel" style="top:auto;bottom:0;max-height:65vh;border-radius:12px 12px 0 0;">
       <div class="panel-header"><h2 class="shop-title">Админ-панель</h2><button class="panel-close-btn" onclick="closePanel('admin')">✕</button></div>
       <div id="admin-login-area"><div style="display:flex;gap:8px;"><input type="password" id="admin-password" class="admin-input" placeholder="Пароль" /><button class="admin-btn" onclick="adminLogin()">Войти</button></div></div>
@@ -819,12 +622,45 @@
           <button class="admin-action-btn btn-purple" onclick="openPanel('console')">💬 Консоль</button>
         </div>
         <button class="admin-action-btn btn-dark" id="admin-season-toggle" onclick="toggleSeason()">❄️ Включить зимнюю тему</button>
+        
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить линейку</strong><input type="text" id="line-name" class="admin-input" placeholder="Название" /><input type="number" id="line-price" class="admin-input" placeholder="Цена" /><select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select><textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea><button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button></div>
-          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;"><strong>Добавить товар</strong><input type="text" id="item-name" class="admin-input" placeholder="Название" /><input type="number" id="item-price" class="admin-input" placeholder="Цена" /><select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select><input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0=нет)" /><button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button></div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;">
+            <strong>Добавить линейку</strong>
+            <input type="text" id="line-name" class="admin-input" placeholder="Название" />
+            <input type="number" id="line-price" class="admin-input" placeholder="Цена" />
+            <select id="line-category" class="admin-input"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select>
+            <textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;"></textarea>
+            <button class="admin-action-btn btn-dark" onclick="addLine()">Добавить линейку</button>
+          </div>
+          <div style="border:1px solid var(--border);padding:8px;border-radius:8px;">
+            <strong>Добавить товар</strong>
+            <input type="text" id="item-name" class="admin-input" placeholder="Название" />
+            <input type="number" id="item-price" class="admin-input" placeholder="Цена" />
+            <select id="item-category" class="admin-input"><option value="coils">Испарители</option><option value="devices">Устройства</option></select>
+            <input type="number" id="item-qty" class="admin-input" placeholder="Кол-во (0=нет)" />
+            <button class="admin-action-btn btn-dark" onclick="addItem()">Добавить товар</button>
+          </div>
         </div>
-        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;"><strong>Создать промокод</strong><input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" /><input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" /><input type="text" id="promo-user-id" class="admin-input" placeholder="User ID получателя (пусто=для всех)" /><button class="admin-action-btn btn-dark" onclick="createPromo()">Создать промокод</button></div>
-        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;"><strong style="color:var(--danger);">Удаление товаров</strong><select id="del-category" class="delete-select" onchange="updateDelSelect()"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option><option value="coils">Испарители</option><option value="devices">Устройства</option></select><select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select><button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить выбранный</button><button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button></div>
+        
+        <div style="border:1px solid var(--border);padding:8px;border-radius:8px;margin-top:8px;">
+          <strong>Создать промокод</strong>
+          <input type="text" id="promo-code" class="admin-input" placeholder="Код (пусто=авто)" />
+          <input type="number" id="promo-discount" class="admin-input" placeholder="Скидка %" value="15" />
+          <input type="number" id="promo-max-uses" class="admin-input" placeholder="Макс. активаций (0=∞)" value="0" />
+          <input type="text" id="promo-user-id" class="admin-input" placeholder="User ID (пусто=для всех)" />
+          <button class="admin-action-btn btn-dark" onclick="createPromo()">Создать промокод</button>
+        </div>
+        
+        <div style="border:2px solid var(--danger);padding:8px;border-radius:8px;margin-top:8px;">
+          <strong style="color:var(--danger);">Удаление товаров</strong>
+          <select id="del-category" class="delete-select" onchange="updateDelSelect()">
+            <option value="liquids">Жидкости</option><option value="pouches">Шайбы</option>
+            <option value="coils">Испарители</option><option value="devices">Устройства</option>
+          </select>
+          <select id="del-item" class="delete-select"><option value="">-- Выберите --</option></select>
+          <button class="admin-action-btn btn-red" onclick="deleteSelected()">Удалить выбранный</button>
+          <button class="admin-action-btn btn-orange" onclick="deleteAllOutOfStock()">Удалить всё что закончилось</button>
+        </div>
         <button class="admin-action-btn btn-red" onclick="adminLogout()" style="margin-top:16px;">🚪 Выйти из админки</button>
       </div>
     </div>
@@ -857,7 +693,7 @@ const BOT_TOKEN = '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
 const CHAT_ID = '5993502384';
 const BASE_USERS_COUNT = 79;
 
-// ===== FIREBASE ИНИЦИАЛИЗАЦИЯ =====
+// ===== FIREBASE =====
 firebase.initializeApp({
   apiKey:"AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
   authDomain:"swwshop.firebaseapp.com",
@@ -869,77 +705,47 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// ===== ФУНКЦИИ УПРАВЛЕНИЯ ТЕХРАБОТАМИ =====
+// ===== ТЕХРАБОТЫ =====
 function updateMaintenanceUI() {
   const wrap = document.getElementById('maintenanceToggleWrap');
   const sw = document.getElementById('maintenanceToggleSwitch');
   const badge = document.getElementById('maintenanceStatusBadge');
   if (!wrap || !sw || !badge) return;
-  
   if (maintenanceMode) {
-    wrap.classList.add('active');
-    sw.classList.add('active');
-    badge.textContent = '🔧 Включено';
-    badge.className = 'maintenance-status-badge on';
+    wrap.classList.add('active'); sw.classList.add('active');
+    badge.textContent = '🔧 Включено'; badge.className = 'maintenance-status-badge on';
     document.getElementById('maintenance-page').classList.add('active');
     document.getElementById('main-app').style.display = 'none';
   } else {
-    wrap.classList.remove('active');
-    sw.classList.remove('active');
-    badge.textContent = '⛔ Выключено';
-    badge.className = 'maintenance-status-badge off';
+    wrap.classList.remove('active'); sw.classList.remove('active');
+    badge.textContent = '⛔ Выключено'; badge.className = 'maintenance-status-badge off';
     document.getElementById('maintenance-page').classList.remove('active');
     document.getElementById('main-app').style.display = 'block';
   }
 }
 
 function toggleMaintenance() {
-  if (!isAdmin) {
-    showIosToast('❌ Только для администратора!', '❌');
-    return;
-  }
+  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
   maintenanceMode = !maintenanceMode;
   updateMaintenanceUI();
   localStorage.setItem('sww_maintenance_mode', String(maintenanceMode));
-  if (maintenanceMode) {
-    showIosToast('🔧 Технические работы включены', '🔧');
-  } else {
-    showIosToast('✅ Технические работы выключены', '✅');
-  }
+  showIosToast(maintenanceMode ? '🔧 Технические работы включены' : '✅ Технические работы выключены', maintenanceMode ? '🔧' : '✅');
 }
 
-// ===== ВХОД В АДМИНКУ СО СТРАНИЦЫ ТЕХРАБОТ =====
-function openAdminKeyModal() {
-  document.getElementById('adminKeyModal').classList.add('open');
-  document.getElementById('adminKeyInput').focus();
-}
-
-function closeAdminKeyModal() {
-  document.getElementById('adminKeyModal').classList.remove('open');
-}
+function openAdminKeyModal() { document.getElementById('adminKeyModal').classList.add('open'); document.getElementById('adminKeyInput').focus(); }
+function closeAdminKeyModal() { document.getElementById('adminKeyModal').classList.remove('open'); }
 
 function adminKeyLogin() {
-  const pass = document.getElementById('adminKeyInput').value;
-  if (pass === 'SWWADMIN_SWQ35YTF') {
-    isAdmin = true;
-    closeAdminKeyModal();
-    maintenanceMode = false;
-    updateMaintenanceUI();
-    localStorage.setItem('sww_maintenance_mode', 'false');
+  if (document.getElementById('adminKeyInput').value === 'SWWADMIN_SWQ35YTF') {
+    isAdmin = true; closeAdminKeyModal(); maintenanceMode = false;
+    updateMaintenanceUI(); localStorage.setItem('sww_maintenance_mode', 'false');
     document.getElementById('admin-login-area').style.display = 'none';
     document.getElementById('admin-controls-area').style.display = 'block';
-    updateAdminUI();
-    updateAdminEarnings();
-    showMain();
-    updateRouletteTimer();
+    updateAdminUI(); updateAdminEarnings(); showMain(); updateRouletteTimer();
     showIosToast('✅ Добро пожаловать в админку!', '👑');
     document.getElementById('admin-panel').classList.add('active');
     activePanel = 'admin';
-  } else {
-    alert('❌ Неверный пароль!');
-    document.getElementById('adminKeyInput').value = '';
-    document.getElementById('adminKeyInput').focus();
-  }
+  } else { alert('❌ Неверный пароль!'); document.getElementById('adminKeyInput').value = ''; document.getElementById('adminKeyInput').focus(); }
 }
 
 // ===== ВЕРИФИКАЦИЯ =====
@@ -989,11 +795,9 @@ document.getElementById('v-input').addEventListener('input',function(e){
 
 // ===== МЕНЮ =====
 function toggleMenu() {
-  const overlay = document.getElementById('menuOverlay');
-  overlay.classList.toggle('open');
-  document.body.style.overflow = overlay.classList.contains('open') ? 'hidden' : '';
+  document.getElementById('menuOverlay').classList.toggle('open');
+  document.body.style.overflow = document.getElementById('menuOverlay').classList.contains('open') ? 'hidden' : '';
 }
-
 function closeMenu() {
   document.getElementById('menuOverlay').classList.remove('open');
   document.body.style.overflow = '';
@@ -1009,203 +813,229 @@ function showIosToast(message, icon = '✅') {
   toastText.textContent = message;
   toast.classList.add('show');
   clearTimeout(toast._hideTimer);
-  toast._hideTimer = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 2000);
+  toast._hideTimer = setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
 
-function showNotification(message) {
-  showIosToast(message, 'ℹ️');
-}
-
-// ===== ОБНОВЛЁННЫЙ ПОКАЗ ГЛАВНОЙ =====
+// ===== ОСНОВНЫЕ ФУНКЦИИ =====
 function showMain() {
   currentView = 'main';
   const e = getEarnings();
   const totalUsers = getTotalUsers();
-  
   const categories = [
     { id: 'liquids', icon: '💧', label: 'Жидкости' },
     { id: 'pouches', icon: '👝', label: 'Шайбы' },
     { id: 'coils', icon: '🔧', label: 'Испарители' },
     { id: 'devices', icon: '📱', label: 'Устройства' }
   ];
-  
-  let html = `
-    <h1 class="shop-title">SWWSHOP</h1>
-    <div style="text-align:center;">
-      <div class="users-counter">👥 Пользователей: <span>${totalUsers}</span></div>
-    </div>
+  let html = `<h1 class="shop-title">SWWSHOP</h1>
+    <div style="text-align:center;"><div class="users-counter">👥 Пользователей: <span>${totalUsers}</span></div></div>
     ${isAdmin ? `<div style="text-align:center;"><div class="earnings-display"><div class="earnings-label">Заработано сегодня</div><div class="earnings-amount">${e.day} ₽</div></div></div>` : ''}
-    <p style="text-align:center;opacity:0.7;margin-bottom:16px;">Выберите категорию:</p>
-  `;
-  
+    <p style="text-align:center;opacity:0.7;margin-bottom:16px;">Выберите категорию:</p>`;
   categories.forEach(cat => {
     const count = data[cat.id]?.length || 0;
-    html += `
-      <div class="category-gradient">
-        <button class="category-inner" onclick="showCategory('${cat.id}')">
-          <span class="cat-left">
-            <span class="cat-icon">${cat.icon}</span>
-            <span>${cat.label}</span>
-          </span>
-          <span class="cat-right">
-            <span>${count} товаров</span>
-            <span>›</span>
-          </span>
-        </button>
-      </div>
-    `;
+    html += `<div class="gradient-wrap"><button class="gradient-inner" onclick="showCategory('${cat.id}')">
+      <span class="left"><span class="icon-big">${cat.icon}</span><span>${cat.label}</span></span>
+      <span class="right"><span>${count} товаров</span><span>›</span></span>
+    </button></div>`;
   });
-  
   document.getElementById('app').innerHTML = html;
 }
 
-// ===== ПОКАЗ КАТЕГОРИИ =====
 function showCategory(cat) {
-  currentView = 'category';
-  currentCategory = cat;
+  currentView = 'category'; currentCategory = cat;
   const t = {liquids:'Жидкости', pouches:'Шайбы', coils:'Испарители', devices:'Устройства'};
   const icons = {liquids:'💧', pouches:'👝', coils:'🔧', devices:'📱'};
-  
-  let html = `<button class="back-btn" onclick="showMain()">← Назад</button>`;
-  html += `<h1 class="shop-title">${icons[cat]} ${t[cat]}</h1>`;
-  
-  if (!data[cat]?.length) {
-    html += '<p style="text-align:center;opacity:0.5;padding:40px;">Нет товаров</p>';
-  } else if (cat === 'liquids' || cat === 'pouches') {
+  let html = `<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">${icons[cat]} ${t[cat]}</h1>`;
+  if (!data[cat]?.length) { html += '<p style="text-align:center;opacity:0.5;padding:40px;">Нет товаров</p>'; }
+  else if (cat === 'liquids' || cat === 'pouches') {
     data[cat].forEach((l, i) => {
-      html += `
-        <div class="category-gradient" style="margin-bottom:8px;">
-          <button class="category-inner" onclick="showDetail('${cat}', ${i})">
-            <span class="cat-left">
-              <span style="font-weight:600;">${l.name}</span>
-            </span>
-            <span class="cat-right">
-              <span>${l.price} RUB</span>
-              <span>${l.flavors.length} вкусов</span>
-              <span>›</span>
-            </span>
-          </button>
-        </div>
-      `;
-      if (isAdmin) {
-        html += `<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine('${cat}',${i})">Удалить линейку</button>`;
-      }
+      html += `<div class="gradient-wrap" style="margin-bottom:8px;"><button class="gradient-inner" onclick="showDetail('${cat}', ${i})">
+        <span class="left"><span style="font-weight:600;">${l.name}</span></span>
+        <span class="right"><span>${l.price} RUB</span><span>${l.flavors.length} вкусов</span><span>›</span></span>
+      </button></div>`;
+      if (isAdmin) html += `<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine('${cat}',${i})">Удалить линейку</button>`;
     });
   } else {
     data[cat].forEach((item, i) => {
-      html += `
-        <div class="product-row">
-          <span class="product-name">${item.name}</span>
-          <span class="product-price">${item.price} RUB</span>
-          <span class="status-badge ${item.inStock ? 'status-in-stock' : 'status-out-stock'}">${item.inStock ? 'В наличии' : 'Нет'}</span>
-          <div class="product-actions">
-            ${item.inStock ? `<button class="add-to-cart-btn" onclick="addToCartSimple('${item.name}', ${item.price})">🛒</button>` : `<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>`}
-            ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>` : ''}
-          </div>
+      html += `<div class="product-row">
+        <span class="product-name">${item.name}</span>
+        <span class="product-price">${item.price} RUB</span>
+        <span class="status-badge ${item.inStock ? 'status-in-stock' : 'status-out-stock'}">${item.inStock ? 'В наличии' : 'Нет'}</span>
+        <div class="product-actions">
+          ${item.inStock ? `<button class="add-to-cart-btn" onclick="addToCartSimple('${item.name}', ${item.price})">🛒</button>` : `<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>`}
+          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>` : ''}
         </div>
-      `;
+      </div>`;
     });
   }
-  
   document.getElementById('app').innerHTML = html;
 }
 
-// ===== ПОКАЗ ДЕТАЛЕЙ =====
 function showDetail(cat, idx) {
-  currentView = 'detail';
-  currentCategory = cat;
-  currentIndex = idx;
+  currentView = 'detail'; currentCategory = cat; currentIndex = idx;
   const line = data[cat][idx];
   if (!line) { showCategory(cat); return; }
-  
-  let html = `<button class="back-btn" onclick="showCategory('${cat}')">← Назад</button>`;
-  html += `<h1 class="shop-title">${line.name}</h1>`;
-  html += `<p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>`;
-  html += `<div style="margin:12px 0 8px;font-weight:600;">Выберите вкус (${line.flavors.length}):</div>`;
-  
+  let html = `<button class="back-btn" onclick="showCategory('${cat}')">← Назад</button>
+    <h1 class="shop-title">${line.name}</h1>
+    <p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>
+    <div style="margin:12px 0 8px;font-weight:600;">Выберите вкус (${line.flavors.length}):</div>`;
   line.flavors.forEach((f, fi) => {
-    html += `
-      <div class="flavor-row">
-        <span class="flavor-name">${f.name}</span>
-        <div class="flavor-actions">
-          <span class="status-badge ${f.inStock ? 'status-in-stock' : 'status-out-stock'}">${f.inStock ? 'В наличии' : 'Нет'}</span>
-          ${f.inStock ? `<button class="add-to-cart-btn" onclick="addToCart('${line.name}', ${line.price}, '${line.name}', '${f.name}')">🛒</button>` : `<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>`}
-          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>` : ''}
-        </div>
+    html += `<div class="flavor-row">
+      <span class="flavor-name">${f.name}</span>
+      <div class="flavor-actions">
+        <span class="status-badge ${f.inStock ? 'status-in-stock' : 'status-out-stock'}">${f.inStock ? 'В наличии' : 'Нет'}</span>
+        ${f.inStock ? `<button class="add-to-cart-btn" onclick="addToCart('${line.name}', ${line.price}, '${line.name}', '${f.name}')">🛒</button>` : `<button class="add-to-cart-btn" style="background:#999;" disabled>Нет</button>`}
+        ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>` : ''}
       </div>
-    `;
+    </div>`;
   });
-  
   document.getElementById('app').innerHTML = html;
 }
 
-// ===== ДОБАВЛЕНИЕ В КОРЗИНУ =====
+// ===== КОРЗИНА =====
 function addToCart(n, p, ln, fn) {
-  if (!fn) {
-    showIosToast('❌ Выберите вкус!', '❌');
-    return;
-  }
+  if (!fn) { showIosToast('❌ Выберите вкус!', '❌'); return; }
   const line = data[currentCategory]?.find(l => l.name === ln);
-  if (line) {
-    const f = line.flavors.find(f => f.name === fn);
-    if (f && !f.inStock) {
-      showIosToast('❌ Нет в наличии!', '❌');
-      return;
-    }
-  }
+  if (line) { const f = line.flavors.find(f => f.name === fn); if (f && !f.inStock) { showIosToast('❌ Нет в наличии!', '❌'); return; } }
   cart.push({name: fn + ' (' + ln + ')', price: p});
-  saveCart();
-  showIosToast('✅ Добавлено в корзину!', '✅');
+  saveCart(); showIosToast('✅ Добавлено в корзину!', '✅');
 }
 
 function addToCartSimple(n, p) {
   const item = data[currentCategory]?.find(i => i.name === n);
-  if (item && !item.inStock) {
-    showIosToast('❌ Нет в наличии!', '❌');
-    return;
-  }
+  if (item && !item.inStock) { showIosToast('❌ Нет в наличии!', '❌'); return; }
   cart.push({name: n, price: p});
-  saveCart();
-  showIosToast('✅ Добавлено в корзину!', '✅');
+  saveCart(); showIosToast('✅ Добавлено в корзину!', '✅');
 }
 
-function saveCart() {
-  localStorage.setItem('swwshop_cart', JSON.stringify(cart));
-  updateCartBadge();
-}
+function saveCart() { localStorage.setItem('swwshop_cart', JSON.stringify(cart)); updateCartBadge(); }
 
 function updateCartBadge() {
   const c = cart.reduce((s, i) => s + (i.quantity || 1), 0);
   const el = document.getElementById('cart-count');
   const menuBadge = document.getElementById('menuCartBadge');
-  if (el) {
-    el.style.display = c > 0 ? 'flex' : 'none';
-    if (c > 0) el.textContent = c;
+  if (el) { el.style.display = c > 0 ? 'flex' : 'none'; if (c > 0) el.textContent = c; }
+  if (menuBadge) { menuBadge.style.display = c > 0 ? 'inline-block' : 'none'; if (c > 0) menuBadge.textContent = c; }
+}
+
+function showCart() {
+  if (!cart.length) {
+    document.getElementById('cart-items').innerHTML = '<p>Пусто</p>';
+    document.getElementById('cart-total').textContent = '';
+    document.getElementById('order-form').style.display = 'none';
+    return;
   }
-  if (menuBadge) {
-    menuBadge.style.display = c > 0 ? 'inline-block' : 'none';
-    if (c > 0) menuBadge.textContent = c;
+  let sub = cart.reduce((s,i) => s + i.price, 0);
+  let disc = appliedPromo ? Math.round(sub * appliedPromo.discount / 100) : 0;
+  document.getElementById('cart-items').innerHTML = cart.map((item,i) =>
+    `<div class="cart-item"><div>${item.name}</div><span>${item.price} RUB</span><button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button></div>`
+  ).join('');
+  document.getElementById('cart-total').textContent = 'Итого: ' + (sub - disc) + ' RUB';
+  document.getElementById('order-form').style.display = 'block';
+}
+
+function removeFromCart(i) { cart.splice(i,1); saveCart(); showCart(); }
+
+function applyPromo() {
+  const input = document.getElementById('promo-input').value.trim().toUpperCase();
+  if (!input) return;
+  const promo = promos[input];
+  if (promo && !promo.used && (promo.maxUses === undefined || promo.uses < promo.maxUses)) {
+    appliedPromo = {code: input, discount: promo.discount};
+    document.getElementById('promo-message').innerHTML = '<span style="color:var(--success);">Скидка -'+promo.discount+'% применена!</span>';
+    showCart();
+  } else {
+    document.getElementById('promo-message').innerHTML = '<span style="color:var(--danger);">Промокод не найден, использован или превышен лимит</span>';
+    appliedPromo = null;
   }
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
+function sendOrder() {
+  const name = document.getElementById('customer-name').value.trim();
+  const contact = document.getElementById('customer-contact').value.trim();
+  const payment = document.getElementById('payment-method').value;
+  if (!name || !contact || !payment) return alert('Заполните все поля!');
+  if (!cart.length) return alert('❌ Корзина пуста!');
+  let sub = cart.reduce((s,i) => s + i.price, 0);
+  let disc = 0;
+  if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
+    const p = promos[appliedPromo.code];
+    if (p.maxUses === undefined || p.uses < p.maxUses) {
+      disc = Math.round(sub * p.discount / 100);
+      db.ref('promos/'+appliedPromo.code).update({used: true, usedBy: getUserId(), usedAt: Date.now(), uses: (p.uses||0)+1});
+      if (p.maxUses !== undefined && (p.uses||0)+1 >= p.maxUses) {
+        db.ref('promos/'+appliedPromo.code).update({used: true});
+      }
+    }
+  }
+  const total = sub - disc;
+  const oid = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
+  const uid = getUserId();
+  db.ref('orders/'+oid).set({
+    id:oid, userId:uid, userName:name, userContact:contact,
+    items:[...cart], subtotal:sub, discount:disc, total:total,
+    payment:payment, status:'pending', date:Date.now()
+  });
+  let atxt = '🛒 НОВЫЙ ЗАКАЗ #'+oid+'\n\n👤 '+name+'\n📱 '+contact+'\n💳 '+payment+'\n\n📋 Товары:\n';
+  cart.forEach((item,i) => { atxt += (i+1)+'. '+item.name+' - '+item.price+'₽\n'; });
+  if (disc > 0) atxt += '\n🎫 Промокод: '+appliedPromo?.code+' (-'+disc+'₽)';
+  atxt += '\n💰 Итого: '+total+'₽';
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:CHAT_ID, text:atxt})
+  }).catch(() => {});
+  cart = []; appliedPromo = null; saveCart();
+  document.getElementById('cart-items').innerHTML = '';
+  document.getElementById('cart-total').textContent = '';
+  document.getElementById('order-form').style.display = 'none';
+  document.getElementById('order-success').style.display = 'block';
+  document.getElementById('order-success').innerHTML = '✅ Заказ #'+oid+' оформлен!';
+  showIosToast('✅ Заказ оформлен!', '📦');
+}
+
+// ===== ПРОМОКОДЫ С ЛИМИТОМ АКТИВАЦИЙ =====
+function createPromo() {
+  if (!isAdmin) return;
+  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
+  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
+  const maxUses = parseInt(document.getElementById('promo-max-uses').value) || 0;
+  const userId = document.getElementById('promo-user-id').value.trim() || null;
+  db.ref('promos/'+c).set({
+    discount, used: false, created: Date.now(), type: 'admin',
+    userId: userId, uses: 0, maxUses: maxUses > 0 ? maxUses : undefined
+  });
+  showIosToast('✅ Промокод создан: ' + c, '🎫');
+  document.getElementById('promo-code').value = '';
+  document.getElementById('promo-max-uses').value = '0';
+  document.getElementById('promo-user-id').value = '';
+}
+
+function showAllPromos() {
+  if (!isAdmin) return;
+  const el = document.getElementById('all-promos-list');
+  const codes = Object.entries(promos);
+  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
+  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => {
+    const limitInfo = p.maxUses ? ` (${p.uses||0}/${p.maxUses})` : ' ♾️';
+    return `<div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><strong>${c}</strong> - ${p.discount}%${limitInfo}<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
+      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
+
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо) =====
 function getUserId() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (tgU) return 'tg_' + tgU.id;
   let id = localStorage.getItem('swwshop_userId');
-  if (!id) {
-    id = 'web_' + Date.now();
-    localStorage.setItem('swwshop_userId', id);
-  }
+  if (!id) { id = 'web_' + Date.now(); localStorage.setItem('swwshop_userId', id); }
   return id;
 }
 
-function getTotalUsers() {
-  const actualUsers = Object.keys(users).length;
-  return BASE_USERS_COUNT + actualUsers;
-}
+function getTotalUsers() { return BASE_USERS_COUNT + Object.keys(users).length; }
 
 function getEarnings() {
   const ds = new Date(); ds.setHours(0,0,0,0);
@@ -1238,22 +1068,14 @@ function updateAdminUI() {
   document.getElementById('admin-indicator').className = isAdmin ? 'admin-indicator active' : 'admin-indicator';
   document.getElementById('menuConsoleBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('menuUsersBtn').style.display = isAdmin ? 'flex' : 'none';
-  if (!isAdmin) {
-    document.getElementById('admin-login-area').style.display = 'block';
-    document.getElementById('admin-controls-area').style.display = 'none';
-  } else {
-    document.getElementById('admin-login-area').style.display = 'none';
-    document.getElementById('admin-controls-area').style.display = 'block';
-  }
+  document.getElementById('admin-login-area').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('admin-controls-area').style.display = isAdmin ? 'block' : 'none';
 }
 
 function openPanel(n) {
   document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
   const p = document.getElementById(n + '-panel');
-  if (p) {
-    p.classList.add('active');
-    activePanel = n;
-  }
+  if (p) { p.classList.add('active'); activePanel = n; }
   if (n === 'orders') showOrders();
   if (n === 'all-orders') showAllOrders();
   if (n === 'mypromos') showMyPromos();
@@ -1264,24 +1086,13 @@ function openPanel(n) {
   if (n === 'console') updateConsoleUsers();
 }
 
-function closePanel(n) {
-  const p = document.getElementById(n + '-panel');
-  if (p) p.classList.remove('active');
-  activePanel = null;
-}
+function closePanel(n) { const p = document.getElementById(n + '-panel'); if (p) p.classList.remove('active'); activePanel = null; }
 
 function toggleAdminPanel() {
   if (isAdmin) {
     const p = document.getElementById('admin-panel');
-    if (p.classList.contains('active')) {
-      p.classList.remove('active');
-      activePanel = null;
-    } else {
-      document.querySelectorAll('.overlay-panel').forEach(x => x.classList.remove('active'));
-      p.classList.add('active');
-      activePanel = 'admin';
-      updateAdminEarnings();
-    }
+    if (p.classList.contains('active')) { p.classList.remove('active'); activePanel = null; }
+    else { document.querySelectorAll('.overlay-panel').forEach(x => x.classList.remove('active')); p.classList.add('active'); activePanel = 'admin'; updateAdminEarnings(); }
   } else {
     document.getElementById('admin-panel').classList.toggle('active');
     activePanel = document.getElementById('admin-panel').classList.contains('active') ? 'admin' : null;
@@ -1293,14 +1104,9 @@ function adminLogin() {
     isAdmin = true;
     document.getElementById('admin-login-area').style.display = 'none';
     document.getElementById('admin-controls-area').style.display = 'block';
-    updateAdminUI();
-    updateAdminEarnings();
-    showMain();
-    updateRouletteTimer();
+    updateAdminUI(); updateAdminEarnings(); showMain(); updateRouletteTimer();
     showIosToast('✅ Вы вошли как администратор', '👑');
-  } else {
-    alert('Неверный пароль!');
-  }
+  } else { alert('Неверный пароль!'); }
 }
 
 function adminLogout() {
@@ -1309,9 +1115,7 @@ function adminLogout() {
   document.getElementById('admin-controls-area').style.display = 'none';
   document.getElementById('admin-panel').classList.remove('active');
   activePanel = null;
-  updateAdminUI();
-  showMain();
-  updateRouletteTimer();
+  updateAdminUI(); showMain(); updateRouletteTimer();
   showIosToast('Вы вышли из админ-панели', '👋');
 }
 
@@ -1352,12 +1156,9 @@ function showOrderDetail(oid) {
   const order = orders.find(o => o.id === oid);
   if (!order) return;
   const el = document.getElementById('order-detail-content');
-  let html = `
-    <div class="order-detail-card">
-      <h3>Заказ #${order.id}</h3>
-      <div style="font-size:13px;opacity:0.8;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}</div>
-      <div style="font-weight:600;margin:12px 0 8px;">Товары:</div>
-  `;
+  let html = `<div class="order-detail-card"><h3>Заказ #${order.id}</h3>
+    <div style="font-size:13px;opacity:0.8;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}</div>
+    <div style="font-weight:600;margin:12px 0 8px;">Товары:</div>`;
   if (order.items) order.items.forEach((item,i) => {
     html += `<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
   });
@@ -1369,115 +1170,15 @@ function showOrderDetail(oid) {
 
 function showMyPromos() {
   const el = document.getElementById('mypromos-list');
-  const myPromos = Object.entries(promos).filter(([c,p]) => p.userId === getUserId());
+  const myPromos = Object.entries(promos).filter(([c,p]) => p.userId === getUserId() || p.userId === null);
   if (!myPromos.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">У вас пока нет промокодов</p>'; return; }
-  el.innerHTML = myPromos.map(([c,p]) => `
-    <div class="promo-card" style="display:flex;justify-content:space-between;">
-      <div><strong>${c}</strong> - ${p.discount}%</div>
+  el.innerHTML = myPromos.map(([c,p]) => {
+    const limitInfo = p.maxUses ? ` (${p.uses||0}/${p.maxUses})` : ' ♾️';
+    return `<div class="promo-card" style="display:flex;justify-content:space-between;">
+      <div><strong>${c}</strong> - ${p.discount}%${limitInfo}</div>
       <span style="color:${p.used ? 'var(--danger)' : 'var(--success)'};">${p.used ? 'Использован' : 'Доступен'}</span>
-    </div>
-  `).join('');
-}
-
-function showAllPromos() {
-  if (!isAdmin) return;
-  const el = document.getElementById('all-promos-list');
-  const codes = Object.entries(promos);
-  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
-  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => `
-    <div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
-      <div><strong>${c}</strong> - ${p.discount}%<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
-      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
-    </div>
-  `).join('');
-}
-
-function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
-
-function createPromo() {
-  if (!isAdmin) return;
-  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
-  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
-  db.ref('promos/'+c).set({discount, used:false, created:Date.now(), type:'admin', userId:null});
-  showIosToast('✅ Промокод создан: ' + c, '🎫');
-  document.getElementById('promo-code').value = '';
-}
-
-function applyPromo() {
-  const input = document.getElementById('promo-input').value.trim().toUpperCase();
-  if (!input) return;
-  if (promos[input] && !promos[input].used) {
-    appliedPromo = {code: input, discount: promos[input].discount};
-    document.getElementById('promo-message').innerHTML = '<span style="color:var(--success);">Скидка -'+promos[input].discount+'% применена!</span>';
-    showCart();
-  } else {
-    document.getElementById('promo-message').innerHTML = '<span style="color:var(--danger);">Промокод не найден или использован</span>';
-    appliedPromo = null;
-  }
-}
-
-function showCart() {
-  if (!cart.length) {
-    document.getElementById('cart-items').innerHTML = '<p>Пусто</p>';
-    document.getElementById('cart-total').textContent = '';
-    document.getElementById('order-form').style.display = 'none';
-    return;
-  }
-  let sub = cart.reduce((s,i) => s + i.price, 0);
-  let disc = appliedPromo ? Math.round(sub * appliedPromo.discount / 100) : 0;
-  document.getElementById('cart-items').innerHTML = cart.map((item,i) => `
-    <div class="cart-item">
-      <div>${item.name}</div>
-      <span>${item.price} RUB</span>
-      <button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button>
-    </div>
-  `).join('');
-  document.getElementById('cart-total').textContent = 'Итого: ' + (sub - disc) + ' RUB';
-  document.getElementById('order-form').style.display = 'block';
-}
-
-function removeFromCart(i) { cart.splice(i,1); saveCart(); showCart(); }
-
-function sendOrder() {
-  const name = document.getElementById('customer-name').value.trim();
-  const contact = document.getElementById('customer-contact').value.trim();
-  const payment = document.getElementById('payment-method').value;
-  if (!name || !contact || !payment) return alert('Заполните все поля!');
-  if (!cart.length) return alert('❌ Корзина пуста!');
-  
-  let sub = cart.reduce((s,i) => s + i.price, 0);
-  let disc = 0;
-  if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
-    disc = Math.round(sub * appliedPromo.discount / 100);
-    db.ref('promos/'+appliedPromo.code).update({used:true, usedBy:getUserId(), usedAt:Date.now()});
-  }
-  const total = sub - disc;
-  const oid = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
-  const uid = getUserId();
-  
-  db.ref('orders/'+oid).set({
-    id:oid, userId:uid, userName:name, userContact:contact,
-    items:[...cart], subtotal:sub, discount:disc, total:total,
-    payment:payment, status:'pending', date:Date.now()
-  });
-  
-  // Отправка в Telegram
-  let atxt = '🛒 НОВЫЙ ЗАКАЗ #'+oid+'\n\n👤 '+name+'\n📱 '+contact+'\n💳 '+payment+'\n\n📋 Товары:\n';
-  cart.forEach((item,i) => { atxt += (i+1)+'. '+item.name+' - '+item.price+'₽\n'; });
-  if (disc > 0) atxt += '\n🎫 Промокод: '+appliedPromo?.code+' (-'+disc+'₽)';
-  atxt += '\n💰 Итого: '+total+'₽';
-  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:CHAT_ID, text:atxt})
-  }).catch(() => {});
-  
-  cart = []; appliedPromo = null; saveCart();
-  document.getElementById('cart-items').innerHTML = '';
-  document.getElementById('cart-total').textContent = '';
-  document.getElementById('order-form').style.display = 'none';
-  document.getElementById('order-success').style.display = 'block';
-  document.getElementById('order-success').innerHTML = '✅ Заказ #'+oid+' оформлен!';
-  showIosToast('✅ Заказ оформлен!', '📦');
+    </div>`;
+  }).join('');
 }
 
 function updateRouletteTimer() {
@@ -1513,26 +1214,22 @@ function spinRoulette() {
   if (rand < 0.005) prize = {d:15, l:'15%'};
   else if (rand < 0.05) prize = {d:5, l:'5%'};
   else if (rand < 0.15) prize = {d:1, l:'1%'};
-  
   const reel = document.getElementById('slot-reel');
   const itemH = 120, totalItems = 15;
   const target = prize.d === 15 ? 4 : prize.d === 5 ? 3 : prize.d === 1 ? 2 : (Math.floor(Math.random()*5)+10);
   const extraRounds = isAdmin ? 5 : 4;
   const distance = (extraRounds * totalItems + target) * itemH;
-  
   reel.style.transition = 'none';
   reel.style.transform = 'translateY(0px)';
   setTimeout(() => {
     reel.style.transition = 'transform ' + (isAdmin ? 6 : 5) + 's cubic-bezier(0.15, 0.55, 0.35, 1)';
     reel.style.transform = `translateY(-${distance}px)`;
   }, 30);
-  
   if (!isAdmin) {
     lastSpin = Date.now();
     localStorage.setItem('swwshop_roulette_time', lastSpin.toString());
     db.ref('settings/lastRouletteTime').set(lastSpin);
   }
-  
   setTimeout(() => {
     spinning = false;
     reel.style.transition = 'none';
@@ -1540,7 +1237,7 @@ function spinRoulette() {
     updateRouletteTimer();
     if (prize.d > 0) {
       const code = 'RLT-' + Math.random().toString(36).substring(2,6).toUpperCase();
-      promos[code] = {discount:prize.d, used:false, created:Date.now(), type:'roulette', userId:getUserId()};
+      promos[code] = {discount:prize.d, used:false, created:Date.now(), type:'roulette', userId:getUserId(), uses:0};
       db.ref('promos/'+code).set(promos[code]);
       document.getElementById('roulette-result').innerHTML = `<div class="promo-code-display">🎉 Вы выиграли ${prize.l}!<br>Промокод: <strong>${code}</strong></div>`;
     } else {
@@ -1693,81 +1390,31 @@ function toggleSeason() {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 function initShop() {
-  // Загружаем данные из Firebase
   db.ref('assortment').once('value').then(s => {
     const v = s.val();
-    if (v?.liquids) {
-      data = v;
-    } else {
-      // Если данных нет, создаём пустые категории
-      data = {liquids:[], pouches:[], coils:[], devices:[]};
-      db.ref('assortment').set(data);
-    }
-    // Показываем главную страницу
-    if (!initialized) {
-      initialized = true;
-      showMain();
-      updateRouletteTimer();
-    }
-  }).catch(err => {
-    console.error('Error loading data:', err);
-    // В случае ошибки всё равно показываем страницу с пустыми данными
-    if (!initialized) {
-      initialized = true;
-      showMain();
-      updateRouletteTimer();
-    }
-  });
+    if (v?.liquids) data = v;
+    else { data = {liquids:[], pouches:[], coils:[], devices:[]}; db.ref('assortment').set(data); }
+    if (!initialized) { initialized = true; showMain(); updateRouletteTimer(); }
+  }).catch(() => { if (!initialized) { initialized = true; showMain(); updateRouletteTimer(); } });
   
-  // Слушатели изменений
-  db.ref('orders').on('value', s => { 
-    orders = s.val() ? Object.values(s.val()) : []; 
-    updateUI(); 
-  });
-  db.ref('promos').on('value', s => { 
-    promos = s.val() || {}; 
-    updateUI(); 
-  });
-  db.ref('users').on('value', s => { 
-    users = s.val() || {}; 
-    updateUI(); 
-  });
+  db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
+  db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
+  db.ref('users').on('value', s => { users = s.val() || {}; updateUI(); });
   db.ref('settings/lastRouletteTime').on('value', s => {
     const v = s.val();
-    if (v && v > lastSpin) { 
-      lastSpin = v; 
-      localStorage.setItem('swwshop_roulette_time', v.toString()); 
-      updateRouletteTimer(); 
-    }
+    if (v && v > lastSpin) { lastSpin = v; localStorage.setItem('swwshop_roulette_time', v.toString()); updateRouletteTimer(); }
   });
   
-  // Регистрация пользователя
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const uid = getUserId();
   db.ref('users/'+uid).once('value').then(s => {
-    if (s.val()) {
-      db.ref('users/'+uid).update({lastSeen: Date.now(), visitCount: (s.val().visitCount||1)+1});
-    } else {
-      db.ref('users/'+uid).set({
-        id:uid, 
-        firstSeen:Date.now(), 
-        lastSeen:Date.now(), 
-        visitCount:1, 
-        telegramId: tgU?.id, 
-        firstName: tgU?.first_name, 
-        username: tgU?.username
-      });
-    }
+    if (s.val()) db.ref('users/'+uid).update({lastSeen: Date.now(), visitCount: (s.val().visitCount||1)+1});
+    else db.ref('users/'+uid).set({id:uid, firstSeen:Date.now(), lastSeen:Date.now(), visitCount:1, telegramId: tgU?.id, firstName: tgU?.first_name, username: tgU?.username});
   }).catch(() => {});
   
-  // Инициализация состояния техработ
-  try {
-    const saved = localStorage.getItem('sww_maintenance_mode');
-    if (saved !== null) maintenanceMode = saved === 'true';
-  } catch (_) {}
+  try { const saved = localStorage.getItem('sww_maintenance_mode'); if (saved !== null) maintenanceMode = saved === 'true'; } catch (_) {}
   updateMaintenanceUI();
   
-  // Обработчики событий
   document.getElementById('hamburgerBtn').addEventListener('click', toggleMenu);
   document.getElementById('menuCloseBtn').addEventListener('click', closeMenu);
   document.getElementById('menuOverlay').addEventListener('click', function(e) { if (e.target === this) closeMenu(); });
@@ -1781,11 +1428,7 @@ function initShop() {
   const savedTheme = localStorage.getItem('swwshop_theme') || 'telegram';
   document.body.className = savedTheme;
   
-  // Telegram WebApp
-  if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
-  }
+  if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
 }
 
 function updateUI() {
@@ -1800,20 +1443,14 @@ function updateUI() {
   if (isAdmin) updateAdminEarnings();
 }
 
-// Запуск после загрузки страницы
 window.addEventListener('load', function() {
-  // Если верификация уже пройдена, запускаем магазин
   if (localStorage.getItem('swwshop_verified') === 'true') {
     document.getElementById('verify-overlay').style.display = 'none';
     document.getElementById('main-app').style.display = 'block';
     initShop();
-  } else {
-    // Показываем верификацию
-    document.getElementById('verify-overlay').style.display = 'flex';
   }
 });
 
-// Обработчик для верификации если она уже была пройдена до загрузки
 if (localStorage.getItem('swwshop_verified') === 'true') {
   document.getElementById('verify-overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
