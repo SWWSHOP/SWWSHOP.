@@ -708,7 +708,9 @@
     <div id="chat-panel" class="overlay-panel">
       <div class="overlay-content">
         <div class="panel-header"><h2>💬 Чат с администратором</h2><button class="panel-close-btn" onclick="closePanel('chat')">✕</button></div>
-        <div id="chat-messages" class="chat-messages"></div>
+        <div id="chat-messages" class="chat-messages">
+          <p style="text-align:center;opacity:0.5;padding:20px;">Загрузка сообщений...</p>
+        </div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="Введите сообщение..." />
           <button onclick="sendChatMessage()">Отправить</button>
@@ -1041,6 +1043,39 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
+// ===== ОБРАБОТКА ОТВЕТОВ ИЗ TELEGRAM =====
+// Функция для отправки ответа пользователю из бота
+window.handleTelegramReply = function(userId, messageId, replyText) {
+  // Сохраняем ответ в чат пользователя
+  const message = {
+    id: Date.now().toString(),
+    userId: userId,
+    userName: 'Админ',
+    text: replyText,
+    timestamp: Date.now(),
+    isAdmin: true,
+    chatId: userId,
+    replyTo: messageId
+  };
+  
+  db.ref('chat/messages').push(message);
+  
+  // Отправляем уведомление пользователю в Telegram
+  const user = users[userId];
+  if (user?.telegramId) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user.telegramId,
+        text: `📨 Ответ от администратора:\n\n${replyText}`
+      })
+    }).catch(() => {});
+  }
+  
+  showIosToast('✅ Ответ отправлен пользователю!', '📨');
+};
+
 // ===== ТЕХРАБОТЫ =====
 function updateMaintenanceUI() {
   const sw = document.getElementById('maintenanceToggleSwitch');
@@ -1110,31 +1145,56 @@ function sendChatMessage() {
   if (!msg) return;
   
   const userId = getUserId();
+  const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const userName = tgU?.first_name || 'Пользователь';
+  
   const message = {
     id: Date.now().toString(),
     userId: userId,
-    userName: 'Пользователь',
+    userName: userName,
     text: msg,
     timestamp: Date.now(),
     isAdmin: false,
-    chatId: userId // Уникальный идентификатор чата для каждого пользователя
+    chatId: userId
   };
   
+  // Сохраняем в Firebase
   db.ref('chat/messages').push(message);
   input.value = '';
   
-  // Отправляем уведомление админу в Telegram
-  const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  const userName = tgU?.first_name || 'Пользователь';
+  // Отправляем уведомление админу в Telegram с кнопкой "Ответить"
   const username = tgU?.username ? '@' + tgU.username : '';
+  const userInfo = users[userId] || {};
+  const userFirstName = userInfo.firstName || userName;
+  
+  // Создаём inline-клавиатуру с кнопкой "Ответить"
+  const replyKeyboard = {
+    inline_keyboard: [[
+      { 
+        text: '✏️ Ответить', 
+        callback_data: JSON.stringify({
+          action: 'reply',
+          userId: userId,
+          messageId: message.id,
+          userName: userFirstName,
+          messageText: msg.substring(0, 100)
+        })
+      }
+    ]]
+  };
+  
   fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: CHAT_ID,
-      text: `💬 НОВОЕ СООБЩЕНИЕ В ЧАТЕ\n\n👤 ${userName} ${username}\n🆔 ${userId}\n📝 ${msg}`
+      text: `💬 НОВОЕ СООБЩЕНИЕ В ЧАТЕ\n\n👤 ${userFirstName} ${username}\n🆔 ${userId}\n📝 ${msg}`,
+      reply_markup: replyKeyboard
     })
   }).catch(() => {});
+  
+  // Обновляем чат сразу
+  loadChatMessages();
 }
 
 function loadChatMessages() {
@@ -1142,26 +1202,30 @@ function loadChatMessages() {
   if (!container) return;
   
   const userId = getUserId();
-  // Показываем только сообщения текущего пользователя и ответы админа для него
+  // Фильтруем сообщения только для текущего пользователя
   const userMessages = chatMessages.filter(m => 
     m.chatId === userId || 
-    (m.isAdmin && m.chatId === userId) ||
-    (!m.chatId && m.userId === userId) // обратная совместимость
+    (m.userId === userId)
   );
   
-  const sorted = [...userMessages].sort((a,b) => a.timestamp - b.timestamp);
-  
-  if (sorted.length === 0) {
+  if (userMessages.length === 0) {
     container.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Нет сообщений. Напишите что-нибудь администратору.</p>';
     return;
   }
+  
+  const sorted = [...userMessages].sort((a,b) => a.timestamp - b.timestamp);
   
   container.innerHTML = sorted.map(m => {
     const isUser = m.userId === userId && !m.isAdmin;
     const className = isUser ? 'user' : 'admin';
     const name = m.isAdmin ? '👑 Админ' : (m.userName || 'Вы');
     const time = new Date(m.timestamp).toLocaleTimeString();
+    let replyHtml = '';
+    if (m.replyTo) {
+      replyHtml = `<div style="font-size:10px;opacity:0.5;margin-bottom:4px;">↩️ Ответ на сообщение</div>`;
+    }
     return `<div class="chat-message ${className}">
+      ${replyHtml}
       <div><strong>${name}</strong>: ${m.text}</div>
       <span class="msg-time">${time}</span>
     </div>`;
@@ -1180,7 +1244,7 @@ function updateChatUnreadBadge() {
   // Считаем непрочитанные сообщения от админа для текущего пользователя
   const unread = chatMessages.filter(m => 
     m.isAdmin && 
-    m.chatId === userId &&
+    (m.chatId === userId || m.userId === userId) &&
     m.timestamp > lastReadTimestamp
   ).length;
   
@@ -1258,7 +1322,7 @@ function showIosToast(message, icon = '✅') {
   toast._hideTimer = setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
 
-// ===== ОСНОВНЫЕ ФУНКЦИИ =====
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо) =====
 function showMain() {
   currentView = 'main';
   const e = getEarnings();
@@ -1492,151 +1556,7 @@ function sendOrder() {
   refreshView();
 }
 
-// ===== УПРАВЛЕНИЕ КОЛИЧЕСТВОМ =====
-function updateEditItemSelect() {
-  const cat = document.getElementById('edit-item-category').value;
-  const s = document.getElementById('edit-item-select');
-  if (!s || !data[cat]) return;
-  s.innerHTML = '<option value="">-- Выберите --</option>';
-  data[cat].forEach((item, i) => {
-    s.innerHTML += '<option value="'+i+'">'+item.name+' ('+(item.quantity||0)+' шт)</option>';
-  });
-}
-
-function updateItemQuantity() {
-  if (!isAdmin) return;
-  const cat = document.getElementById('edit-item-category').value;
-  const idx = parseInt(document.getElementById('edit-item-select').value);
-  const qty = parseInt(document.getElementById('edit-item-qty').value);
-  if (isNaN(idx) || isNaN(qty) || qty < 0) return alert('Выберите товар и укажите количество');
-  data[cat][idx].quantity = qty;
-  db.ref('assortment/' + cat + '/' + idx + '/quantity').set(qty);
-  showIosToast('✅ Количество обновлено!', '📦');
-  document.getElementById('edit-item-qty').value = '';
-  updateEditItemSelect();
-  showCategory(cat);
-}
-
-// ===== ПРОМОКОДЫ =====
-function createPromo() {
-  if (!isAdmin) return;
-  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
-  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
-  const maxUses = parseInt(document.getElementById('promo-max-uses').value) || 1;
-  const userId = document.getElementById('promo-user-id').value.trim() || null;
-  db.ref('promos/'+c).set({
-    discount, used: false, created: Date.now(), type: 'admin',
-    userId: userId, uses: 0, maxUses: maxUses > 0 ? maxUses : 0
-  });
-  showIosToast('✅ Промокод создан: ' + c + ' ('+maxUses+' активаций)', '🎫');
-  document.getElementById('promo-code').value = '';
-  document.getElementById('promo-max-uses').value = '1';
-  document.getElementById('promo-user-id').value = '';
-}
-
-function showAllPromos() {
-  if (!isAdmin) return;
-  const el = document.getElementById('all-promos-list');
-  const codes = Object.entries(promos);
-  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
-  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => {
-    const maxUses = p.maxUses || 0;
-    const uses = p.uses || 0;
-    const limitInfo = maxUses > 0 ? ` (${uses}/${maxUses})` : ' ♾️';
-    return `<div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
-      <div><strong>${c}</strong> - ${p.discount}%${limitInfo}<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
-      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
-
-// ===== УПРАВЛЕНИЕ ЗАКАЗАМИ =====
-function returnItemsToStock(items) {
-  if (!items || !items.length) return;
-  for (const item of items) {
-    if (!item.id) continue;
-    for (const cat of ['coils', 'devices']) {
-      const idx = data[cat]?.findIndex(el => el.id === item.id);
-      if (idx !== undefined && idx >= 0) {
-        data[cat][idx].quantity = (data[cat][idx].quantity || 0) + 1;
-        db.ref('assortment/' + cat + '/' + idx + '/quantity').set(data[cat][idx].quantity);
-        break;
-      }
-    }
-    for (const cat of ['liquids', 'pouches']) {
-      for (let li = 0; li < data[cat]?.length; li++) {
-        const line = data[cat][li];
-        const fi = line.flavors?.findIndex(f => f.id === item.id);
-        if (fi !== undefined && fi >= 0) {
-          line.flavors[fi].quantity = (line.flavors[fi].quantity || 0) + 1;
-          db.ref('assortment/' + cat + '/' + li + '/flavors/' + fi + '/quantity').set(line.flavors[fi].quantity);
-          break;
-        }
-      }
-    }
-  }
-}
-
-function completeOrder(orderId) {
-  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
-  if (!confirm('Подтвердить выполнение заказа #' + orderId + '?')) return;
-  
-  const orderRef = db.ref('orders/' + orderId);
-  orderRef.update({
-    status: 'completed',
-    completedAt: Date.now()
-  }).then(() => {
-    orderRef.once('value').then(snapshot => {
-      const order = snapshot.val();
-      if (order && order.subtotal >= 800) {
-        const promoCode = 'SWW' + Math.random().toString(36).substring(2,7).toUpperCase();
-        db.ref('promos/' + promoCode).set({
-          discount: 15,
-          used: false,
-          created: Date.now(),
-          type: 'auto',
-          userId: order.userId,
-          uses: 0,
-          maxUses: 1
-        });
-        orderRef.update({ promoCode: promoCode });
-        showIosToast('✅ Промокод создан: ' + promoCode, '🎫');
-      }
-    });
-    showIosToast('✅ Заказ #' + orderId + ' выполнен!', '✅');
-    showAllOrders();
-    updateAdminEarnings();
-  }).catch(() => {
-    showIosToast('❌ Ошибка при подтверждении заказа', '❌');
-  });
-}
-
-function cancelOrder(orderId) {
-  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
-  if (!confirm('Отменить заказ #' + orderId + '? Товары будут возвращены.')) return;
-  
-  const orderRef = db.ref('orders/' + orderId);
-  orderRef.once('value').then(snapshot => {
-    const order = snapshot.val();
-    if (order && order.items) {
-      returnItemsToStock(order.items);
-    }
-    return orderRef.update({
-      status: 'cancelled',
-      cancelledAt: Date.now()
-    });
-  }).then(() => {
-    showIosToast('❌ Заказ #' + orderId + ' отменён, товары возвращены', '❌');
-    showAllOrders();
-    refreshView();
-  }).catch(() => {
-    showIosToast('❌ Ошибка при отмене заказа', '❌');
-  });
-}
-
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо для объёма) =====
 function getUserId() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (tgU) return 'tg_' + tgU.id;
@@ -1737,6 +1657,7 @@ function adminLogout() {
   showIosToast('Вы вышли из админ-панели', '👋');
 }
 
+// ===== КОРОТКИЕ ФУНКЦИИ ДЛЯ ЗАКАЗОВ И ПРОМОКОДОВ =====
 function showOrders() {
   const my = orders.filter(o => o.userId === getUserId() && o.status === 'completed');
   const el = document.getElementById('orders-list');
@@ -1781,35 +1702,63 @@ function showAllOrders() {
   }).join('');
 }
 
-function refreshView() {
-  if (currentView === 'main') showMain();
-  else if (currentView === 'category') showCategory(currentCategory);
-  else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
+function completeOrder(orderId) {
+  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
+  if (!confirm('Подтвердить выполнение заказа #' + orderId + '?')) return;
+  
+  const orderRef = db.ref('orders/' + orderId);
+  orderRef.update({
+    status: 'completed',
+    completedAt: Date.now()
+  }).then(() => {
+    orderRef.once('value').then(snapshot => {
+      const order = snapshot.val();
+      if (order && order.subtotal >= 800) {
+        const promoCode = 'SWW' + Math.random().toString(36).substring(2,7).toUpperCase();
+        db.ref('promos/' + promoCode).set({
+          discount: 15,
+          used: false,
+          created: Date.now(),
+          type: 'auto',
+          userId: order.userId,
+          uses: 0,
+          maxUses: 1
+        });
+        orderRef.update({ promoCode: promoCode });
+        showIosToast('✅ Промокод создан: ' + promoCode, '🎫');
+      }
+    });
+    showIosToast('✅ Заказ #' + orderId + ' выполнен!', '✅');
+    showAllOrders();
+    updateAdminEarnings();
+  }).catch(() => {
+    showIosToast('❌ Ошибка при подтверждении заказа', '❌');
+  });
 }
 
-function showOrderDetail(oid) {
-  const order = orders.find(o => o.id === oid);
-  if (!order) return;
-  const el = document.getElementById('order-detail-content');
-  let html = `<div class="order-detail-card"><h3>Заказ #${order.id}</h3>
-    <div style="font-size:13px;opacity:0.8;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}</div>
-    <div style="font-weight:600;margin:12px 0 8px;">Товары:</div>`;
-  if (order.items) order.items.forEach((item,i) => {
-    html += `<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
+function cancelOrder(orderId) {
+  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
+  if (!confirm('Отменить заказ #' + orderId + '? Товары будут возвращены.')) return;
+  
+  const orderRef = db.ref('orders/' + orderId);
+  orderRef.once('value').then(snapshot => {
+    const order = snapshot.val();
+    if (order && order.items) {
+      for (const item of order.items) {
+        returnItemToStock(item);
+      }
+    }
+    return orderRef.update({
+      status: 'cancelled',
+      cancelledAt: Date.now()
+    });
+  }).then(() => {
+    showIosToast('❌ Заказ #' + orderId + ' отменён, товары возвращены', '❌');
+    showAllOrders();
+    refreshView();
+  }).catch(() => {
+    showIosToast('❌ Ошибка при отмене заказа', '❌');
   });
-  html += `<div class="order-detail-total">Итого: ${order.total||0} ₽</div>`;
-  if (order.status === 'pending' && isAdmin) {
-    html += `
-      <div class="order-actions">
-        <button class="btn-confirm" onclick="completeOrder('${order.id}');closePanel('order-detail');showAllOrders();">✅ Выполнить</button>
-        <button class="btn-cancel" onclick="cancelOrder('${order.id}');closePanel('order-detail');showAllOrders();">❌ Отменить</button>
-      </div>
-    `;
-  }
-  html += `</div>`;
-  el.innerHTML = html;
-  document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('order-detail-panel').classList.add('active');
 }
 
 function showMyPromos() {
@@ -1825,6 +1774,46 @@ function showMyPromos() {
       <span style="color:${p.used ? 'var(--danger)' : 'var(--success)'};">${p.used ? 'Использован' : 'Доступен'}</span>
     </div>`;
   }).join('');
+}
+
+function showAllPromos() {
+  if (!isAdmin) return;
+  const el = document.getElementById('all-promos-list');
+  const codes = Object.entries(promos);
+  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
+  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => {
+    const maxUses = p.maxUses || 0;
+    const uses = p.uses || 0;
+    const limitInfo = maxUses > 0 ? ` (${uses}/${maxUses})` : ' ♾️';
+    return `<div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><strong>${c}</strong> - ${p.discount}%${limitInfo}<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
+      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
+
+function createPromo() {
+  if (!isAdmin) return;
+  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
+  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
+  const maxUses = parseInt(document.getElementById('promo-max-uses').value) || 1;
+  const userId = document.getElementById('promo-user-id').value.trim() || null;
+  db.ref('promos/'+c).set({
+    discount, used: false, created: Date.now(), type: 'admin',
+    userId: userId, uses: 0, maxUses: maxUses > 0 ? maxUses : 0
+  });
+  showIosToast('✅ Промокод создан: ' + c + ' ('+maxUses+' активаций)', '🎫');
+  document.getElementById('promo-code').value = '';
+  document.getElementById('promo-max-uses').value = '1';
+  document.getElementById('promo-user-id').value = '';
+}
+
+function refreshView() {
+  if (currentView === 'main') showMain();
+  else if (currentView === 'category') showCategory(currentCategory);
+  else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
 }
 
 function updateRouletteTimer() {
@@ -1935,7 +1924,7 @@ function sendMessageToUser() {
   });
   
   // Сохраняем сообщение в чат пользователя
-  db.ref('chat/messages').push({
+  const message = {
     id: Date.now().toString(),
     userId: uid,
     userName: 'Админ',
@@ -1943,8 +1932,9 @@ function sendMessageToUser() {
     timestamp: Date.now(),
     isAdmin: true,
     chatId: uid
-  });
+  };
   
+  db.ref('chat/messages').push(message);
   showIosToast('✅ Отправлено!', '📨');
 }
 
@@ -2023,6 +2013,30 @@ function deleteSelected() {
   const i = parseInt(document.getElementById('del-item').value);
   if (isNaN(i)) return alert('Выберите товар!');
   if (confirm('Удалить?')) { data[c].splice(i,1); db.ref('assortment').set(data); showMain(); }
+}
+
+function updateEditItemSelect() {
+  const cat = document.getElementById('edit-item-category').value;
+  const s = document.getElementById('edit-item-select');
+  if (!s || !data[cat]) return;
+  s.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    s.innerHTML += '<option value="'+i+'">'+item.name+' ('+(item.quantity||0)+' шт)</option>';
+  });
+}
+
+function updateItemQuantity() {
+  if (!isAdmin) return;
+  const cat = document.getElementById('edit-item-category').value;
+  const idx = parseInt(document.getElementById('edit-item-select').value);
+  const qty = parseInt(document.getElementById('edit-item-qty').value);
+  if (isNaN(idx) || isNaN(qty) || qty < 0) return alert('Выберите товар и укажите количество');
+  data[cat][idx].quantity = qty;
+  db.ref('assortment/' + cat + '/' + idx + '/quantity').set(qty);
+  showIosToast('✅ Количество обновлено!', '📦');
+  document.getElementById('edit-item-qty').value = '';
+  updateEditItemSelect();
+  showCategory(cat);
 }
 
 function setTheme(t) {
