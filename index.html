@@ -706,13 +706,11 @@
 
     <div class="container" id="app"><p style="text-align:center;padding:40px;">Загрузка...</p></div>
 
-    <!-- ПЕРСОНАЛЬНЫЙ ЧАТ -->
+    <!-- ЧАТ -->
     <div id="chat-panel" class="overlay-panel">
       <div class="overlay-content">
         <div class="panel-header"><h2>💬 Чат с администратором</h2><button class="panel-close-btn" onclick="closePanel('chat')">✕</button></div>
-        <div id="chat-messages" class="chat-messages">
-          <p style="text-align:center;opacity:0.5;padding:20px;">Загрузка сообщений...</p>
-        </div>
+        <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="Введите сообщение..." />
           <button onclick="sendChatMessage()">Отправить</button>
@@ -1113,11 +1111,12 @@ function closeMenu() {
   document.body.style.overflow = '';
 }
 
-// ===== ПЕРСОНАЛЬНЫЙ ЧАТ =====
+// ===== ЧАТ =====
 function openChat() {
   openPanel('chat');
   lastReadTimestamp = Date.now();
   localStorage.setItem('swwshop_chat_last_read', lastReadTimestamp.toString());
+  loadChatMessages();
   updateChatUnreadBadge();
 }
 
@@ -1130,8 +1129,8 @@ function sendChatMessage() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const userName = tgU?.first_name || 'Пользователь';
   
-  const message = {
-    id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,6),
+  const messageData = {
+    id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,8),
     userId: userId,
     userName: userName,
     text: msg,
@@ -1140,24 +1139,29 @@ function sendChatMessage() {
     chatId: userId
   };
   
-  db.ref('chat/messages').push(message);
+  // Сохраняем в Firebase
+  const newRef = db.ref('chat/messages').push();
+  newRef.set(messageData);
   input.value = '';
   
+  // Отправляем уведомление админу в Telegram
   const username = tgU?.username ? '@' + tgU.username : '';
   const userInfo = users[userId] || {};
   const userFirstName = userInfo.firstName || userName;
+  
+  // Формируем callback-данные для кнопки "Ответить"
+  const callbackData = JSON.stringify({
+    action: 'reply',
+    userId: userId,
+    messageId: messageData.id,
+    userName: userFirstName
+  });
   
   const replyKeyboard = {
     inline_keyboard: [[
       { 
         text: '✏️ Ответить', 
-        callback_data: JSON.stringify({
-          action: 'reply',
-          userId: userId,
-          messageId: message.id,
-          userName: userFirstName,
-          messageText: msg.substring(0, 100)
-        })
+        callback_data: callbackData
       }
     ]]
   };
@@ -1170,8 +1174,9 @@ function sendChatMessage() {
       text: `💬 НОВОЕ СООБЩЕНИЕ В ЧАТЕ\n\n👤 ${userFirstName} ${username}\n🆔 ${userId}\n📝 ${msg}`,
       reply_markup: replyKeyboard
     })
-  }).catch(() => {});
+  }).catch(err => console.error('Telegram send error:', err));
   
+  // Обновляем чат
   loadChatMessages();
 }
 
@@ -1180,9 +1185,10 @@ function loadChatMessages() {
   if (!container) return;
   
   const userId = getUserId();
+  
+  // Фильтруем сообщения: только для текущего пользователя
   const userMessages = chatMessages.filter(m => 
-    m.chatId === userId || 
-    m.userId === userId
+    m.chatId === userId || m.userId === userId
   );
   
   if (userMessages.length === 0) {
@@ -1228,6 +1234,51 @@ function updateChatUnreadBadge() {
   } else {
     badge.style.display = 'none';
   }
+}
+
+// ===== ОБРАБОТКА ОТВЕТОВ ИЗ TELEGRAM =====
+// Функция, которая будет вызываться при ответе из Telegram
+window.handleTelegramReply = function(userId, replyText) {
+  if (!userId || !replyText) return;
+  
+  // Сохраняем ответ в чат пользователя
+  const messageData = {
+    id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,8),
+    userId: userId,
+    userName: 'Админ',
+    text: replyText,
+    timestamp: Date.now(),
+    isAdmin: true,
+    chatId: userId,
+    replyTo: 'telegram'
+  };
+  
+  db.ref('chat/messages').push(messageData);
+  
+  // Отправляем уведомление пользователю в Telegram
+  const user = users[userId];
+  if (user?.telegramId) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user.telegramId,
+        text: `📨 Ответ от администратора:\n\n${replyText}`
+      })
+    }).catch(err => console.error('Telegram send error:', err));
+  }
+  
+  showIosToast('✅ Ответ отправлен пользователю!', '📨');
+  if (activePanel === 'chat') loadChatMessages();
+};
+
+// Слушаем ответы из консоли (администратор может отвечать через сайт)
+function sendAdminReplyToUser() {
+  const uid = document.getElementById('console-user').value;
+  const msg = document.getElementById('console-message').value.trim();
+  if (!uid || !msg) return alert('Заполните все поля!');
+  window.handleTelegramReply(uid, msg);
+  document.getElementById('console-message').value = '';
 }
 
 // ===== УПРАВЛЕНИЕ КОРЗИНОЙ =====
@@ -1649,7 +1700,6 @@ function updateItemQuantity() {
   if (isNaN(idx) || isNaN(qty) || qty < 0) return alert('Выберите товар и укажите количество');
   
   if (cat === 'liquids' || cat === 'pouches') {
-    // Для жидкостей/шайб - распределяем количество по всем вкусам поровну
     const flavors = data[cat][idx].flavors;
     const perFlavor = Math.floor(qty / flavors.length);
     const remainder = qty % flavors.length;
@@ -2052,26 +2102,8 @@ function sendMessageToUser() {
   const uid = document.getElementById('console-user').value;
   const msg = document.getElementById('console-message').value.trim();
   if (!uid || !msg) return alert('Заполните!');
-  const user = users[uid];
-  if (!user?.telegramId) return alert('Не в Telegram');
-  
-  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:user.telegramId, text:'📨 SWWSHOP:\n\n'+msg})
-  });
-  
-  const message = {
-    id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,6),
-    userId: uid,
-    userName: 'Админ',
-    text: msg,
-    timestamp: Date.now(),
-    isAdmin: true,
-    chatId: uid
-  };
-  
-  db.ref('chat/messages').push(message);
-  showIosToast('✅ Отправлено!', '📨');
+  window.handleTelegramReply(uid, msg);
+  document.getElementById('console-message').value = '';
 }
 
 function sendBroadcast() {
