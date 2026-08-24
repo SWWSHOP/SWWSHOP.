@@ -214,29 +214,6 @@
     }
     .panel-close-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
     
-    .item-gradient {
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      padding: 2px;
-      border-radius: 16px;
-      margin-bottom: 8px;
-      transition: all 0.3s;
-    }
-    .item-gradient:hover { transform: translateX(3px); box-shadow: 0 4px 16px rgba(94, 163, 217, 0.25); }
-    .item-inner {
-      background: var(--card-bg);
-      border-radius: 14px;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      border: none;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
-      gap: 8px;
-    }
-    
     .earnings-display { text-align: center; margin: 8px auto 16px; padding: 10px 16px; background: linear-gradient(135deg, rgba(46,204,113,0.15), rgba(94,163,217,0.15)); border-radius: 16px; display: inline-block; }
     .earnings-label { font-size: 11px; opacity: 0.7; }
     .earnings-amount { font-size: 22px; font-weight: 800; color: var(--success); }
@@ -608,6 +585,31 @@
       border-radius: 30px;
       margin-left: 4px;
     }
+    
+    .admin-edit-price {
+      margin-top: 4px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .admin-edit-price input {
+      width: 70px;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+    }
+    .admin-edit-price button {
+      padding: 4px 8px;
+      font-size: 11px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="telegram">
@@ -843,6 +845,7 @@
               <input type="text" id="line-name" class="admin-input" placeholder="Название" style="margin-bottom:4px;" />
               <input type="number" id="line-price" class="admin-input" placeholder="Цена" style="margin-bottom:4px;" />
               <select id="line-category" class="admin-input" style="margin-bottom:4px;"><option value="liquids">Жидкости</option><option value="pouches">Шайбы</option></select>
+              <input type="number" id="line-quantity" class="admin-input" placeholder="Количество (по умолч. 1)" value="1" style="margin-bottom:4px;" />
               <textarea id="line-flavors" class="admin-input" placeholder="Вкус,YES" style="height:50px;margin-bottom:4px;"></textarea>
               <button class="admin-action-btn btn-dark" onclick="addLine()" style="width:100%;">Добавить линейку</button>
             </div>
@@ -864,10 +867,24 @@
               <strong>Изменить количество товара</strong>
               <select id="edit-item-category" class="admin-input" style="margin-bottom:4px;" onchange="updateEditItemSelect()">
                 <option value="coils">Испарители</option><option value="devices">Устройства</option>
+                <option value="liquids">Жидкости</option><option value="pouches">Шайбы</option>
               </select>
               <select id="edit-item-select" class="admin-input" style="margin-bottom:4px;"><option value="">-- Выберите --</option></select>
               <input type="number" id="edit-item-qty" class="admin-input" placeholder="Новое количество" value="1" style="margin-bottom:4px;" />
               <button class="admin-action-btn btn-cyan" onclick="updateItemQuantity()" style="width:100%;">Обновить количество</button>
+            </div>
+          </div>
+
+          <div class="gradient-wrap" style="margin-bottom:8px;">
+            <div class="gradient-inner" style="cursor:default;flex-direction:column;align-items:stretch;gap:6px;">
+              <strong>Изменить цену товара</strong>
+              <select id="edit-price-category" class="admin-input" style="margin-bottom:4px;" onchange="updatePriceSelect()">
+                <option value="coils">Испарители</option><option value="devices">Устройства</option>
+                <option value="liquids">Жидкости</option><option value="pouches">Шайбы</option>
+              </select>
+              <select id="edit-price-select" class="admin-input" style="margin-bottom:4px;"><option value="">-- Выберите --</option></select>
+              <input type="number" id="edit-price-value" class="admin-input" placeholder="Новая цена" value="0" style="margin-bottom:4px;" />
+              <button class="admin-action-btn btn-orange" onclick="updateItemPrice()" style="width:100%;">Обновить цену</button>
             </div>
           </div>
 
@@ -1022,7 +1039,6 @@ let spinning = false;
 let lastSpin = parseInt(localStorage.getItem('swwshop_roulette_time')||'0');
 let initialized = false;
 let cartExpiryCheckInterval = null;
-let chatUnreadCount = 0;
 let lastReadTimestamp = parseInt(localStorage.getItem('swwshop_chat_last_read') || '0');
 const CART_EXPIRY_HOURS = 1;
 const CART_EXPIRY_MS = CART_EXPIRY_HOURS * 60 * 60 * 1000;
@@ -1042,39 +1058,6 @@ firebase.initializeApp({
   appId:"1:698268675105:web:15814d169ee2e74c8e4760"
 });
 const db = firebase.database();
-
-// ===== ОБРАБОТКА ОТВЕТОВ ИЗ TELEGRAM =====
-// Функция для отправки ответа пользователю из бота
-window.handleTelegramReply = function(userId, messageId, replyText) {
-  // Сохраняем ответ в чат пользователя
-  const message = {
-    id: Date.now().toString(),
-    userId: userId,
-    userName: 'Админ',
-    text: replyText,
-    timestamp: Date.now(),
-    isAdmin: true,
-    chatId: userId,
-    replyTo: messageId
-  };
-  
-  db.ref('chat/messages').push(message);
-  
-  // Отправляем уведомление пользователю в Telegram
-  const user = users[userId];
-  if (user?.telegramId) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: user.telegramId,
-        text: `📨 Ответ от администратора:\n\n${replyText}`
-      })
-    }).catch(() => {});
-  }
-  
-  showIosToast('✅ Ответ отправлен пользователю!', '📨');
-};
 
 // ===== ТЕХРАБОТЫ =====
 function updateMaintenanceUI() {
@@ -1133,7 +1116,6 @@ function closeMenu() {
 // ===== ПЕРСОНАЛЬНЫЙ ЧАТ =====
 function openChat() {
   openPanel('chat');
-  // Отмечаем сообщения как прочитанные
   lastReadTimestamp = Date.now();
   localStorage.setItem('swwshop_chat_last_read', lastReadTimestamp.toString());
   updateChatUnreadBadge();
@@ -1149,7 +1131,7 @@ function sendChatMessage() {
   const userName = tgU?.first_name || 'Пользователь';
   
   const message = {
-    id: Date.now().toString(),
+    id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,6),
     userId: userId,
     userName: userName,
     text: msg,
@@ -1158,16 +1140,13 @@ function sendChatMessage() {
     chatId: userId
   };
   
-  // Сохраняем в Firebase
   db.ref('chat/messages').push(message);
   input.value = '';
   
-  // Отправляем уведомление админу в Telegram с кнопкой "Ответить"
   const username = tgU?.username ? '@' + tgU.username : '';
   const userInfo = users[userId] || {};
   const userFirstName = userInfo.firstName || userName;
   
-  // Создаём inline-клавиатуру с кнопкой "Ответить"
   const replyKeyboard = {
     inline_keyboard: [[
       { 
@@ -1193,7 +1172,6 @@ function sendChatMessage() {
     })
   }).catch(() => {});
   
-  // Обновляем чат сразу
   loadChatMessages();
 }
 
@@ -1202,10 +1180,9 @@ function loadChatMessages() {
   if (!container) return;
   
   const userId = getUserId();
-  // Фильтруем сообщения только для текущего пользователя
   const userMessages = chatMessages.filter(m => 
     m.chatId === userId || 
-    (m.userId === userId)
+    m.userId === userId
   );
   
   if (userMessages.length === 0) {
@@ -1231,8 +1208,6 @@ function loadChatMessages() {
     </div>`;
   }).join('');
   container.scrollTop = container.scrollHeight;
-  
-  // Обновляем бейдж непрочитанных
   updateChatUnreadBadge();
 }
 
@@ -1241,7 +1216,6 @@ function updateChatUnreadBadge() {
   const badge = document.getElementById('chatUnreadBadge');
   if (!badge) return;
   
-  // Считаем непрочитанные сообщения от админа для текущего пользователя
   const unread = chatMessages.filter(m => 
     m.isAdmin && 
     (m.chatId === userId || m.userId === userId) &&
@@ -1256,7 +1230,7 @@ function updateChatUnreadBadge() {
   }
 }
 
-// ===== УПРАВЛЕНИЕ КОРЗИНОЙ С ТАЙМАУТОМ =====
+// ===== УПРАВЛЕНИЕ КОРЗИНОЙ =====
 function checkCartExpiry() {
   const now = Date.now();
   let expired = false;
@@ -1309,7 +1283,6 @@ function startCartExpiryCheck() {
   setTimeout(checkCartExpiry, 1000);
 }
 
-// ===== iOS УВЕДОМЛЕНИЕ =====
 function showIosToast(message, icon = '✅') {
   const toast = document.getElementById('iosToast');
   const toastText = document.getElementById('toastText');
@@ -1322,7 +1295,7 @@ function showIosToast(message, icon = '✅') {
   toast._hideTimer = setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо) =====
+// ===== ОСНОВНЫЕ ФУНКЦИИ =====
 function showMain() {
   currentView = 'main';
   const e = getEarnings();
@@ -1354,11 +1327,25 @@ function showCategory(cat) {
   if (!data[cat]?.length) { html += '<p style="text-align:center;opacity:0.5;padding:40px;">Нет товаров</p>'; }
   else if (cat === 'liquids' || cat === 'pouches') {
     data[cat].forEach((l, i) => {
-      html += `<div class="gradient-wrap" style="margin-bottom:8px;"><button class="gradient-inner" onclick="showDetail('${cat}', ${i})">
-        <span class="left"><span style="font-weight:600;">${l.name}</span></span>
-        <span class="right"><span>${l.price} RUB</span><span>${l.flavors.length} вкусов</span><span>›</span></span>
-      </button></div>`;
-      if (isAdmin) html += `<button class="btn-delete-line" onclick="event.stopPropagation();deleteLine('${cat}',${i})">Удалить линейку</button>`;
+      const totalQty = l.flavors.reduce((s, f) => s + (f.quantity || 0), 0);
+      html += `<div class="gradient-wrap" style="margin-bottom:8px;">
+        <div class="gradient-inner" onclick="showDetail('${cat}', ${i})" style="cursor:pointer;">
+          <span class="left"><span style="font-weight:600;">${l.name}</span></span>
+          <span class="right">
+            <span>${l.price} RUB</span>
+            <span>${l.flavors.length} вкусов</span>
+            ${isAdmin ? `<span style="color:var(--warning);">${totalQty} шт</span>` : ''}
+            <span>›</span>
+          </span>
+        </div>
+        ${isAdmin ? `<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">
+          <button class="btn-delete-line" onclick="event.stopPropagation();deleteLine('${cat}',${i})">Удалить</button>
+          <div class="admin-edit-price">
+            <input type="number" id="price_${cat}_${i}" value="${l.price}" placeholder="Цена" />
+            <button onclick="updateLinePrice('${cat}',${i})">Изм. цену</button>
+          </div>
+        </div>` : ''}
+      </div>`;
     });
   } else {
     data[cat].forEach((item, i) => {
@@ -1374,7 +1361,11 @@ function showCategory(cat) {
         <span class="status-badge ${statusClass}">${statusText}</span>
         <div class="product-actions">
           ${canAdd ? `<button class="add-to-cart-btn" onclick="addToCartSimple('${item.id}', '${item.name}', ${item.price})">🛒</button>` : `<button class="add-to-cart-btn ${inCart ? 'in-cart' : ''}" style="${inCart ? '' : 'background:#999;'}" disabled>${inCart ? 'В корзине' : 'Нет'}</button>`}
-          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>` : ''}
+          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>
+            <div class="admin-edit-price">
+              <input type="number" id="price_${cat}_${i}" value="${item.price}" placeholder="Цена" />
+              <button onclick="updateItemPriceSimple('${cat}',${i})">Изм.</button>
+            </div>` : ''}
         </div>
       </div>`;
     });
@@ -1389,6 +1380,12 @@ function showDetail(cat, idx) {
   let html = `<button class="back-btn" onclick="showCategory('${cat}')">← Назад</button>
     <h1 class="shop-title">${line.name}</h1>
     <p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>
+    ${isAdmin ? `<div style="text-align:center;margin-bottom:8px;">
+      <div class="admin-edit-price" style="justify-content:center;">
+        <input type="number" id="price_detail" value="${line.price}" placeholder="Цена" style="width:100px;" />
+        <button onclick="updateLinePrice('${cat}',${idx})">Изменить цену</button>
+      </div>
+    </div>` : ''}
     <div style="margin:12px 0 8px;font-weight:600;">Выберите вкус (${line.flavors.length}):</div>`;
   line.flavors.forEach((f, fi) => {
     const qty = f.quantity || 0;
@@ -1401,7 +1398,11 @@ function showDetail(cat, idx) {
       <div class="flavor-actions">
         <span class="status-badge ${statusClass}">${statusText}</span>
         ${canAdd ? `<button class="add-to-cart-btn" onclick="addToCart('${f.id}', '${line.name}', ${line.price}, '${line.name}', '${f.name}')">🛒</button>` : `<button class="add-to-cart-btn ${inCart ? 'in-cart' : ''}" style="${inCart ? '' : 'background:#999;'}" disabled>${inCart ? 'В корзине' : 'Нет'}</button>`}
-        ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>` : ''}
+        ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>
+          <div class="admin-edit-price">
+            <input type="number" id="qty_${cat}_${idx}_${fi}" value="${qty}" placeholder="Кол-во" style="width:50px;" />
+            <button onclick="updateFlavorQuantity('${cat}',${idx},${fi})">OK</button>
+          </div>` : ''}
       </div>
     </div>`;
   });
@@ -1556,7 +1557,213 @@ function sendOrder() {
   refreshView();
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (сокращённо для объёма) =====
+// ===== УПРАВЛЕНИЕ ЦЕНАМИ И КОЛИЧЕСТВОМ =====
+function updateLinePrice(cat, idx) {
+  if (!isAdmin) return;
+  const input = document.getElementById('price_detail') || document.getElementById('price_' + cat + '_' + idx);
+  if (!input) return;
+  const newPrice = parseInt(input.value);
+  if (isNaN(newPrice) || newPrice < 0) return alert('Введите корректную цену');
+  data[cat][idx].price = newPrice;
+  db.ref('assortment/' + cat + '/' + idx + '/price').set(newPrice);
+  showIosToast('✅ Цена обновлена!', '💰');
+  showCategory(cat);
+}
+
+function updateItemPriceSimple(cat, idx) {
+  if (!isAdmin) return;
+  const input = document.getElementById('price_' + cat + '_' + idx);
+  if (!input) return;
+  const newPrice = parseInt(input.value);
+  if (isNaN(newPrice) || newPrice < 0) return alert('Введите корректную цену');
+  data[cat][idx].price = newPrice;
+  db.ref('assortment/' + cat + '/' + idx + '/price').set(newPrice);
+  showIosToast('✅ Цена обновлена!', '💰');
+  showCategory(cat);
+}
+
+function updateFlavorQuantity(cat, idx, fi) {
+  if (!isAdmin) return;
+  const input = document.getElementById('qty_' + cat + '_' + idx + '_' + fi);
+  if (!input) return;
+  const newQty = parseInt(input.value);
+  if (isNaN(newQty) || newQty < 0) return alert('Введите корректное количество');
+  data[cat][idx].flavors[fi].quantity = newQty;
+  db.ref('assortment/' + cat + '/' + idx + '/flavors/' + fi + '/quantity').set(newQty);
+  showIosToast('✅ Количество обновлено!', '📦');
+  showDetail(cat, idx);
+}
+
+function updatePriceSelect() {
+  const cat = document.getElementById('edit-price-category').value;
+  const s = document.getElementById('edit-price-select');
+  if (!s || !data[cat]) return;
+  s.innerHTML = '<option value="">-- Выберите --</option>';
+  if (cat === 'liquids' || cat === 'pouches') {
+    data[cat].forEach((item, i) => {
+      s.innerHTML += '<option value="'+i+'">'+item.name+' ('+item.price+' ₽)</option>';
+    });
+  } else {
+    data[cat].forEach((item, i) => {
+      s.innerHTML += '<option value="'+i+'">'+item.name+' ('+item.price+' ₽)</option>';
+    });
+  }
+}
+
+function updateItemPrice() {
+  if (!isAdmin) return;
+  const cat = document.getElementById('edit-price-category').value;
+  const idx = parseInt(document.getElementById('edit-price-select').value);
+  const price = parseInt(document.getElementById('edit-price-value').value);
+  if (isNaN(idx) || isNaN(price) || price < 0) return alert('Выберите товар и укажите цену');
+  data[cat][idx].price = price;
+  db.ref('assortment/' + cat + '/' + idx + '/price').set(price);
+  showIosToast('✅ Цена обновлена!', '💰');
+  document.getElementById('edit-price-value').value = '';
+  updatePriceSelect();
+  showCategory(cat);
+}
+
+function updateEditItemSelect() {
+  const cat = document.getElementById('edit-item-category').value;
+  const s = document.getElementById('edit-item-select');
+  if (!s || !data[cat]) return;
+  s.innerHTML = '<option value="">-- Выберите --</option>';
+  if (cat === 'liquids' || cat === 'pouches') {
+    data[cat].forEach((item, i) => {
+      const totalQty = item.flavors.reduce((sum, f) => sum + (f.quantity || 0), 0);
+      s.innerHTML += '<option value="'+i+'">'+item.name+' ('+totalQty+' шт)</option>';
+    });
+  } else {
+    data[cat].forEach((item, i) => {
+      s.innerHTML += '<option value="'+i+'">'+item.name+' ('+(item.quantity||0)+' шт)</option>';
+    });
+  }
+}
+
+function updateItemQuantity() {
+  if (!isAdmin) return;
+  const cat = document.getElementById('edit-item-category').value;
+  const idx = parseInt(document.getElementById('edit-item-select').value);
+  const qty = parseInt(document.getElementById('edit-item-qty').value);
+  if (isNaN(idx) || isNaN(qty) || qty < 0) return alert('Выберите товар и укажите количество');
+  
+  if (cat === 'liquids' || cat === 'pouches') {
+    // Для жидкостей/шайб - распределяем количество по всем вкусам поровну
+    const flavors = data[cat][idx].flavors;
+    const perFlavor = Math.floor(qty / flavors.length);
+    const remainder = qty % flavors.length;
+    flavors.forEach((f, fi) => {
+      const addQty = perFlavor + (fi < remainder ? 1 : 0);
+      f.quantity = addQty;
+      db.ref('assortment/' + cat + '/' + idx + '/flavors/' + fi + '/quantity').set(addQty);
+    });
+  } else {
+    data[cat][idx].quantity = qty;
+    db.ref('assortment/' + cat + '/' + idx + '/quantity').set(qty);
+  }
+  showIosToast('✅ Количество обновлено!', '📦');
+  document.getElementById('edit-item-qty').value = '';
+  updateEditItemSelect();
+  showCategory(cat);
+}
+
+// ===== ПРОМОКОДЫ =====
+function createPromo() {
+  if (!isAdmin) return;
+  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
+  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
+  const maxUses = parseInt(document.getElementById('promo-max-uses').value) || 1;
+  const userId = document.getElementById('promo-user-id').value.trim() || null;
+  db.ref('promos/'+c).set({
+    discount, used: false, created: Date.now(), type: 'admin',
+    userId: userId, uses: 0, maxUses: maxUses > 0 ? maxUses : 0
+  });
+  showIosToast('✅ Промокод создан: ' + c + ' ('+maxUses+' активаций)', '🎫');
+  document.getElementById('promo-code').value = '';
+  document.getElementById('promo-max-uses').value = '1';
+  document.getElementById('promo-user-id').value = '';
+}
+
+function showAllPromos() {
+  if (!isAdmin) return;
+  const el = document.getElementById('all-promos-list');
+  const codes = Object.entries(promos);
+  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
+  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => {
+    const maxUses = p.maxUses || 0;
+    const uses = p.uses || 0;
+    const limitInfo = maxUses > 0 ? ` (${uses}/${maxUses})` : ' ♾️';
+    return `<div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><strong>${c}</strong> - ${p.discount}%${limitInfo}<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
+      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
+
+// ===== УПРАВЛЕНИЕ ЗАКАЗАМИ =====
+function completeOrder(orderId) {
+  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
+  if (!confirm('Подтвердить выполнение заказа #' + orderId + '?')) return;
+  
+  const orderRef = db.ref('orders/' + orderId);
+  orderRef.update({
+    status: 'completed',
+    completedAt: Date.now()
+  }).then(() => {
+    orderRef.once('value').then(snapshot => {
+      const order = snapshot.val();
+      if (order && order.subtotal >= 800) {
+        const promoCode = 'SWW' + Math.random().toString(36).substring(2,7).toUpperCase();
+        db.ref('promos/' + promoCode).set({
+          discount: 15,
+          used: false,
+          created: Date.now(),
+          type: 'auto',
+          userId: order.userId,
+          uses: 0,
+          maxUses: 1
+        });
+        orderRef.update({ promoCode: promoCode });
+        showIosToast('✅ Промокод создан: ' + promoCode, '🎫');
+      }
+    });
+    showIosToast('✅ Заказ #' + orderId + ' выполнен!', '✅');
+    showAllOrders();
+    updateAdminEarnings();
+  }).catch(() => {
+    showIosToast('❌ Ошибка при подтверждении заказа', '❌');
+  });
+}
+
+function cancelOrder(orderId) {
+  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
+  if (!confirm('Отменить заказ #' + orderId + '? Товары будут возвращены.')) return;
+  
+  const orderRef = db.ref('orders/' + orderId);
+  orderRef.once('value').then(snapshot => {
+    const order = snapshot.val();
+    if (order && order.items) {
+      for (const item of order.items) {
+        returnItemToStock(item);
+      }
+    }
+    return orderRef.update({
+      status: 'cancelled',
+      cancelledAt: Date.now()
+    });
+  }).then(() => {
+    showIosToast('❌ Заказ #' + orderId + ' отменён, товары возвращены', '❌');
+    showAllOrders();
+    refreshView();
+  }).catch(() => {
+    showIosToast('❌ Ошибка при отмене заказа', '❌');
+  });
+}
+
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
 function getUserId() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (tgU) return 'tg_' + tgU.id;
@@ -1657,7 +1864,6 @@ function adminLogout() {
   showIosToast('Вы вышли из админ-панели', '👋');
 }
 
-// ===== КОРОТКИЕ ФУНКЦИИ ДЛЯ ЗАКАЗОВ И ПРОМОКОДОВ =====
 function showOrders() {
   const my = orders.filter(o => o.userId === getUserId() && o.status === 'completed');
   const el = document.getElementById('orders-list');
@@ -1702,63 +1908,35 @@ function showAllOrders() {
   }).join('');
 }
 
-function completeOrder(orderId) {
-  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
-  if (!confirm('Подтвердить выполнение заказа #' + orderId + '?')) return;
-  
-  const orderRef = db.ref('orders/' + orderId);
-  orderRef.update({
-    status: 'completed',
-    completedAt: Date.now()
-  }).then(() => {
-    orderRef.once('value').then(snapshot => {
-      const order = snapshot.val();
-      if (order && order.subtotal >= 800) {
-        const promoCode = 'SWW' + Math.random().toString(36).substring(2,7).toUpperCase();
-        db.ref('promos/' + promoCode).set({
-          discount: 15,
-          used: false,
-          created: Date.now(),
-          type: 'auto',
-          userId: order.userId,
-          uses: 0,
-          maxUses: 1
-        });
-        orderRef.update({ promoCode: promoCode });
-        showIosToast('✅ Промокод создан: ' + promoCode, '🎫');
-      }
-    });
-    showIosToast('✅ Заказ #' + orderId + ' выполнен!', '✅');
-    showAllOrders();
-    updateAdminEarnings();
-  }).catch(() => {
-    showIosToast('❌ Ошибка при подтверждении заказа', '❌');
-  });
+function refreshView() {
+  if (currentView === 'main') showMain();
+  else if (currentView === 'category') showCategory(currentCategory);
+  else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
 }
 
-function cancelOrder(orderId) {
-  if (!isAdmin) { showIosToast('❌ Только для администратора!', '❌'); return; }
-  if (!confirm('Отменить заказ #' + orderId + '? Товары будут возвращены.')) return;
-  
-  const orderRef = db.ref('orders/' + orderId);
-  orderRef.once('value').then(snapshot => {
-    const order = snapshot.val();
-    if (order && order.items) {
-      for (const item of order.items) {
-        returnItemToStock(item);
-      }
-    }
-    return orderRef.update({
-      status: 'cancelled',
-      cancelledAt: Date.now()
-    });
-  }).then(() => {
-    showIosToast('❌ Заказ #' + orderId + ' отменён, товары возвращены', '❌');
-    showAllOrders();
-    refreshView();
-  }).catch(() => {
-    showIosToast('❌ Ошибка при отмене заказа', '❌');
+function showOrderDetail(oid) {
+  const order = orders.find(o => o.id === oid);
+  if (!order) return;
+  const el = document.getElementById('order-detail-content');
+  let html = `<div class="order-detail-card"><h3>Заказ #${order.id}</h3>
+    <div style="font-size:13px;opacity:0.8;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}</div>
+    <div style="font-weight:600;margin:12px 0 8px;">Товары:</div>`;
+  if (order.items) order.items.forEach((item,i) => {
+    html += `<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
   });
+  html += `<div class="order-detail-total">Итого: ${order.total||0} ₽</div>`;
+  if (order.status === 'pending' && isAdmin) {
+    html += `
+      <div class="order-actions">
+        <button class="btn-confirm" onclick="completeOrder('${order.id}');closePanel('order-detail');showAllOrders();">✅ Выполнить</button>
+        <button class="btn-cancel" onclick="cancelOrder('${order.id}');closePanel('order-detail');showAllOrders();">❌ Отменить</button>
+      </div>
+    `;
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+  document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('order-detail-panel').classList.add('active');
 }
 
 function showMyPromos() {
@@ -1774,46 +1952,6 @@ function showMyPromos() {
       <span style="color:${p.used ? 'var(--danger)' : 'var(--success)'};">${p.used ? 'Использован' : 'Доступен'}</span>
     </div>`;
   }).join('');
-}
-
-function showAllPromos() {
-  if (!isAdmin) return;
-  const el = document.getElementById('all-promos-list');
-  const codes = Object.entries(promos);
-  if (!codes.length) { el.innerHTML = '<p style="text-align:center;opacity:0.5;">Нет промокодов</p>'; return; }
-  el.innerHTML = codes.sort((a,b) => b[1].created - a[1].created).map(([c,p]) => {
-    const maxUses = p.maxUses || 0;
-    const uses = p.uses || 0;
-    const limitInfo = maxUses > 0 ? ` (${uses}/${maxUses})` : ' ♾️';
-    return `<div class="promo-card" style="display:flex;justify-content:space-between;align-items:center;">
-      <div><strong>${c}</strong> - ${p.discount}%${limitInfo}<br><small>${p.used ? '❌ Использован' : '✅ Доступен'}</small></div>
-      <button class="btn-sm btn-delete" onclick="deletePromo('${c}')">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function deletePromo(c) { if (isAdmin && confirm('Удалить?')) db.ref('promos/'+c).remove(); }
-
-function createPromo() {
-  if (!isAdmin) return;
-  const c = document.getElementById('promo-code').value.trim() || 'SWW'+Math.random().toString(36).substring(2,7).toUpperCase();
-  const discount = parseInt(document.getElementById('promo-discount').value) || 15;
-  const maxUses = parseInt(document.getElementById('promo-max-uses').value) || 1;
-  const userId = document.getElementById('promo-user-id').value.trim() || null;
-  db.ref('promos/'+c).set({
-    discount, used: false, created: Date.now(), type: 'admin',
-    userId: userId, uses: 0, maxUses: maxUses > 0 ? maxUses : 0
-  });
-  showIosToast('✅ Промокод создан: ' + c + ' ('+maxUses+' активаций)', '🎫');
-  document.getElementById('promo-code').value = '';
-  document.getElementById('promo-max-uses').value = '1';
-  document.getElementById('promo-user-id').value = '';
-}
-
-function refreshView() {
-  if (currentView === 'main') showMain();
-  else if (currentView === 'category') showCategory(currentCategory);
-  else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
 }
 
 function updateRouletteTimer() {
@@ -1917,15 +2055,13 @@ function sendMessageToUser() {
   const user = users[uid];
   if (!user?.telegramId) return alert('Не в Telegram');
   
-  // Отправляем сообщение пользователю в Telegram
   fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({chat_id:user.telegramId, text:'📨 SWWSHOP:\n\n'+msg})
   });
   
-  // Сохраняем сообщение в чат пользователя
   const message = {
-    id: Date.now().toString(),
+    id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,6),
     userId: uid,
     userName: 'Админ',
     text: msg,
@@ -1963,11 +2099,12 @@ function addLine() {
   const n = document.getElementById('line-name').value.trim();
   const p = parseInt(document.getElementById('line-price').value);
   const c = document.getElementById('line-category').value;
+  const q = parseInt(document.getElementById('line-quantity').value) || 1;
   const ft = document.getElementById('line-flavors').value.trim();
   if (!n || !p || !ft) return alert('Заполните!');
   const fl = ft.split('\n').filter(l=>l.trim()).map(l => {
     const a = l.split(',');
-    return {name: a[0].trim(), inStock: a[1]?.trim().toUpperCase() === 'YES', quantity: 1, id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,6)};
+    return {name: a[0].trim(), inStock: a[1]?.trim().toUpperCase() === 'YES', quantity: q, id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,6)};
   });
   if (!fl.length) return alert('Минимум 1 вкус!');
   data[c].push({name:n, price:p, flavors:fl});
@@ -1975,6 +2112,7 @@ function addLine() {
   showIosToast('✅ Добавлено!', '➕');
   document.getElementById('line-name').value = '';
   document.getElementById('line-price').value = '';
+  document.getElementById('line-quantity').value = '1';
   document.getElementById('line-flavors').value = '';
   showMain();
 }
@@ -2002,9 +2140,15 @@ function updateDelSelect() {
   const s = document.getElementById('del-item');
   if (!s || !data[c]) return;
   s.innerHTML = '<option value="">-- Выберите --</option>';
-  data[c].forEach((item,i) => {
-    s.innerHTML += '<option value="'+i+'">'+item.name+'</option>';
-  });
+  if (c === 'liquids' || c === 'pouches') {
+    data[c].forEach((item, i) => {
+      s.innerHTML += '<option value="'+i+'">'+item.name+'</option>';
+    });
+  } else {
+    data[c].forEach((item, i) => {
+      s.innerHTML += '<option value="'+i+'">'+item.name+'</option>';
+    });
+  }
 }
 
 function deleteSelected() {
@@ -2013,30 +2157,6 @@ function deleteSelected() {
   const i = parseInt(document.getElementById('del-item').value);
   if (isNaN(i)) return alert('Выберите товар!');
   if (confirm('Удалить?')) { data[c].splice(i,1); db.ref('assortment').set(data); showMain(); }
-}
-
-function updateEditItemSelect() {
-  const cat = document.getElementById('edit-item-category').value;
-  const s = document.getElementById('edit-item-select');
-  if (!s || !data[cat]) return;
-  s.innerHTML = '<option value="">-- Выберите --</option>';
-  data[cat].forEach((item, i) => {
-    s.innerHTML += '<option value="'+i+'">'+item.name+' ('+(item.quantity||0)+' шт)</option>';
-  });
-}
-
-function updateItemQuantity() {
-  if (!isAdmin) return;
-  const cat = document.getElementById('edit-item-category').value;
-  const idx = parseInt(document.getElementById('edit-item-select').value);
-  const qty = parseInt(document.getElementById('edit-item-qty').value);
-  if (isNaN(idx) || isNaN(qty) || qty < 0) return alert('Выберите товар и укажите количество');
-  data[cat][idx].quantity = qty;
-  db.ref('assortment/' + cat + '/' + idx + '/quantity').set(qty);
-  showIosToast('✅ Количество обновлено!', '📦');
-  document.getElementById('edit-item-qty').value = '';
-  updateEditItemSelect();
-  showCategory(cat);
 }
 
 function setTheme(t) {
@@ -2066,6 +2186,7 @@ function initShop() {
       showMain(); 
       updateRouletteTimer(); 
       updateEditItemSelect();
+      updatePriceSelect();
       startCartExpiryCheck();
     }
   }).catch(() => { 
