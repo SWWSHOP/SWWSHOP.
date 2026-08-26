@@ -385,6 +385,7 @@
       background: rgba(94, 163, 217, 0.15); border: 1px solid rgba(94, 163, 217, 0.3);
       border-radius: 10px; color: #5ea3d9; font-size: 14px; font-weight: 600;
       text-decoration: none; transition: all 0.3s; margin-top: 8px;
+      cursor: pointer; border: none;
     }
     .maintenance-card .maintenance-contact:hover { background: rgba(94, 163, 217, 0.25); }
     .maintenance-card .maintenance-shop { font-size: 13px; color: #64748b; margin-top: 16px; }
@@ -1139,17 +1140,14 @@ function sendChatMessage() {
     chatId: userId
   };
   
-  // Сохраняем в Firebase
   const newRef = db.ref('chat/messages').push();
   newRef.set(messageData);
   input.value = '';
   
-  // Отправляем уведомление админу в Telegram
   const username = tgU?.username ? '@' + tgU.username : '';
   const userInfo = users[userId] || {};
   const userFirstName = userInfo.firstName || userName;
   
-  // Формируем callback-данные для кнопки "Ответить"
   const callbackData = JSON.stringify({
     action: 'reply',
     userId: userId,
@@ -1176,7 +1174,6 @@ function sendChatMessage() {
     })
   }).catch(err => console.error('Telegram send error:', err));
   
-  // Обновляем чат
   loadChatMessages();
 }
 
@@ -1186,7 +1183,6 @@ function loadChatMessages() {
   
   const userId = getUserId();
   
-  // Фильтруем сообщения: только для текущего пользователя
   const userMessages = chatMessages.filter(m => 
     m.chatId === userId || m.userId === userId
   );
@@ -1237,11 +1233,9 @@ function updateChatUnreadBadge() {
 }
 
 // ===== ОБРАБОТКА ОТВЕТОВ ИЗ TELEGRAM =====
-// Функция, которая будет вызываться при ответе из Telegram
 window.handleTelegramReply = function(userId, replyText) {
   if (!userId || !replyText) return;
   
-  // Сохраняем ответ в чат пользователя
   const messageData = {
     id: Date.now().toString() + '_' + Math.random().toString(36).slice(2,8),
     userId: userId,
@@ -1255,7 +1249,6 @@ window.handleTelegramReply = function(userId, replyText) {
   
   db.ref('chat/messages').push(messageData);
   
-  // Отправляем уведомление пользователю в Telegram
   const user = users[userId];
   if (user?.telegramId) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -1272,7 +1265,6 @@ window.handleTelegramReply = function(userId, replyText) {
   if (activePanel === 'chat') loadChatMessages();
 };
 
-// Слушаем ответы из консоли (администратор может отвечать через сайт)
 function sendAdminReplyToUser() {
   const uid = document.getElementById('console-user').value;
   const msg = document.getElementById('console-message').value.trim();
@@ -1281,7 +1273,7 @@ function sendAdminReplyToUser() {
   document.getElementById('console-message').value = '';
 }
 
-// ===== УПРАВЛЕНИЕ КОРЗИНОЙ =====
+// ===== УПРАВЛЕНИЕ КОРЗИНОЙ (ИСПРАВЛЕНО) =====
 function checkCartExpiry() {
   const now = Date.now();
   let expired = false;
@@ -1289,7 +1281,6 @@ function checkCartExpiry() {
   for (let i = cart.length - 1; i >= 0; i--) {
     const item = cart[i];
     if (item.addedAt && (now - item.addedAt) > CART_EXPIRY_MS) {
-      returnItemToStock(item);
       cart.splice(i, 1);
       expired = true;
     }
@@ -1300,31 +1291,6 @@ function checkCartExpiry() {
     showIosToast('⏳ Товары удалены из корзины (истекло время резерва)', '⏳');
     if (activePanel === 'cart') showCart();
     refreshView();
-  }
-}
-
-function returnItemToStock(item) {
-  if (!item.id) return;
-  
-  for (const cat of ['coils', 'devices']) {
-    const idx = data[cat]?.findIndex(el => el.id === item.id);
-    if (idx !== undefined && idx >= 0) {
-      data[cat][idx].quantity = (data[cat][idx].quantity || 0) + 1;
-      db.ref('assortment/' + cat + '/' + idx + '/quantity').set(data[cat][idx].quantity);
-      return;
-    }
-  }
-  
-  for (const cat of ['liquids', 'pouches']) {
-    for (let li = 0; li < data[cat]?.length; li++) {
-      const line = data[cat][li];
-      const fi = line.flavors?.findIndex(f => f.id === item.id);
-      if (fi !== undefined && fi >= 0) {
-        line.flavors[fi].quantity = (line.flavors[fi].quantity || 0) + 1;
-        db.ref('assortment/' + cat + '/' + li + '/flavors/' + fi + '/quantity').set(line.flavors[fi].quantity);
-        return;
-      }
-    }
   }
 }
 
@@ -1460,30 +1426,81 @@ function showDetail(cat, idx) {
   document.getElementById('app').innerHTML = html;
 }
 
-// ===== КОРЗИНА =====
+// ===== КОРЗИНА (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
+
+// Добавляем товар в корзину БЕЗ немедленного уменьшения количества
 function addToCart(id, n, p, ln, fn) {
   if (!fn) { showIosToast('❌ Выберите вкус!', '❌'); return; }
+  
   const line = data[currentCategory]?.find(l => l.name === ln);
-  if (line) {
-    const f = line.flavors.find(f => f.name === fn);
-    if (f && (f.quantity || 0) <= 0) { showIosToast('❌ Нет в наличии!', '❌'); return; }
-    if (cart.some(c => c.id === f.id)) { showIosToast('❌ Уже в корзине!', '❌'); return; }
-    cart.push({id: f.id, name: fn + ' (' + ln + ')', price: p, quantity: 1, addedAt: Date.now()});
-    f.quantity = (f.quantity || 0) - 1;
-    db.ref('assortment/' + currentCategory + '/' + currentIndex + '/flavors/' + line.flavors.indexOf(f) + '/quantity').set(f.quantity);
+  if (!line) { showIosToast('❌ Товар не найден!', '❌'); return; }
+  
+  const f = line.flavors.find(f => f.name === fn);
+  if (!f) { showIosToast('❌ Вкус не найден!', '❌'); return; }
+  
+  if ((f.quantity || 0) <= 0) { 
+    showIosToast('❌ Нет в наличии!', '❌'); 
+    return; 
   }
-  saveCart(); showIosToast('✅ Добавлено в корзину!', '✅');
+  
+  if (cart.some(c => c.id === f.id)) { 
+    showIosToast('❌ Уже в корзине!', '❌'); 
+    return; 
+  }
+  
+  // Добавляем в корзину, но НЕ уменьшаем количество в Firebase
+  cart.push({
+    id: f.id, 
+    name: fn + ' (' + ln + ')', 
+    price: p, 
+    quantity: 1, 
+    addedAt: Date.now(),
+    category: currentCategory,
+    lineIndex: currentIndex,
+    flavorIndex: line.flavors.indexOf(f),
+    type: 'flavor'
+  });
+  
+  saveCart(); 
+  showIosToast('✅ Добавлено в корзину!', '✅');
+  
+  if (currentView === 'detail') {
+    showDetail(currentCategory, currentIndex);
+  }
 }
 
 function addToCartSimple(id, n, p) {
   const item = data[currentCategory]?.find(i => i.id === id);
-  if (!item) return;
-  if ((item.quantity || 0) <= 0) { showIosToast('❌ Нет в наличии!', '❌'); return; }
-  if (cart.some(c => c.id === id)) { showIosToast('❌ Уже в корзине!', '❌'); return; }
-  cart.push({id: id, name: n, price: p, quantity: 1, addedAt: Date.now()});
-  item.quantity = (item.quantity || 0) - 1;
-  db.ref('assortment/' + currentCategory + '/' + data[currentCategory].indexOf(item) + '/quantity').set(item.quantity);
-  saveCart(); showIosToast('✅ Добавлено в корзину!', '✅');
+  if (!item) { showIosToast('❌ Товар не найден!', '❌'); return; }
+  
+  if ((item.quantity || 0) <= 0) { 
+    showIosToast('❌ Нет в наличии!', '❌'); 
+    return; 
+  }
+  
+  if (cart.some(c => c.id === id)) { 
+    showIosToast('❌ Уже в корзине!', '❌'); 
+    return; 
+  }
+  
+  // Добавляем в корзину, но НЕ уменьшаем количество в Firebase
+  cart.push({
+    id: id, 
+    name: n, 
+    price: p, 
+    quantity: 1, 
+    addedAt: Date.now(),
+    category: currentCategory,
+    itemIndex: data[currentCategory].indexOf(item),
+    type: 'simple'
+  });
+  
+  saveCart(); 
+  showIosToast('✅ Добавлено в корзину!', '✅');
+  
+  if (currentView === 'category') {
+    showCategory(currentCategory);
+  }
 }
 
 function saveCart() { 
@@ -1519,13 +1536,18 @@ function showCart() {
       <button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button>
     </div>`;
   }).join('');
+  
+  if (disc > 0) {
+    document.getElementById('cart-discount').textContent = 'Скидка: -' + disc + ' RUB';
+  } else {
+    document.getElementById('cart-discount').textContent = '';
+  }
+  
   document.getElementById('cart-total').textContent = 'Итого: ' + (sub - disc) + ' RUB';
   document.getElementById('order-form').style.display = 'block';
 }
 
 function removeFromCart(i) {
-  const item = cart[i];
-  returnItemToStock(item);
   cart.splice(i,1); 
   saveCart(); 
   showCart();
@@ -1556,56 +1578,182 @@ function sendOrder() {
   const name = document.getElementById('customer-name').value.trim();
   const contact = document.getElementById('customer-contact').value.trim();
   const payment = document.getElementById('payment-method').value;
-  if (!name || !contact || !payment) return alert('Заполните все поля!');
-  if (!cart.length) return alert('❌ Корзина пуста!');
+  
+  if (!name || !contact || !payment) {
+    showIosToast('❌ Заполните все поля!', '❌');
+    return;
+  }
+  
+  if (!cart.length) {
+    showIosToast('❌ Корзина пуста!', '❌');
+    return;
+  }
+  
+  const orderBtn = document.querySelector('.order-btn');
+  if (orderBtn) {
+    orderBtn.disabled = true;
+    orderBtn.textContent = '⏳ Оформление...';
+  }
+  
   let sub = cart.reduce((s,i) => s + i.price, 0);
   let disc = 0;
-  if (appliedPromo && promos[appliedPromo.code] && !promos[appliedPromo.code].used) {
+  
+  if (appliedPromo && promos[appliedPromo.code]) {
     const promo = promos[appliedPromo.code];
     const maxUses = promo.maxUses || 0;
     const uses = promo.uses || 0;
-    if (maxUses === 0 || uses < maxUses) {
-      disc = Math.round(sub * promo.discount / 100);
-      db.ref('promos/'+appliedPromo.code).update({
-        used: true,
-        usedBy: getUserId(),
-        usedAt: Date.now(),
-        uses: uses + 1
-      });
-      if (maxUses > 0 && uses + 1 >= maxUses) {
-        db.ref('promos/'+appliedPromo.code).update({used: true});
+    
+    if (promo.used || (maxUses > 0 && uses >= maxUses)) {
+      showIosToast('❌ Промокод уже использован!', '❌');
+      appliedPromo = null;
+      showCart();
+      if (orderBtn) {
+        orderBtn.disabled = false;
+        orderBtn.textContent = 'Оформить заказ';
       }
+      return;
     }
+    
+    disc = Math.round(sub * promo.discount / 100);
   }
+  
   const total = sub - disc;
   const oid = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
   const uid = getUserId();
   const orderItems = [...cart];
-  cart = []; saveCart();
-  appliedPromo = null;
   
-  db.ref('orders/'+oid).set({
-    id:oid, userId:uid, userName:name, userContact:contact,
-    items:orderItems, subtotal:sub, discount:disc, total:total,
-    payment:payment, status:'pending', date:Date.now()
-  });
+  const orderData = {
+    id: oid,
+    userId: uid,
+    userName: name,
+    userContact: contact,
+    items: orderItems,
+    subtotal: sub,
+    discount: disc,
+    total: total,
+    payment: payment,
+    status: 'pending',
+    date: Date.now(),
+    promoCode: appliedPromo?.code || null
+  };
   
-  let atxt = '🛒 НОВЫЙ ЗАКАЗ #'+oid+'\n\n👤 '+name+'\n📱 '+contact+'\n💳 '+payment+'\n\n📋 Товары:\n';
-  orderItems.forEach((item,i) => { atxt += (i+1)+'. '+item.name+' - '+item.price+'₽\n'; });
-  if (disc > 0) atxt += '\n🎫 Промокод: '+appliedPromo?.code+' (-'+disc+'₽)';
-  atxt += '\n💰 Итого: '+total+'₽';
-  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:CHAT_ID, text:atxt})
-  }).catch(() => {});
+  const orderRef = db.ref('orders/' + oid);
   
-  document.getElementById('cart-items').innerHTML = '';
-  document.getElementById('cart-total').textContent = '';
-  document.getElementById('order-form').style.display = 'none';
-  document.getElementById('order-success').style.display = 'block';
-  document.getElementById('order-success').innerHTML = '✅ Заказ #'+oid+' оформлен!';
-  showIosToast('✅ Заказ оформлен!', '📦');
-  refreshView();
+  orderRef.set(orderData)
+    .then(() => {
+      const updatePromises = [];
+      
+      for (const item of orderItems) {
+        if (item.type === 'flavor') {
+          const updatePromise = db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
+            .once('value')
+            .then(snapshot => {
+              const currentQty = snapshot.val() || 0;
+              const newQty = Math.max(0, currentQty - 1);
+              return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity').set(newQty);
+            });
+          updatePromises.push(updatePromise);
+        } else if (item.type === 'simple') {
+          const updatePromise = db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
+            .once('value')
+            .then(snapshot => {
+              const currentQty = snapshot.val() || 0;
+              const newQty = Math.max(0, currentQty - 1);
+              return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity').set(newQty);
+            });
+          updatePromises.push(updatePromise);
+        }
+      }
+      
+      if (appliedPromo && promos[appliedPromo.code]) {
+        const promo = promos[appliedPromo.code];
+        const maxUses = promo.maxUses || 0;
+        const uses = promo.uses || 0;
+        
+        const promoUpdate = {
+          uses: uses + 1,
+          usedBy: uid,
+          usedAt: Date.now()
+        };
+        
+        if (maxUses > 0 && uses + 1 >= maxUses) {
+          promoUpdate.used = true;
+        }
+        
+        updatePromises.push(db.ref('promos/' + appliedPromo.code).update(promoUpdate));
+      }
+      
+      return Promise.all(updatePromises);
+    })
+    .then(() => {
+      let atxt = '🛒 НОВЫЙ ЗАКАЗ #' + oid + '\n\n';
+      atxt += '👤 ' + name + '\n';
+      atxt += '📱 ' + contact + '\n';
+      atxt += '💳 ' + payment + '\n\n';
+      atxt += '📋 Товары:\n';
+      
+      orderItems.forEach((item, i) => {
+        atxt += (i+1) + '. ' + item.name + ' - ' + item.price + '₽\n';
+      });
+      
+      if (disc > 0) {
+        atxt += '\n🎫 Промокод: ' + appliedPromo.code + ' (-' + disc + '₽)';
+      }
+      atxt += '\n💰 Итого: ' + total + '₽';
+      
+      return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({chat_id: CHAT_ID, text: atxt})
+      }).catch(() => {});
+    })
+    .then(() => {
+      cart = [];
+      saveCart();
+      appliedPromo = null;
+      
+      document.getElementById('cart-items').innerHTML = '';
+      document.getElementById('cart-total').textContent = '';
+      document.getElementById('order-form').style.display = 'none';
+      document.getElementById('order-success').style.display = 'block';
+      document.getElementById('order-success').innerHTML = '✅ Заказ #' + oid + ' оформлен!';
+      
+      showIosToast('✅ Заказ оформлен!', '📦');
+      refreshView();
+      
+      initShop();
+    })
+    .catch(error => {
+      console.error('Ошибка при оформлении заказа:', error);
+      showIosToast('❌ Ошибка при оформлении заказа!', '❌');
+      
+      if (orderBtn) {
+        orderBtn.disabled = false;
+        orderBtn.textContent = 'Оформить заказ';
+      }
+    });
+}
+
+function returnItemToStock(item) {
+  if (!item.id || !item.type) return;
+  
+  if (item.type === 'flavor' && item.category && item.lineIndex !== undefined && item.flavorIndex !== undefined) {
+    return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
+      .once('value')
+      .then(snapshot => {
+        const currentQty = snapshot.val() || 0;
+        return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity').set(currentQty + 1);
+      });
+  } else if (item.type === 'simple' && item.category && item.itemIndex !== undefined) {
+    return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
+      .once('value')
+      .then(snapshot => {
+        const currentQty = snapshot.val() || 0;
+        return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity').set(currentQty + 1);
+      });
+  }
+  
+  return Promise.resolve();
 }
 
 // ===== УПРАВЛЕНИЕ ЦЕНАМИ И КОЛИЧЕСТВОМ =====
@@ -1793,24 +1941,54 @@ function cancelOrder(orderId) {
   if (!confirm('Отменить заказ #' + orderId + '? Товары будут возвращены.')) return;
   
   const orderRef = db.ref('orders/' + orderId);
-  orderRef.once('value').then(snapshot => {
-    const order = snapshot.val();
-    if (order && order.items) {
-      for (const item of order.items) {
-        returnItemToStock(item);
+  
+  orderRef.once('value')
+    .then(snapshot => {
+      const order = snapshot.val();
+      if (!order) throw new Error('Заказ не найден');
+      if (order.status === 'cancelled') throw new Error('Заказ уже отменен');
+      
+      const returnPromises = [];
+      
+      if (order.items) {
+        for (const item of order.items) {
+          if (item.type === 'flavor' && item.category && item.lineIndex !== undefined && item.flavorIndex !== undefined) {
+            const returnPromise = db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
+              .once('value')
+              .then(snapshot => {
+                const currentQty = snapshot.val() || 0;
+                return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity').set(currentQty + 1);
+              });
+            returnPromises.push(returnPromise);
+          } else if (item.type === 'simple' && item.category && item.itemIndex !== undefined) {
+            const returnPromise = db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
+              .once('value')
+              .then(snapshot => {
+                const currentQty = snapshot.val() || 0;
+                return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity').set(currentQty + 1);
+              });
+            returnPromises.push(returnPromise);
+          }
+        }
       }
-    }
-    return orderRef.update({
-      status: 'cancelled',
-      cancelledAt: Date.now()
+      
+      return Promise.all(returnPromises);
+    })
+    .then(() => {
+      return orderRef.update({
+        status: 'cancelled',
+        cancelledAt: Date.now()
+      });
+    })
+    .then(() => {
+      showIosToast('❌ Заказ #' + orderId + ' отменён, товары возвращены', '❌');
+      showAllOrders();
+      refreshView();
+    })
+    .catch(error => {
+      console.error('Ошибка при отмене заказа:', error);
+      showIosToast('❌ Ошибка при отмене заказа: ' + error.message, '❌');
     });
-  }).then(() => {
-    showIosToast('❌ Заказ #' + orderId + ' отменён, товары возвращены', '❌');
-    showAllOrders();
-    refreshView();
-  }).catch(() => {
-    showIosToast('❌ Ошибка при отмене заказа', '❌');
-  });
 }
 
 // ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
@@ -1962,31 +2140,6 @@ function refreshView() {
   if (currentView === 'main') showMain();
   else if (currentView === 'category') showCategory(currentCategory);
   else if (currentView === 'detail') showDetail(currentCategory, currentIndex);
-}
-
-function showOrderDetail(oid) {
-  const order = orders.find(o => o.id === oid);
-  if (!order) return;
-  const el = document.getElementById('order-detail-content');
-  let html = `<div class="order-detail-card"><h3>Заказ #${order.id}</h3>
-    <div style="font-size:13px;opacity:0.8;">👤 ${order.userName||'Без имени'}<br>📱 ${order.userContact||'Нет контакта'}<br>📅 ${new Date(order.date||Date.now()).toLocaleString()}</div>
-    <div style="font-weight:600;margin:12px 0 8px;">Товары:</div>`;
-  if (order.items) order.items.forEach((item,i) => {
-    html += `<div class="order-detail-item"><span>${i+1}. ${item.name}</span><span>${item.price} ₽</span></div>`;
-  });
-  html += `<div class="order-detail-total">Итого: ${order.total||0} ₽</div>`;
-  if (order.status === 'pending' && isAdmin) {
-    html += `
-      <div class="order-actions">
-        <button class="btn-confirm" onclick="completeOrder('${order.id}');closePanel('order-detail');showAllOrders();">✅ Выполнить</button>
-        <button class="btn-cancel" onclick="cancelOrder('${order.id}');closePanel('order-detail');showAllOrders();">❌ Отменить</button>
-      </div>
-    `;
-  }
-  html += `</div>`;
-  el.innerHTML = html;
-  document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('order-detail-panel').classList.add('active');
 }
 
 function showMyPromos() {
