@@ -1274,6 +1274,51 @@ function sendAdminReplyToUser() {
 }
 
 // ===== УПРАВЛЕНИЕ КОРЗИНОЙ (ИСПРАВЛЕНО) =====
+
+// Функция для проверки, есть ли товар в корзине
+function isItemInCart(itemId) {
+  return cart.some(c => c.id === itemId);
+}
+
+// Функция для очистки невалидной корзины
+function validateCart() {
+  let changed = false;
+  
+  cart = cart.filter(item => {
+    let exists = false;
+    
+    if (item.type === 'flavor') {
+      const line = data[item.category]?.[item.lineIndex];
+      const flavor = line?.flavors?.[item.flavorIndex];
+      exists = flavor && flavor.id === item.id;
+    } else if (item.type === 'simple') {
+      const product = data[item.category]?.[item.itemIndex];
+      exists = product && product.id === item.id;
+    } else {
+      exists = Object.values(data).some(cat => 
+        cat.some(product => {
+          if (product.flavors) {
+            return product.flavors.some(f => f.id === item.id);
+          }
+          return product.id === item.id;
+        })
+      );
+    }
+    
+    if (!exists) {
+      changed = true;
+      return false;
+    }
+    
+    return true;
+  });
+  
+  if (changed) {
+    saveCart();
+    showIosToast('🔄 Корзина обновлена', '🔄');
+  }
+}
+
 function checkCartExpiry() {
   const now = Date.now();
   let expired = false;
@@ -1338,13 +1383,18 @@ function showMain() {
 }
 
 function showCategory(cat) {
-  currentView = 'category'; currentCategory = cat;
+  currentView = 'category'; 
+  currentCategory = cat;
   const t = {liquids:'Жидкости', pouches:'Шайбы', coils:'Испарители', devices:'Устройства'};
   let html = `<button class="back-btn" onclick="showMain()">← Назад</button><h1 class="shop-title">${t[cat]}</h1>`;
-  if (!data[cat]?.length) { html += '<p style="text-align:center;opacity:0.5;padding:40px;">Нет товаров</p>'; }
+  
+  if (!data[cat]?.length) { 
+    html += '<p style="text-align:center;opacity:0.5;padding:40px;">Нет товаров</p>'; 
+  }
   else if (cat === 'liquids' || cat === 'pouches') {
     data[cat].forEach((l, i) => {
       const totalQty = l.flavors.reduce((s, f) => s + (f.quantity || 0), 0);
+      
       html += `<div class="gradient-wrap" style="margin-bottom:8px;">
         <div class="gradient-inner" onclick="showDetail('${cat}', ${i})" style="cursor:pointer;">
           <span class="left"><span style="font-weight:600;">${l.name}</span></span>
@@ -1367,18 +1417,39 @@ function showCategory(cat) {
   } else {
     data[cat].forEach((item, i) => {
       const qty = item.quantity || 0;
-      const inCart = cart.some(c => c.id === item.id);
-      const statusClass = inCart ? 'status-in-cart' : (qty > 5 ? 'status-in-stock' : (qty > 0 ? 'status-low-stock' : 'status-out-stock'));
-      const statusText = inCart ? 'В корзине' : (qty > 5 ? 'В наличии' : (qty > 0 ? 'Осталось ' + qty : 'Нет'));
-      const canAdd = qty > 0 && !inCart;
+      const inCart = isItemInCart(item.id);
+      
+      let statusClass, statusText, canAdd;
+      
+      if (inCart) {
+        statusClass = 'status-in-cart';
+        statusText = 'В корзине';
+        canAdd = false;
+      } else if (qty > 5) {
+        statusClass = 'status-in-stock';
+        statusText = 'В наличии';
+        canAdd = true;
+      } else if (qty > 0) {
+        statusClass = 'status-low-stock';
+        statusText = 'Осталось ' + qty;
+        canAdd = true;
+      } else {
+        statusClass = 'status-out-stock';
+        statusText = 'Нет в наличии';
+        canAdd = false;
+      }
+      
       html += `<div class="product-row">
         <span class="product-name">${item.name}</span>
         <span class="product-price">${item.price} RUB</span>
         ${isAdmin ? `<span class="product-qty">${qty} шт</span>` : ''}
         <span class="status-badge ${statusClass}">${statusText}</span>
         <div class="product-actions">
-          ${canAdd ? `<button class="add-to-cart-btn" onclick="addToCartSimple('${item.id}', '${item.name}', ${item.price})">🛒</button>` : `<button class="add-to-cart-btn ${inCart ? 'in-cart' : ''}" style="${inCart ? '' : 'background:#999;'}" disabled>${inCart ? 'В корзине' : 'Нет'}</button>`}
-          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button><button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>
+          ${canAdd 
+            ? `<button class="add-to-cart-btn" onclick="addToCartSimple('${item.id}', '${item.name}', ${item.price})">🛒</button>` 
+            : `<button class="add-to-cart-btn ${inCart ? 'in-cart' : ''}" style="${inCart ? '' : 'background:#999;'}" disabled>${inCart ? 'В корзине' : 'Нет'}</button>`}
+          ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleItem('${cat}',${i})">Сменить</button>
+          <button class="btn-sm btn-delete" onclick="deleteItem('${cat}',${i})">Удалить</button>
             <div class="admin-edit-price">
               <input type="number" id="price_${cat}_${i}" value="${item.price}" placeholder="Цена" />
               <button onclick="updateItemPriceSimple('${cat}',${i})">Изм.</button>
@@ -1387,34 +1458,67 @@ function showCategory(cat) {
       </div>`;
     });
   }
+  
   document.getElementById('app').innerHTML = html;
 }
 
 function showDetail(cat, idx) {
-  currentView = 'detail'; currentCategory = cat; currentIndex = idx;
+  currentView = 'detail'; 
+  currentCategory = cat; 
+  currentIndex = idx;
   const line = data[cat][idx];
-  if (!line) { showCategory(cat); return; }
+  
+  if (!line) { 
+    showCategory(cat); 
+    return; 
+  }
+  
   let html = `<button class="back-btn" onclick="showCategory('${cat}')">← Назад</button>
     <h1 class="shop-title">${line.name}</h1>
-    <p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>
-    ${isAdmin ? `<div style="text-align:center;margin-bottom:8px;">
+    <p style="text-align:center;color:var(--accent);font-weight:600;font-size:18px;">${line.price} RUB</p>`;
+  
+  if (isAdmin) {
+    html += `<div style="text-align:center;margin-bottom:8px;">
       <div class="admin-edit-price" style="justify-content:center;">
         <input type="number" id="price_detail" value="${line.price}" placeholder="Цена" style="width:100px;" />
         <button onclick="updateLinePrice('${cat}',${idx})">Изменить цену</button>
       </div>
-    </div>` : ''}
-    <div style="margin:12px 0 8px;font-weight:600;">Выберите вкус (${line.flavors.length}):</div>`;
+    </div>`;
+  }
+  
+  html += `<div style="margin:12px 0 8px;font-weight:600;">Выберите вкус (${line.flavors.length}):</div>`;
+  
   line.flavors.forEach((f, fi) => {
     const qty = f.quantity || 0;
-    const inCart = cart.some(c => c.id === f.id);
-    const statusClass = inCart ? 'status-in-cart' : (qty > 5 ? 'status-in-stock' : (qty > 0 ? 'status-low-stock' : 'status-out-stock'));
-    const statusText = inCart ? 'В корзине' : (qty > 5 ? 'В наличии' : (qty > 0 ? 'Осталось ' + qty : 'Нет'));
-    const canAdd = qty > 0 && !inCart;
+    const inCart = isItemInCart(f.id);
+    
+    let statusClass, statusText, canAdd;
+    
+    if (inCart) {
+      statusClass = 'status-in-cart';
+      statusText = 'В корзине';
+      canAdd = false;
+    } else if (qty > 5) {
+      statusClass = 'status-in-stock';
+      statusText = 'В наличии';
+      canAdd = true;
+    } else if (qty > 0) {
+      statusClass = 'status-low-stock';
+      statusText = 'Осталось ' + qty;
+      canAdd = true;
+    } else {
+      statusClass = 'status-out-stock';
+      statusText = 'Нет в наличии';
+      canAdd = false;
+    }
+    
     html += `<div class="flavor-row">
       <span class="flavor-name">${f.name}</span>
       <div class="flavor-actions">
         <span class="status-badge ${statusClass}">${statusText}</span>
-        ${canAdd ? `<button class="add-to-cart-btn" onclick="addToCart('${f.id}', '${line.name}', ${line.price}, '${line.name}', '${f.name}')">🛒</button>` : `<button class="add-to-cart-btn ${inCart ? 'in-cart' : ''}" style="${inCart ? '' : 'background:#999;'}" disabled>${inCart ? 'В корзине' : 'Нет'}</button>`}
+        ${canAdd 
+          ? `<button class="add-to-cart-btn" onclick="addToCart('${f.id}', '${line.name}', ${line.price}, '${line.name}', '${f.name}')">🛒</button>` 
+          : `<button class="add-to-cart-btn ${inCart ? 'in-cart' : ''}" style="${inCart ? '' : 'background:#999;'}" disabled>${inCart ? 'В корзине' : 'Нет'}</button>`}
         ${isAdmin ? `<button class="btn-sm btn-toggle" onclick="toggleFlavor('${cat}',${idx},${fi})">Сменить</button>
           <div class="admin-edit-price">
             <input type="number" id="qty_${cat}_${idx}_${fi}" value="${qty}" placeholder="Кол-во" style="width:50px;" />
@@ -1423,32 +1527,40 @@ function showDetail(cat, idx) {
       </div>
     </div>`;
   });
+  
   document.getElementById('app').innerHTML = html;
 }
 
 // ===== КОРЗИНА (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
 
-// Добавляем товар в корзину БЕЗ немедленного уменьшения количества
 function addToCart(id, n, p, ln, fn) {
-  if (!fn) { showIosToast('❌ Выберите вкус!', '❌'); return; }
+  if (!fn) { 
+    showIosToast('❌ Выберите вкус!', '❌'); 
+    return; 
+  }
   
   const line = data[currentCategory]?.find(l => l.name === ln);
-  if (!line) { showIosToast('❌ Товар не найден!', '❌'); return; }
+  if (!line) { 
+    showIosToast('❌ Товар не найден!', '❌'); 
+    return; 
+  }
   
   const f = line.flavors.find(f => f.name === fn);
-  if (!f) { showIosToast('❌ Вкус не найден!', '❌'); return; }
+  if (!f) { 
+    showIosToast('❌ Вкус не найден!', '❌'); 
+    return; 
+  }
   
   if ((f.quantity || 0) <= 0) { 
     showIosToast('❌ Нет в наличии!', '❌'); 
     return; 
   }
   
-  if (cart.some(c => c.id === f.id)) { 
+  if (isItemInCart(f.id)) { 
     showIosToast('❌ Уже в корзине!', '❌'); 
     return; 
   }
   
-  // Добавляем в корзину, но НЕ уменьшаем количество в Firebase
   cart.push({
     id: f.id, 
     name: fn + ' (' + ln + ')', 
@@ -1464,26 +1576,27 @@ function addToCart(id, n, p, ln, fn) {
   saveCart(); 
   showIosToast('✅ Добавлено в корзину!', '✅');
   
-  if (currentView === 'detail') {
-    showDetail(currentCategory, currentIndex);
-  }
+  refreshView();
+  updateCartBadge();
 }
 
 function addToCartSimple(id, n, p) {
   const item = data[currentCategory]?.find(i => i.id === id);
-  if (!item) { showIosToast('❌ Товар не найден!', '❌'); return; }
+  if (!item) { 
+    showIosToast('❌ Товар не найден!', '❌'); 
+    return; 
+  }
   
   if ((item.quantity || 0) <= 0) { 
     showIosToast('❌ Нет в наличии!', '❌'); 
     return; 
   }
   
-  if (cart.some(c => c.id === id)) { 
+  if (isItemInCart(id)) { 
     showIosToast('❌ Уже в корзине!', '❌'); 
     return; 
   }
   
-  // Добавляем в корзину, но НЕ уменьшаем количество в Firebase
   cart.push({
     id: id, 
     name: n, 
@@ -1498,60 +1611,88 @@ function addToCartSimple(id, n, p) {
   saveCart(); 
   showIosToast('✅ Добавлено в корзину!', '✅');
   
-  if (currentView === 'category') {
-    showCategory(currentCategory);
-  }
+  refreshView();
+  updateCartBadge();
 }
 
 function saveCart() { 
   localStorage.setItem('swwshop_cart', JSON.stringify(cart)); 
-  updateCartBadge(); 
+  updateCartBadge();
+  
+  if (activePanel === 'cart') {
+    showCart();
+  }
+  
+  refreshView();
 }
 
 function updateCartBadge() {
-  const c = cart.length;
-  const menuBadge = document.getElementById('menuCartBadge');
-  if (menuBadge) { menuBadge.style.display = c > 0 ? 'inline-block' : 'none'; if (c > 0) menuBadge.textContent = c; }
+  const badge = document.getElementById('menuCartBadge');
+  if (badge) {
+    const count = cart.length;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
+    badge.textContent = count;
+  }
 }
 
 function showCart() {
+  const cartItems = document.getElementById('cart-items');
+  const cartTotal = document.getElementById('cart-total');
+  const orderForm = document.getElementById('order-form');
+  const cartDiscount = document.getElementById('cart-discount');
+  
+  validateCart();
+  
   if (!cart.length) {
-    document.getElementById('cart-items').innerHTML = '<p>Пусто</p>';
-    document.getElementById('cart-total').textContent = '';
-    document.getElementById('order-form').style.display = 'none';
+    cartItems.innerHTML = '<p style="text-align:center;opacity:0.5;padding:20px;">Корзина пуста</p>';
+    cartTotal.textContent = '';
+    cartDiscount.textContent = '';
+    orderForm.style.display = 'none';
+    updateCartBadge();
     return;
   }
-  let sub = cart.reduce((s,i) => s + i.price, 0);
+  
+  let sub = cart.reduce((s, i) => s + i.price, 0);
   let disc = appliedPromo ? Math.round(sub * appliedPromo.discount / 100) : 0;
   
   const now = Date.now();
-  document.getElementById('cart-items').innerHTML = cart.map((item,i) => {
+  
+  cartItems.innerHTML = cart.map((item, i) => {
     const timeLeft = Math.max(0, CART_EXPIRY_MS - (now - (item.addedAt || now)));
     const minutes = Math.floor(timeLeft / 60000);
     const seconds = Math.floor((timeLeft % 60000) / 1000);
     const timeStr = minutes > 0 ? `${minutes}м ${seconds}с` : `${seconds}с`;
+    
     return `<div class="cart-item">
-      <div>${item.name} <span class="item-time">⏳ ${timeStr}</span></div>
-      <span>${item.price} RUB</span>
-      <button class="btn-sm btn-delete" onclick="removeFromCart(${i})">×</button>
+      <div style="flex:1;">
+        <div>${item.name}</div>
+        <div class="item-time">⏳ ${timeStr}</div>
+      </div>
+      <span style="font-weight:600;">${item.price} RUB</span>
+      <button class="btn-sm btn-delete" onclick="removeFromCart(${i})" style="cursor:pointer;">✕</button>
     </div>`;
   }).join('');
   
   if (disc > 0) {
-    document.getElementById('cart-discount').textContent = 'Скидка: -' + disc + ' RUB';
+    cartDiscount.textContent = 'Скидка: -' + disc + ' RUB';
+    cartTotal.textContent = 'Итого: ' + (sub - disc) + ' RUB';
   } else {
-    document.getElementById('cart-discount').textContent = '';
+    cartDiscount.textContent = '';
+    cartTotal.textContent = 'Итого: ' + sub + ' RUB';
   }
   
-  document.getElementById('cart-total').textContent = 'Итого: ' + (sub - disc) + ' RUB';
-  document.getElementById('order-form').style.display = 'block';
+  orderForm.style.display = 'block';
+  updateCartBadge();
 }
 
-function removeFromCart(i) {
-  cart.splice(i,1); 
-  saveCart(); 
-  showCart();
-  refreshView();
+function removeFromCart(index) {
+  if (index >= 0 && index < cart.length) {
+    cart.splice(index, 1);
+    saveCart();
+    showCart();
+    refreshView();
+    showIosToast('🗑️ Товар удален из корзины', '🗑️');
+  }
 }
 
 function applyPromo() {
@@ -1574,6 +1715,28 @@ function applyPromo() {
   }
 }
 
+function isItemAvailable(item) {
+  if (!item) return false;
+  
+  if (item.type === 'flavor') {
+    const line = data[item.category]?.[item.lineIndex];
+    const flavor = line?.flavors?.[item.flavorIndex];
+    return flavor && flavor.id === item.id && (flavor.quantity || 0) > 0;
+  } else if (item.type === 'simple') {
+    const product = data[item.category]?.[item.itemIndex];
+    return product && product.id === item.id && (product.quantity || 0) > 0;
+  } else {
+    return Object.values(data).some(cat => 
+      cat.some(product => {
+        if (product.flavors) {
+          return product.flavors.some(f => f.id === item.id && (f.quantity || 0) > 0);
+        }
+        return product.id === item.id && (product.quantity || 0) > 0;
+      })
+    );
+  }
+}
+
 function sendOrder() {
   const name = document.getElementById('customer-name').value.trim();
   const contact = document.getElementById('customer-contact').value.trim();
@@ -1584,9 +1747,21 @@ function sendOrder() {
     return;
   }
   
+  validateCart();
+  
   if (!cart.length) {
     showIosToast('❌ Корзина пуста!', '❌');
+    showCart();
     return;
+  }
+  
+  for (const item of cart) {
+    if (!isItemAvailable(item)) {
+      showIosToast('❌ Некоторые товары стали недоступны!', '❌');
+      validateCart();
+      showCart();
+      return;
+    }
   }
   
   const orderBtn = document.querySelector('.order-btn');
@@ -1595,7 +1770,7 @@ function sendOrder() {
     orderBtn.textContent = '⏳ Оформление...';
   }
   
-  let sub = cart.reduce((s,i) => s + i.price, 0);
+  let sub = cart.reduce((s, i) => s + i.price, 0);
   let disc = 0;
   
   if (appliedPromo && promos[appliedPromo.code]) {
@@ -1714,14 +1889,13 @@ function sendOrder() {
       
       document.getElementById('cart-items').innerHTML = '';
       document.getElementById('cart-total').textContent = '';
+      document.getElementById('cart-discount').textContent = '';
       document.getElementById('order-form').style.display = 'none';
       document.getElementById('order-success').style.display = 'block';
       document.getElementById('order-success').innerHTML = '✅ Заказ #' + oid + ' оформлен!';
       
       showIosToast('✅ Заказ оформлен!', '📦');
       refreshView();
-      
-      initShop();
     })
     .catch(error => {
       console.error('Ошибка при оформлении заказа:', error);
@@ -1732,28 +1906,6 @@ function sendOrder() {
         orderBtn.textContent = 'Оформить заказ';
       }
     });
-}
-
-function returnItemToStock(item) {
-  if (!item.id || !item.type) return;
-  
-  if (item.type === 'flavor' && item.category && item.lineIndex !== undefined && item.flavorIndex !== undefined) {
-    return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
-      .once('value')
-      .then(snapshot => {
-        const currentQty = snapshot.val() || 0;
-        return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity').set(currentQty + 1);
-      });
-  } else if (item.type === 'simple' && item.category && item.itemIndex !== undefined) {
-    return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
-      .once('value')
-      .then(snapshot => {
-        const currentQty = snapshot.val() || 0;
-        return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity').set(currentQty + 1);
-      });
-  }
-  
-  return Promise.resolve();
 }
 
 // ===== УПРАВЛЕНИЕ ЦЕНАМИ И КОЛИЧЕСТВОМ =====
@@ -2362,12 +2514,26 @@ function toggleSeason() {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 function initShop() {
+  try {
+    const savedCart = localStorage.getItem('swwshop_cart');
+    if (savedCart) {
+      cart = JSON.parse(savedCart);
+    }
+  } catch (e) {
+    cart = [];
+  }
+  
   db.ref('assortment').once('value').then(s => {
     const v = s.val();
     if (v?.liquids) data = v;
-    else { data = {liquids:[], pouches:[], coils:[], devices:[]}; db.ref('assortment').set(data); }
+    else { 
+      data = {liquids:[], pouches:[], coils:[], devices:[]}; 
+      db.ref('assortment').set(data); 
+    }
+    
     if (!initialized) { 
       initialized = true; 
+      validateCart();
       showMain(); 
       updateRouletteTimer(); 
       updateEditItemSelect();
@@ -2383,44 +2549,95 @@ function initShop() {
     } 
   });
   
-  db.ref('orders').on('value', s => { orders = s.val() ? Object.values(s.val()) : []; updateUI(); });
-  db.ref('promos').on('value', s => { promos = s.val() || {}; updateUI(); });
-  db.ref('users').on('value', s => { users = s.val() || {}; updateUI(); });
+  db.ref('orders').on('value', s => { 
+    orders = s.val() ? Object.values(s.val()) : []; 
+    updateUI(); 
+  });
+  
+  db.ref('promos').on('value', s => { 
+    promos = s.val() || {}; 
+    updateUI(); 
+  });
+  
+  db.ref('users').on('value', s => { 
+    users = s.val() || {}; 
+    updateUI(); 
+  });
+  
   db.ref('chat/messages').on('value', s => { 
     chatMessages = s.val() ? Object.values(s.val()) : []; 
     if (activePanel === 'chat') loadChatMessages();
     updateChatUnreadBadge();
   });
+  
   db.ref('settings/lastRouletteTime').on('value', s => {
     const v = s.val();
-    if (v && v > lastSpin) { lastSpin = v; localStorage.setItem('swwshop_roulette_time', v.toString()); updateRouletteTimer(); }
+    if (v && v > lastSpin) { 
+      lastSpin = v; 
+      localStorage.setItem('swwshop_roulette_time', v.toString()); 
+      updateRouletteTimer(); 
+    }
   });
   
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const uid = getUserId();
+  
   db.ref('users/'+uid).once('value').then(s => {
-    if (s.val()) db.ref('users/'+uid).update({lastSeen: Date.now(), visitCount: (s.val().visitCount||1)+1});
-    else db.ref('users/'+uid).set({id:uid, firstSeen:Date.now(), lastSeen:Date.now(), visitCount:1, telegramId: tgU?.id, firstName: tgU?.first_name, username: tgU?.username});
+    if (s.val()) {
+      db.ref('users/'+uid).update({
+        lastSeen: Date.now(), 
+        visitCount: (s.val().visitCount||1)+1
+      });
+    } else {
+      db.ref('users/'+uid).set({
+        id: uid, 
+        firstSeen: Date.now(), 
+        lastSeen: Date.now(), 
+        visitCount: 1, 
+        telegramId: tgU?.id, 
+        firstName: tgU?.first_name, 
+        username: tgU?.username
+      });
+    }
   }).catch(() => {});
   
-  try { const saved = localStorage.getItem('sww_maintenance_mode'); if (saved !== null) maintenanceMode = saved === 'true'; } catch (_) {}
+  try { 
+    const saved = localStorage.getItem('sww_maintenance_mode'); 
+    if (saved !== null) maintenanceMode = saved === 'true'; 
+  } catch (_) {}
+  
   updateMaintenanceUI();
   
   document.getElementById('hamburgerBtn').addEventListener('click', toggleMenu);
   document.getElementById('menuCloseBtn').addEventListener('click', closeMenu);
-  document.getElementById('menuOverlay').addEventListener('click', function(e) { if (e.target === this) closeMenu(); });
+  document.getElementById('menuOverlay').addEventListener('click', function(e) { 
+    if (e.target === this) closeMenu(); 
+  });
   document.getElementById('maintenanceAdminKey').addEventListener('click', openAdminKeyModal);
-  document.getElementById('adminKeyModal').addEventListener('click', function(e) { if (e.target === this) closeAdminKeyModal(); });
-  document.getElementById('adminKeyInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') adminKeyLogin(); });
-  document.getElementById('maintenanceToggleSwitch').addEventListener('click', function(e) { e.stopPropagation(); toggleMaintenance(); });
-  document.getElementById('chat-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendChatMessage(); });
+  document.getElementById('adminKeyModal').addEventListener('click', function(e) { 
+    if (e.target === this) closeAdminKeyModal(); 
+  });
+  document.getElementById('adminKeyInput').addEventListener('keydown', function(e) { 
+    if (e.key === 'Enter') adminKeyLogin(); 
+  });
+  document.getElementById('maintenanceToggleSwitch').addEventListener('click', function(e) { 
+    e.stopPropagation(); 
+    toggleMaintenance(); 
+  });
+  document.getElementById('chat-input').addEventListener('keydown', function(e) { 
+    if (e.key === 'Enter') sendChatMessage(); 
+  });
   
   updateCartBadge();
   updateAdminUI();
+  
   const savedTheme = localStorage.getItem('swwshop_theme') || 'telegram';
   document.body.className = savedTheme;
   
-  if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
+  if (window.Telegram?.WebApp) { 
+    window.Telegram.WebApp.ready(); 
+    window.Telegram.WebApp.expand(); 
+  }
 }
 
 function updateUI() {
