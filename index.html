@@ -1273,14 +1273,12 @@ function sendAdminReplyToUser() {
   document.getElementById('console-message').value = '';
 }
 
-// ===== УПРАВЛЕНИЕ КОРЗИНОЙ (ИСПРАВЛЕНО) =====
+// ===== УПРАВЛЕНИЕ КОРЗИНОЙ =====
 
-// Функция для проверки, есть ли товар в корзине
 function isItemInCart(itemId) {
   return cart.some(c => c.id === itemId);
 }
 
-// Функция для очистки невалидной корзины
 function validateCart() {
   let changed = false;
   
@@ -1425,13 +1423,9 @@ function showCategory(cat) {
         statusClass = 'status-in-cart';
         statusText = 'В корзине';
         canAdd = false;
-      } else if (qty > 5) {
+      } else if (qty > 0) {
         statusClass = 'status-in-stock';
         statusText = 'В наличии';
-        canAdd = true;
-      } else if (qty > 0) {
-        statusClass = 'status-low-stock';
-        statusText = 'Осталось ' + qty;
         canAdd = true;
       } else {
         statusClass = 'status-out-stock';
@@ -1498,13 +1492,9 @@ function showDetail(cat, idx) {
       statusClass = 'status-in-cart';
       statusText = 'В корзине';
       canAdd = false;
-    } else if (qty > 5) {
+    } else if (qty > 0) {
       statusClass = 'status-in-stock';
       statusText = 'В наличии';
-      canAdd = true;
-    } else if (qty > 0) {
-      statusClass = 'status-low-stock';
-      statusText = 'Осталось ' + qty;
       canAdd = true;
     } else {
       statusClass = 'status-out-stock';
@@ -1531,7 +1521,7 @@ function showDetail(cat, idx) {
   document.getElementById('app').innerHTML = html;
 }
 
-// ===== КОРЗИНА (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
+// ===== КОРЗИНА =====
 
 function addToCart(id, n, p, ln, fn) {
   if (!fn) { 
@@ -1737,6 +1727,7 @@ function isItemAvailable(item) {
   }
 }
 
+// ===== ОПТИМИЗИРОВАННАЯ ФУНКЦИЯ ОФОРМЛЕНИЯ ЗАКАЗА =====
 function sendOrder() {
   const name = document.getElementById('customer-name').value.trim();
   const contact = document.getElementById('customer-contact').value.trim();
@@ -1796,6 +1787,7 @@ function sendOrder() {
   const oid = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
   const uid = getUserId();
   const orderItems = [...cart];
+  const userTelegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
   
   const orderData = {
     id: oid,
@@ -1809,103 +1801,130 @@ function sendOrder() {
     payment: payment,
     status: 'pending',
     date: Date.now(),
-    promoCode: appliedPromo?.code || null
+    promoCode: appliedPromo?.code || null,
+    userTelegramId: userTelegramId || null
   };
   
   const orderRef = db.ref('orders/' + oid);
   
-  orderRef.set(orderData)
-    .then(() => {
-      const updatePromises = [];
-      
-      for (const item of orderItems) {
-        if (item.type === 'flavor') {
-          const updatePromise = db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
-            .once('value')
-            .then(snapshot => {
-              const currentQty = snapshot.val() || 0;
-              const newQty = Math.max(0, currentQty - 1);
-              return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity').set(newQty);
-            });
-          updatePromises.push(updatePromise);
-        } else if (item.type === 'simple') {
-          const updatePromise = db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
-            .once('value')
-            .then(snapshot => {
-              const currentQty = snapshot.val() || 0;
-              const newQty = Math.max(0, currentQty - 1);
-              return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity').set(newQty);
-            });
-          updatePromises.push(updatePromise);
-        }
+  // Оптимизация: все операции выполняются параллельно
+  Promise.all([
+    orderRef.set(orderData),
+    ...orderItems.map(item => {
+      if (item.type === 'flavor') {
+        return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
+          .once('value')
+          .then(snapshot => {
+            const currentQty = snapshot.val() || 0;
+            return db.ref('assortment/' + item.category + '/' + item.lineIndex + '/flavors/' + item.flavorIndex + '/quantity')
+              .set(Math.max(0, currentQty - 1));
+          });
+      } else if (item.type === 'simple') {
+        return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
+          .once('value')
+          .then(snapshot => {
+            const currentQty = snapshot.val() || 0;
+            return db.ref('assortment/' + item.category + '/' + item.itemIndex + '/quantity')
+              .set(Math.max(0, currentQty - 1));
+          });
       }
-      
-      if (appliedPromo && promos[appliedPromo.code]) {
-        const promo = promos[appliedPromo.code];
-        const maxUses = promo.maxUses || 0;
-        const uses = promo.uses || 0;
-        
-        const promoUpdate = {
-          uses: uses + 1,
-          usedBy: uid,
-          usedAt: Date.now()
-        };
-        
-        if (maxUses > 0 && uses + 1 >= maxUses) {
-          promoUpdate.used = true;
-        }
-        
-        updatePromises.push(db.ref('promos/' + appliedPromo.code).update(promoUpdate));
-      }
-      
-      return Promise.all(updatePromises);
+      return Promise.resolve();
     })
-    .then(() => {
-      let atxt = '🛒 НОВЫЙ ЗАКАЗ #' + oid + '\n\n';
-      atxt += '👤 ' + name + '\n';
-      atxt += '📱 ' + contact + '\n';
-      atxt += '💳 ' + payment + '\n\n';
-      atxt += '📋 Товары:\n';
+  ]).then(() => {
+    // Обновляем промокод если он был применен
+    if (appliedPromo && promos[appliedPromo.code]) {
+      const promo = promos[appliedPromo.code];
+      const maxUses = promo.maxUses || 0;
+      const uses = promo.uses || 0;
       
-      orderItems.forEach((item, i) => {
-        atxt += (i+1) + '. ' + item.name + ' - ' + item.price + '₽\n';
-      });
+      const promoUpdate = {
+        uses: uses + 1,
+        usedBy: uid,
+        usedAt: Date.now()
+      };
       
-      if (disc > 0) {
-        atxt += '\n🎫 Промокод: ' + appliedPromo.code + ' (-' + disc + '₽)';
+      if (maxUses > 0 && uses + 1 >= maxUses) {
+        promoUpdate.used = true;
       }
-      atxt += '\n💰 Итого: ' + total + '₽';
       
-      return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      return db.ref('promos/' + appliedPromo.code).update(promoUpdate);
+    }
+    return Promise.resolve();
+  }).then(() => {
+    // Отправляем уведомления
+    const notifications = [];
+    
+    // Уведомление админу
+    let atxt = '🛒 НОВЫЙ ЗАКАЗ #' + oid + '\n\n';
+    atxt += '👤 ' + name + '\n';
+    atxt += '📱 ' + contact + '\n';
+    atxt += '💳 ' + payment + '\n\n';
+    atxt += '📋 Товары:\n';
+    
+    orderItems.forEach((item, i) => {
+      atxt += (i+1) + '. ' + item.name + ' - ' + item.price + '₽\n';
+    });
+    
+    if (disc > 0) {
+      atxt += '\n🎫 Промокод: ' + appliedPromo.code + ' (-' + disc + '₽)';
+    }
+    atxt += '\n💰 Итого: ' + total + '₽';
+    
+    notifications.push(
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({chat_id: CHAT_ID, text: atxt})
-      }).catch(() => {});
-    })
-    .then(() => {
-      cart = [];
-      saveCart();
-      appliedPromo = null;
+      }).catch(() => {})
+    );
+    
+    // Уведомление пользователю в Telegram
+    if (userTelegramId) {
+      let userMsg = '✅ Ваш заказ #' + oid + ' оформлен!\n\n';
+      userMsg += '📋 Товары:\n';
+      orderItems.forEach((item, i) => {
+        userMsg += (i+1) + '. ' + item.name + ' - ' + item.price + '₽\n';
+      });
+      userMsg += '\n💰 Итого: ' + total + '₽';
+      userMsg += '\n\n⏳ Статус: Ожидает подтверждения';
       
-      document.getElementById('cart-items').innerHTML = '';
-      document.getElementById('cart-total').textContent = '';
-      document.getElementById('cart-discount').textContent = '';
-      document.getElementById('order-form').style.display = 'none';
-      document.getElementById('order-success').style.display = 'block';
-      document.getElementById('order-success').innerHTML = '✅ Заказ #' + oid + ' оформлен!';
-      
-      showIosToast('✅ Заказ оформлен!', '📦');
-      refreshView();
-    })
-    .catch(error => {
-      console.error('Ошибка при оформлении заказа:', error);
-      showIosToast('❌ Ошибка при оформлении заказа!', '❌');
-      
-      if (orderBtn) {
-        orderBtn.disabled = false;
-        orderBtn.textContent = 'Оформить заказ';
-      }
-    });
+      notifications.push(
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            chat_id: userTelegramId,
+            text: userMsg
+          })
+        }).catch(() => {})
+      );
+    }
+    
+    return Promise.all(notifications);
+  }).then(() => {
+    // Очищаем корзину
+    cart = [];
+    saveCart();
+    appliedPromo = null;
+    
+    document.getElementById('cart-items').innerHTML = '';
+    document.getElementById('cart-total').textContent = '';
+    document.getElementById('cart-discount').textContent = '';
+    document.getElementById('order-form').style.display = 'none';
+    document.getElementById('order-success').style.display = 'block';
+    document.getElementById('order-success').innerHTML = '✅ Заказ #' + oid + ' оформлен!';
+    
+    showIosToast('✅ Заказ оформлен!', '📦');
+    refreshView();
+  }).catch(error => {
+    console.error('Ошибка при оформлении заказа:', error);
+    showIosToast('❌ Ошибка при оформлении заказа!', '❌');
+    
+    if (orderBtn) {
+      orderBtn.disabled = false;
+      orderBtn.textContent = 'Оформить заказ';
+    }
+  });
 }
 
 // ===== УПРАВЛЕНИЕ ЦЕНАМИ И КОЛИЧЕСТВОМ =====
@@ -2059,15 +2078,37 @@ function completeOrder(orderId) {
   if (!confirm('Подтвердить выполнение заказа #' + orderId + '?')) return;
   
   const orderRef = db.ref('orders/' + orderId);
-  orderRef.update({
-    status: 'completed',
-    completedAt: Date.now()
-  }).then(() => {
-    orderRef.once('value').then(snapshot => {
-      const order = snapshot.val();
-      if (order && order.subtotal >= 800) {
+  
+  orderRef.once('value').then(snapshot => {
+    const order = snapshot.val();
+    if (!order) throw new Error('Заказ не найден');
+    
+    // Обновляем статус заказа
+    return orderRef.update({
+      status: 'completed',
+      completedAt: Date.now()
+    }).then(() => order);
+  }).then((order) => {
+    const notifications = [];
+    
+    // Отправляем уведомление пользователю о завершении заказа
+    if (order.userTelegramId) {
+      let userMsg = '🎉 Ваш заказ #' + orderId + ' выполнен!\n\n';
+      userMsg += '📋 Товары:\n';
+      
+      if (order.items) {
+        order.items.forEach((item, i) => {
+          userMsg += (i+1) + '. ' + item.name + ' - ' + item.price + '₽\n';
+        });
+      }
+      
+      userMsg += '\n💰 Итого: ' + (order.total || 0) + '₽';
+      
+      // Если заказ на 800+ рублей, создаем и отправляем промокод
+      if (order.subtotal >= 800) {
         const promoCode = 'SWW' + Math.random().toString(36).substring(2,7).toUpperCase();
-        db.ref('promos/' + promoCode).set({
+        
+        return db.ref('promos/' + promoCode).set({
           discount: 15,
           used: false,
           created: Date.now(),
@@ -2075,15 +2116,48 @@ function completeOrder(orderId) {
           userId: order.userId,
           uses: 0,
           maxUses: 1
+        }).then(() => {
+          orderRef.update({ promoCode: promoCode });
+          
+          userMsg += '\n\n🎁 Ваш промокод на скидку 15%: ' + promoCode;
+          userMsg += '\n(промокод можно найти в разделе "Мои промокоды")';
+          
+          showIosToast('✅ Промокод создан: ' + promoCode, '🎫');
+          
+          // Отправляем уведомление с промокодом
+          notifications.push(
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                chat_id: order.userTelegramId,
+                text: userMsg
+              })
+            }).catch(() => {})
+          );
         });
-        orderRef.update({ promoCode: promoCode });
-        showIosToast('✅ Промокод создан: ' + promoCode, '🎫');
+      } else {
+        // Отправляем обычное уведомление о завершении
+        notifications.push(
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              chat_id: order.userTelegramId,
+              text: userMsg
+            })
+          }).catch(() => {})
+        );
       }
-    });
+    }
+    
+    return Promise.all(notifications);
+  }).then(() => {
     showIosToast('✅ Заказ #' + orderId + ' выполнен!', '✅');
     showAllOrders();
     updateAdminEarnings();
-  }).catch(() => {
+  }).catch(error => {
+    console.error('Ошибка при подтверждении заказа:', error);
     showIosToast('❌ Ошибка при подтверждении заказа', '❌');
   });
 }
