@@ -1484,6 +1484,7 @@ function showDetail(cat, idx) {
   
   line.flavors.forEach((f, fi) => {
     const qty = f.quantity || 0;
+    // Проверяем только конкретный вкус, а не всю линейку
     const inCart = isItemInCart(f.id);
     
     let statusClass, statusText, canAdd;
@@ -1546,8 +1547,9 @@ function addToCart(id, n, p, ln, fn) {
     return; 
   }
   
+  // Проверяем только конкретный вкус по ID
   if (isItemInCart(f.id)) { 
-    showIosToast('❌ Уже в корзине!', '❌'); 
+    showIosToast('❌ Этот вкус уже в корзине!', '❌'); 
     return; 
   }
   
