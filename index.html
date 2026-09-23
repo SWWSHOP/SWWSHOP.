@@ -21,7 +21,6 @@
     --warning: #ffb020;
     --success: #06ffa5;
     --border: #1e2a3d;
-    --glow: 0 0 40px rgba(0, 212, 255, 0.35);
   }
   body.light {
     --bg: #f4f7fb;
@@ -53,7 +52,6 @@
     padding-bottom: 100px;
   }
 
-  /* ===== ФОН ===== */
   .bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
   .bg-orbs::before, .bg-orbs::after {
     content: ''; position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
@@ -66,7 +64,6 @@
     50% { transform: translate(60px,-40px) scale(1.15); }
   }
 
-  /* ===== СНЕГ (зимняя тема) ===== */
   .snowflake {
     position: fixed; top: -20px; color: #fff; opacity: 0.7;
     pointer-events: none; z-index: 1; font-size: 14px;
@@ -77,7 +74,6 @@
     100% { transform: translateY(100vh) rotate(360deg); }
   }
 
-  /* ===== ХЕДЕР ===== */
   .header {
     position: sticky; top: 0; z-index: 100;
     background: rgba(10,14,23,0.75);
@@ -108,19 +104,9 @@
   }
   .icon-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,212,255,0.25); }
   .icon-btn:active { transform: scale(0.92); }
-  .avatar-btn {
-    width: 40px; height: 40px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; cursor: pointer; font-size: 15px;
-    border: none; transition: transform 0.25s;
-  }
-  .avatar-btn:hover { transform: scale(1.05); }
 
-  /* ===== КОНТЕЙНЕР ===== */
   .container { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 16px; }
 
-  /* ===== СЕКЦИИ ===== */
   .section { margin-bottom: 24px; animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) backwards; }
   .section-title {
     font-size: 17px; font-weight: 700; margin-bottom: 12px;
@@ -134,7 +120,6 @@
   @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-  /* ===== ГЕРОЙ ===== */
   .hero {
     text-align: center; padding: 20px 0;
     animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1);
@@ -161,7 +146,6 @@
   }
   .hero p { color: var(--text-dim); font-size: 14px; line-height: 1.6; max-width: 400px; margin: 0 auto 20px; }
 
-  /* ===== КАРТОЧКА ТОВАРА (категория) ===== */
   .cat-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 18px; padding: 16px;
@@ -201,7 +185,6 @@
   }
   .cat-arrow { color: var(--text-dim); }
 
-  /* ===== ТОВАР ===== */
   .product-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 16px; padding: 14px;
@@ -226,7 +209,6 @@
   .status-out-stock { background: rgba(255,77,109,0.15); color: var(--danger); }
   .status-in-cart { background: rgba(0,212,255,0.15); color: var(--accent); }
 
-  /* ===== ВКУС ===== */
   .flavor-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 12px; border-radius: 12px;
@@ -237,7 +219,6 @@
   .flavor-name { font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .flavor-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-  /* ===== КНОПКИ ===== */
   .btn {
     padding: 10px 16px; border: none; border-radius: 12px;
     font-size: 13px; font-weight: 600; cursor: pointer;
@@ -271,15 +252,7 @@
   .btn-cart:hover:not(:disabled) { transform: scale(1.05); }
   .btn-cart:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-cart.in-cart { background: var(--accent); color: #fff; }
-  .btn-cart.added { animation: addToCart 0.6s ease; background: var(--success); }
-  @keyframes addToCart {
-    0% { transform: scale(1); }
-    30% { transform: scale(1.25); }
-    60% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-  }
 
-  /* ===== КОРЗИНА ===== */
   .cart-item {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px; background: var(--bg-2);
@@ -300,7 +273,6 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
 
-  /* ===== ПРОМОКОД ВШИТЫЙ ===== */
   .promo-welcomed {
     background: linear-gradient(135deg, rgba(255,176,32,0.15), rgba(255,77,109,0.1));
     border: 1px solid var(--warning);
@@ -338,7 +310,6 @@
   .toggle-switch.on { background: linear-gradient(135deg, var(--warning), #ff8c00); }
   .toggle-switch.on::after { transform: translateX(20px); }
 
-  /* ===== ПРОФИЛЬ ===== */
   .profile-header {
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     border-radius: 24px; padding: 24px; color: #fff;
@@ -359,6 +330,10 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 26px; font-weight: 800;
     border: 2px solid rgba(255,255,255,0.3);
+    overflow: hidden; flex-shrink: 0;
+  }
+  .profile-avatar img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
   }
   .profile-info h2 { font-size: 19px; font-weight: 700; }
   .profile-id {
@@ -377,7 +352,6 @@
   }
   .profile-role.admin { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #333; border-color: #ffd700; }
 
-  /* ===== СТАТИСТИКА ===== */
   .stats-grid {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
     margin: 16px 0; position: relative; z-index: 1;
@@ -390,7 +364,6 @@
   .stat-val { font-size: 17px; font-weight: 800; }
   .stat-label { font-size: 10px; opacity: 0.85; margin-top: 2px; }
 
-  /* ===== МЕНЮ ПРОФИЛЯ ===== */
   .menu-list { display: flex; flex-direction: column; gap: 8px; }
   .menu-item {
     display: flex; align-items: center; gap: 14px;
@@ -425,7 +398,6 @@
   .menu-item.admin-only { border-color: rgba(255,215,0,0.3); }
   .menu-item.admin-only .menu-icon { color: #ffd700; background: rgba(255,215,0,0.1); }
 
-  /* ===== МОДАЛКИ ===== */
   .overlay {
     position: fixed; inset: 0; z-index: 500;
     background: rgba(5,8,15,0.8); backdrop-filter: blur(12px);
@@ -458,7 +430,6 @@
   }
   .modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); transform: rotate(90deg); }
 
-  /* ===== ФОРМА ===== */
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
   .field input, .field select, .field textarea {
@@ -473,7 +444,6 @@
   }
   .field textarea { resize: vertical; min-height: 60px; }
 
-  /* ===== РУЛЕТКА ===== */
   .roulette-container {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 24px; padding: 24px 16px;
@@ -510,6 +480,7 @@
     color: #ffd700;
     text-shadow: 0 0 30px rgba(255,215,0,0.6);
     letter-spacing: 2px;
+    transition: opacity 0.3s, transform 0.3s;
   }
   .slot-item.win { color: var(--success); text-shadow: 0 0 40px rgba(6,255,165,0.8); }
   .slot-item.lose { color: #ff6b6b; text-shadow: 0 0 30px rgba(255,107,107,0.5); }
@@ -552,7 +523,6 @@
   }
   .roulette-legend .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-  /* ===== ЗАКАЗЫ ===== */
   .order-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 16px; padding: 14px; margin-bottom: 10px;
@@ -572,7 +542,6 @@
   .order-items { font-size: 12px; color: var(--text-dim); margin: 6px 0; }
   .order-total { font-size: 15px; font-weight: 700; color: var(--accent); text-align: right; margin-top: 8px; }
 
-  /* ===== ТОСТ ===== */
   .toast {
     position: fixed; bottom: 110px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -590,7 +559,6 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ===== НИЖНЯЯ НАВИГАЦИЯ ===== */
   .bottom-nav {
     position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
     background: rgba(19,26,38,0.92); backdrop-filter: blur(20px) saturate(180%);
@@ -621,7 +589,6 @@
     min-width: 16px; text-align: center;
   }
 
-  /* ===== УТИЛИТЫ ===== */
   .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
     background: transparent; border: none; color: var(--accent);
@@ -637,7 +604,6 @@
   .empty-state h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
   .empty-state p { font-size: 13px; }
 
-  /* ===== АДМИН ===== */
   .admin-stats {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
     margin-bottom: 16px;
@@ -666,10 +632,8 @@
   .btn-purple { background: var(--accent-2); }
   .btn-cyan { background: #06b6d4; }
 
-  /* ===== SVG-ИКОНКА ЛОГОТИП ===== */
   .logo-svg { width: 38px; height: 38px; }
 
-  /* ===== ФИЛЬТРЫ / ПОИСК ===== */
   .search-input {
     width: 100%; padding: 12px 16px;
     background: var(--card); border: 1px solid var(--border);
@@ -682,15 +646,6 @@
     box-shadow: 0 0 0 4px rgba(0,212,255,0.1);
   }
 
-  /* ===== СКЕЛЕТОН ===== */
-  .skeleton {
-    background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
-  }
-  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
   @media (min-width: 480px) {
     .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
   }
@@ -700,7 +655,6 @@
 
 <div class="bg-orbs"></div>
 
-<!-- ===== ХЕДЕР ===== -->
 <header class="header">
   <div class="logo">
     <svg class="logo-svg" viewBox="0 0 48 48" fill="none">
@@ -714,15 +668,12 @@
           <stop offset="100%" stop-color="rgba(124,58,237,0.08)"/>
         </linearGradient>
       </defs>
-      <!-- Внешняя форма (ромбовидный щит) -->
       <path d="M24 4 L40 12 V26 C40 36 32 42 24 44 C16 42 8 36 8 26 V12 Z"
             fill="url(#logoInner)" stroke="url(#logoGrad)" stroke-width="2" stroke-linejoin="round"/>
-      <!-- Внутренний символ — стилизованная "S" с молнией -->
       <path d="M18 22 L22 18 L26 22 L30 18" stroke="url(#logoGrad)" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       <path d="M30 28 L26 32 L22 28 L18 32" stroke="url(#logoGrad)" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <!-- Точка в центре -->
       <circle cx="24" cy="25" r="2" fill="url(#logoGrad)"/>
     </svg>
     <span>SWWSHOP</span>
@@ -737,7 +688,6 @@
   </div>
 </header>
 
-<!-- ===== КОНТЕЙНЕР ===== -->
 <main class="container" id="app">
   <div class="empty-state">
     <div class="icon">⏳</div>
@@ -745,7 +695,6 @@
   </div>
 </main>
 
-<!-- ===== НИЖНЯЯ НАВИГАЦИЯ ===== -->
 <nav class="bottom-nav" id="bottomNav">
   <button class="nav-item active" data-page="catalog">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -782,7 +731,6 @@
   </button>
 </nav>
 
-<!-- ===== МОДАЛКА: КОРЗИНА ===== -->
 <div class="overlay" id="cartOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -793,18 +741,6 @@
   </div>
 </div>
 
-<!-- ===== МОДАЛКА: ОФОРМЛЕНИЕ ===== -->
-<div class="overlay" id="checkoutOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>📦 Оформление заказа</h2>
-      <button class="modal-close" onclick="closeOverlay('checkoutOverlay')">✕</button>
-    </div>
-    <div id="checkoutContent"></div>
-  </div>
-</div>
-
-<!-- ===== МОДАЛКА: ЗАКАЗЫ ===== -->
 <div class="overlay" id="ordersOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -815,7 +751,6 @@
   </div>
 </div>
 
-<!-- ===== МОДАЛКА: МОИ ПРОМОКОДЫ ===== -->
 <div class="overlay" id="promosOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -826,7 +761,6 @@
   </div>
 </div>
 
-<!-- ===== МОДАЛКА: АДМИНКА ===== -->
 <div class="overlay" id="adminOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -837,7 +771,6 @@
   </div>
 </div>
 
-<!-- ===== МОДАЛКА: ВСЕ ЗАКАЗЫ (АДМИН) ===== -->
 <div class="overlay" id="allOrdersOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -848,7 +781,6 @@
   </div>
 </div>
 
-<!-- ===== МОДАЛКА: КОНСОЛЬ (АДМИН) ===== -->
 <div class="overlay" id="consoleOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -859,7 +791,6 @@
   </div>
 </div>
 
-<!-- ===== МОДАЛКА: ПОЛЬЗОВАТЕЛИ (АДМИН) ===== -->
 <div class="overlay" id="usersOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -870,7 +801,6 @@
   </div>
 </div>
 
-<!-- ===== TOAST ===== -->
 <div class="toast" id="toast">
   <span id="toastIcon">✅</span>
   <span id="toastText">Готово</span>
@@ -878,13 +808,12 @@
 
 <script>
 /* =========================================================
-   SWWSHOP 2.0
+   SWWSHOP 2.1
    ========================================================= */
 
-// ================= КОНФИГ =================
 const BOT_TOKEN = '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
 const CHAT_ID = '5993502384';
-const ADMIN_TELEGRAM_ID = 5993502384;  // ← ВАШ ID (всегда админ)
+const ADMIN_TELEGRAM_ID = 5993502384;
 const BASE_USERS_COUNT = 79;
 
 firebase.initializeApp({
@@ -898,32 +827,25 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-// ================= СОСТОЯНИЕ =================
 let user = null;
 let isAdmin = false;
 let data = { liquids: [], pouches: [], coils: [], devices: [] };
 let orders = [];
-let promos = {};        // { CODE: {discount, used, userId, ...} }
+let promos = {};
 let users = {};
 let userOrders = [];
 let cart = JSON.parse(localStorage.getItem('sww_cart') || '[]');
-let appliedDiscount = null;  // {code, discount}
+let appliedDiscount = null;
 let useDiscountInOrder = true;
 let currentPage = 'catalog';
 let currentCategory = '';
-let currentLineIndex = 0;
 let lastSpin = parseInt(localStorage.getItem('sww_last_spin') || '0');
 let spinning = false;
 let initialized = false;
 
-const RARITY = {
-  common: { name: 'Обычный', color: '#8b98ad' },
-  rare: { name: 'Редкий', color: '#00d4ff' },
-  epic: { name: 'Эпический', color: '#7c3aed' },
-  legendary: { name: 'Легендарный', color: '#ffd700' }
-};
-
-// ================= ИД ПОЛЬЗОВАТЕЛЯ =================
+/* =========================================================
+   ID ПОЛЬЗОВАТЕЛЯ
+   ========================================================= */
 function getUserId() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (tgU) return 'tg_' + tgU.id;
@@ -932,28 +854,29 @@ function getUserId() {
   return id;
 }
 
-// ================= КРАСИВЫЙ ID =================
 function generateShortId(uid) {
-  // Из "tg_1234567890" делаем "SWW-A1B2-C3D4"
-  const hash = uid.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
+  // Владелец — фиксированный ID
+  if (uid === 'tg_' + ADMIN_TELEGRAM_ID) return 'SWWSHOP-OWNER';
+
+  // Для всех остальных — SWW-XXXX-XXXX
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+    hash = hash & hash;
+  }
   const base = Math.abs(hash).toString(36).toUpperCase();
-  const padded = (base + '0000').slice(0, 8);
+  const padded = (base + '00000000').slice(0, 8);
   return 'SWW-' + padded.slice(0, 4) + '-' + padded.slice(4, 8);
 }
 
-// ================= ИНИЦИАЛИЗАЦИЯ =================
+/* =========================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ========================================================= */
 function initUser() {
   const uid = getUserId();
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
-  // ВСЕГДА админ, если telegramId совпадает
-  isAdmin = tgU && tgU.id === ADMIN_TELEGRAM_ID;
-
-  // В веб-версии (без Telegram) — тоже даём админку, если ID совпадает с сохранённым
-  if (!tgU) {
-    const savedAsAdmin = localStorage.getItem('sww_admin') === 'true';
-    isAdmin = savedAsAdmin;
-  }
+  isAdmin = (tgU && tgU.id === ADMIN_TELEGRAM_ID) || localStorage.getItem('sww_admin') === 'true';
 
   const shortId = generateShortId(uid);
 
@@ -982,66 +905,60 @@ function initUser() {
     };
   }
 
-  // Загружаем профиль пользователя
   db.ref('users/' + uid).once('value').then(s => {
     const u = s.val();
     if (u) {
-      // Если у пользователя есть сохранённые скидки — оставляем
       user.savedDiscount = u.savedDiscount || null;
       user.email = u.email || null;
       user.firstSeen = u.firstSeen;
+      if (!user.photoUrl && u.photoUrl) user.photoUrl = u.photoUrl;
+      // Подтягиваем сохранённый shortId, если он был вручную изменён админом
+      if (u.shortId && (uid === 'tg_' + ADMIN_TELEGRAM_ID || u.shortId.startsWith('SWW') || u.shortId === 'SWWSHOP-OWNER')) {
+        user.shortId = u.shortId;
+      }
     }
 
-    // Обновляем данные
     db.ref('users/' + uid).update({
       id: uid,
-      shortId: shortId,
+      shortId: user.shortId,
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
       telegramId: user.telegramId,
+      photoUrl: user.photoUrl || null,
       isAdmin: isAdmin,
       lastSeen: Date.now(),
       firstSeen: u?.firstSeen || Date.now()
     });
 
-    // Вшиваем скидку из старых промокодов
     applySavedPromo();
-
-    // Загружаем личные заказы
     loadUserOrders();
   });
 
-  // Уведомление о роли
   if (isAdmin) {
     setTimeout(() => toast('👑 Вы вошли как администратор', '👑'), 800);
   }
 }
 
-// ================= ВШИТАЯ СКИДКА =================
 async function applySavedPromo() {
-  // Ищем промокоды, привязанные к пользователю
   const uid = getUserId();
   const allPromos = promos || {};
   const myPromos = Object.entries(allPromos).filter(([code, p]) => {
     if (p.used) return false;
     if (p.userId === uid) return true;
-    if (!p.userId && !p.usedBy) return true;  // для всех
+    if (!p.userId && !p.usedBy) return true;
     return false;
   });
 
   if (myPromos.length > 0) {
-    // Берём максимальную скидку
     const best = myPromos.reduce((a, b) => (a[1].discount > b[1].discount ? a : b));
     appliedDiscount = { code: best[0], discount: best[1].discount };
     db.ref('users/' + uid + '/savedDiscount').set(appliedDiscount);
-    console.log('✅ Вшита скидка:', appliedDiscount);
   } else {
     appliedDiscount = user.savedDiscount || null;
   }
 }
 
-// ================= ЗАКАЗЫ ПОЛЬЗОВАТЕЛЯ =================
 function loadUserOrders() {
   const uid = getUserId();
   db.ref('orders').orderByChild('userId').equalTo(uid).on('value', s => {
@@ -1050,7 +967,6 @@ function loadUserOrders() {
     if (currentPage === 'profile') renderProfile();
   });
 
-  // Если админ — грузим все заказы
   if (isAdmin) {
     db.ref('orders').on('value', s => {
       const val = s.val();
@@ -1059,7 +975,6 @@ function loadUserOrders() {
   }
 }
 
-// ================= СТАТИСТИКА =================
 function getUserStats() {
   const totalOrders = userOrders.length;
   const totalSum = userOrders.reduce((sum, o) => sum + (o.total || 0), 0);
@@ -1067,7 +982,6 @@ function getUserStats() {
   return { totalOrders, totalSum, maxOrder };
 }
 
-// ================= ЗАГРУЗКА АССОРТИМЕНТА =================
 function loadAssortment() {
   db.ref('assortment').on('value', s => {
     const v = s.val();
@@ -1080,14 +994,12 @@ function loadAssortment() {
     if (!initialized) {
       initialized = true;
       render();
-    } else {
-      // Обновляем текущую страницу
-      if (currentPage === 'catalog') renderCatalog();
+    } else if (currentPage === 'catalog') {
+      renderCatalog();
     }
   });
 }
 
-// ================= ЗАГРУЗКА ПРОМОКОДОВ =================
 function loadPromos() {
   db.ref('promos').on('value', s => {
     promos = s.val() || {};
@@ -1095,14 +1007,15 @@ function loadPromos() {
   });
 }
 
-// ================= ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ =================
 function loadUsers() {
   db.ref('users').on('value', s => {
     users = s.val() || {};
   });
 }
 
-// ================= НАВИГАЦИЯ =================
+/* =========================================================
+   НАВИГАЦИЯ
+   ========================================================= */
 function navigate(page) {
   currentPage = page;
   document.querySelectorAll('.nav-item').forEach(n => {
@@ -1112,7 +1025,6 @@ function navigate(page) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ================= РЕНДЕР =================
 function render() {
   if (!user) {
     document.getElementById('app').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><h3>Загрузка...</h3></div>';
@@ -1138,9 +1050,9 @@ function renderCatalog() {
 
   document.getElementById('app').innerHTML = `
     <section class="hero">
-      <div class="hero-badge"><span class="dot"></span> Каталог обновлён</div>
+      <div class="hero-badge"><span class="dot"></span> Каталог</div>
       <h1>Добро пожаловать в<br><span class="grad">SWWSHOP</span></h1>
-      <p>Премиальные жидкости, шайбы и устройства. Доставка по всей России.</p>
+      <p>Премиальные жидкости, шайбы и устройства.</p>
     </section>
 
     <section class="section">
@@ -1246,18 +1158,13 @@ function renderProducts(catId) {
 function filterProducts(query) {
   const items = data[currentCategory] || [];
   const q = query.toLowerCase().trim();
-  if (!q) {
-    document.getElementById('productsList').innerHTML = renderProducts(currentCategory);
-    return;
-  }
-  const filtered = items.filter(item => item.name.toLowerCase().includes(q));
-  // Просто рендерим с фильтром
   const container = document.getElementById('productsList');
+  if (!q) { container.innerHTML = renderProducts(currentCategory); return; }
+  const filtered = items.filter(item => item.name.toLowerCase().includes(q));
   if (!filtered.length) {
     container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><h3>Ничего не найдено</h3></div>';
     return;
   }
-  // Временная подмена data для переиспользования renderProducts
   const original = data[currentCategory];
   data[currentCategory] = filtered;
   container.innerHTML = renderProducts(currentCategory);
@@ -1266,7 +1173,6 @@ function filterProducts(query) {
 
 function openLine(catId, index) {
   currentCategory = catId;
-  currentLineIndex = index;
   const line = data[catId][index];
   if (!line) { navigate('catalog'); return; }
 
@@ -1354,6 +1260,7 @@ function removeFromCart(id) {
   cart = cart.filter(c => c.id !== id);
   saveCart();
   renderCart();
+  if (currentPage === 'order') renderOrder();
   toast('🗑️ Удалено', '🗑️');
 }
 
@@ -1398,14 +1305,14 @@ function renderCart() {
       <span>Итого:</span>
       <span>${subtotal} ₽</span>
     </div>
-    <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="closeOverlay('cartOverlay');openCheckout()">
-      Оформить заказ →
+    <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="closeOverlay('cartOverlay');navigate('order')">
+      Перейти к заказу →
     </button>
   `;
 }
 
 /* =========================================================
-   ЗАКАЗ (с вшитой скидкой)
+   ЗАКАЗ
    ========================================================= */
 function renderOrder() {
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
@@ -1424,7 +1331,7 @@ function renderOrder() {
             <div class="cart-item-name">${c.name}</div>
             <div class="cart-item-price">${c.price} ₽</div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.id}');render()">✕</button>
+          <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.id}')">✕</button>
         </div>
       `).join('') : '<div class="empty-state"><div class="icon">📦</div><h3>Корзина пуста</h3><p>Перейдите в каталог</p></div>'}
 
@@ -1489,9 +1396,6 @@ function toggleDiscount() {
   renderOrder();
 }
 
-/* =========================================================
-   ОФОРМЛЕНИЕ ЗАКАЗА
-   ========================================================= */
 async function submitOrder() {
   if (!cart.length) { toast('❌ Корзина пуста', '❌'); return; }
 
@@ -1534,10 +1438,8 @@ async function submitOrder() {
   };
 
   try {
-    // Сохраняем заказ
     await db.ref('orders/' + orderId).set(orderData);
 
-    // Уменьшаем количество товаров
     for (const item of cart) {
       if (item.type === 'flavor') {
         const line = data[item.category]?.[item.lineIndex];
@@ -1553,7 +1455,6 @@ async function submitOrder() {
       }
     }
 
-    // Помечаем скидку как использованную
     if (useDiscountInOrder && appliedDiscount?.code && promos[appliedDiscount.code]) {
       await db.ref('promos/' + appliedDiscount.code).update({
         used: true,
@@ -1579,14 +1480,15 @@ async function submitOrder() {
     adminMsg += `\n💰 Итого: ${total}₽`;
     if (comment) adminMsg += `\n\n💬 ${comment}`;
 
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: CHAT_ID, text: adminMsg })
-    }).catch(() => {});
+    if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: adminMsg })
+      }).catch(() => {});
+    }
 
-    // Уведомление пользователю в Telegram
-    if (user.telegramId) {
+    if (user.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
       let userMsg = `✅ Заказ #${orderId} принят!\n\n`;
       userMsg += `📋 Товары:\n`;
       cart.forEach((item, i) => {
@@ -1603,7 +1505,6 @@ async function submitOrder() {
       }).catch(() => {});
     }
 
-    // Очищаем
     cart = [];
     saveCart();
     toast('✅ Заказ оформлен!', '🎉');
@@ -1616,10 +1517,9 @@ async function submitOrder() {
 }
 
 /* =========================================================
-   РУЛЕТКА (плавная!)
+   РУЛЕТКА
    ========================================================= */
 function renderRoulette() {
-  const hasSub = user?.isAdmin;  // админ крутит без ограничений
   const now = Date.now();
   const week = 7 * 24 * 60 * 60 * 1000;
   const canSpin = user.isAdmin || (now - lastSpin >= week);
@@ -1724,16 +1624,12 @@ function spinRoulette() {
   btn.disabled = true;
   btn.innerHTML = '🎰 Крутится...';
 
-  // Итоговый результат (взвешенный рандом)
   const rand = Math.random();
   let prize = { discount: 0, label: '0%' };
   if (rand < 0.01) prize = { discount: 15, label: '15%' };
   else if (rand < 0.08) prize = { discount: 5, label: '5%' };
   else if (rand < 0.25) prize = { discount: 1, label: '1%' };
 
-  // Определяем индекс элемента, к которому нужно приехать
-  // Элементы барабана: 0%,0%,1%,0%,5%,0%,1%,0%,15%,0%,1%,0%,5%,0%,0%
-  // Индексы:           0  1  2  3  4  5  6  7  8   9  10 11 12 13 14
   let targetIndex;
   if (prize.discount === 15) targetIndex = 8;
   else if (prize.discount === 5) targetIndex = [4, 12][Math.floor(Math.random() * 2)];
@@ -1743,19 +1639,16 @@ function spinRoulette() {
   const itemHeight = 140;
   const totalItems = 15;
   const rounds = user.isAdmin ? 6 : 5;
-  // Финальная позиция: прокрутили N полных кругов + доехали до targetIndex
   const finalY = (rounds * totalItems + targetIndex) * itemHeight;
 
   const reel = document.getElementById('slotReel');
   const duration = user.isAdmin ? 5500 : 4500;
   const easing = 'cubic-bezier(0.15, 0.85, 0.25, 1)';
 
-  // Старт с позиции 0
   reel.style.transition = 'none';
   reel.style.transform = 'translate3d(0, 0, 0)';
   reel.style.willChange = 'transform';
 
-  // Даём браузеру применить стили
   void reel.offsetHeight;
 
   setTimeout(() => {
@@ -1768,20 +1661,14 @@ function spinRoulette() {
     localStorage.setItem('sww_last_spin', lastSpin.toString());
   }
 
-  // Ждём завершения анимации
   setTimeout(() => {
-    // Красивая пауза + подсветка приза
     const allItems = reel.querySelectorAll('.slot-item');
-    allItems.forEach(it => it.style.opacity = '0.4');
+    allItems.forEach(it => { it.style.opacity = '0.4'; it.style.transform = 'scale(1)'; });
 
-    // Находим видимый сейчас элемент (targetIndex)
-    const visibleItems = Array.from(allItems).slice(
-      Math.floor(finalY / itemHeight),
-      Math.floor(finalY / itemHeight) + 1
-    );
-    if (visibleItems[0]) {
-      visibleItems[0].style.opacity = '1';
-      visibleItems[0].style.transform = 'scale(1.15)';
+    const visibleIndex = Math.floor(finalY / itemHeight) % totalItems;
+    if (allItems[visibleIndex]) {
+      allItems[visibleIndex].style.opacity = '1';
+      allItems[visibleIndex].style.transform = 'scale(1.2)';
     }
 
     spinning = false;
@@ -1789,7 +1676,6 @@ function spinRoulette() {
     updateSpinTimer();
 
     if (prize.discount > 0) {
-      // Создаём персональный промокод
       const code = 'SPIN-' + Math.random().toString(36).slice(2, 6).toUpperCase();
       const promoData = {
         discount: prize.discount,
@@ -1811,18 +1697,18 @@ function spinRoulette() {
         </div>
       `;
 
-      // Обновляем вшитую скидку
       setTimeout(() => applySavedPromo(), 100);
 
-      // Уведомление админу
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: `🎰 ${user.firstName} (${user.shortId}) выиграл скидку ${prize.discount}% (${code})`
-        })
-      }).catch(() => {});
+      if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: `🎰 ${user.firstName} (${user.shortId}) выиграл скидку ${prize.discount}% (${code})`
+          })
+        }).catch(() => {});
+      }
 
     } else {
       document.getElementById('rouletteResult').innerHTML = `
@@ -1842,10 +1728,14 @@ function renderProfile() {
   const stats = getUserStats();
   const activeOrders = userOrders.filter(o => o.status === 'pending').length;
 
+  const avatarHtml = user.photoUrl
+    ? `<img src="${user.photoUrl}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${(user.firstName || '?')[0].toUpperCase()}'" />`
+    : (user.firstName || '?')[0].toUpperCase();
+
   document.getElementById('app').innerHTML = `
     <div class="profile-header">
       <div class="profile-user">
-        <div class="profile-avatar">${(user.firstName || '?')[0].toUpperCase()}</div>
+        <div class="profile-avatar">${avatarHtml}</div>
         <div class="profile-info">
           <h2>${user.firstName}${user.username ? ' · @' + user.username : ''}</h2>
           <div class="profile-id" onclick="copyText('${user.shortId}')">
@@ -1936,7 +1826,7 @@ function renderProfile() {
         </div>
         <div class="menu-text">
           <div class="title">Поддержка</div>
-          <div class="sub">Напишите нам в Telegram</div>
+          <div class="sub">@bmqna</div>
         </div>
         <span class="menu-arrow">›</span>
       </button>
@@ -2044,7 +1934,6 @@ function renderMyPromos() {
    ========================================================= */
 function renderAdmin() {
   const el = document.getElementById('adminContent');
-
   const allOrdersList = orders.length ? orders : [];
   const totalRevenue = allOrdersList.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0);
   const pendingCount = allOrdersList.filter(o => o.status === 'pending').length;
@@ -2114,7 +2003,7 @@ function renderAdmin() {
       </button>
     </div>
 
-    <div class="section-title" style="margin-top:20px;">Добавить товар</div>
+    <div class="section-title" style="margin-top:20px;">➕ Добавить товар</div>
     <div class="field">
       <label>Название</label>
       <input type="text" id="addName" placeholder="Например: HQD Sweet" />
@@ -2137,12 +2026,79 @@ function renderAdmin() {
       <input type="number" id="addQty" value="1" />
     </div>
     <div class="field">
-      <label>Вкусы (по одному на строку, для жидкостей/шайб)</label>
+      <label>Вкусы (для жидкостей/шайб, по одному на строку)</label>
       <textarea id="addFlavors" placeholder="Манго,YES&#10;Клубника,YES&#10;Арбуз,YES"></textarea>
     </div>
     <button class="admin-action-btn btn-green" onclick="adminAddProduct()">➕ Добавить товар</button>
 
-    <div class="section-title" style="margin-top:20px;">Создать скидку</div>
+    <div class="section-title" style="margin-top:20px;">🗑️ Удаление товаров</div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="delCategory" onchange="updateDelSelect()">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Товар</label>
+      <select id="delItem"><option value="">-- Выберите --</option></select>
+    </div>
+    <button class="admin-action-btn btn-red" onclick="adminDeleteProduct()">🗑️ Удалить товар</button>
+
+    <div class="section-title" style="margin-top:20px;">💰 Изменить цену</div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="priceCategory" onchange="updatePriceSelectAdmin()">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Товар</label>
+      <select id="priceItem"><option value="">-- Выберите --</option></select>
+    </div>
+    <div class="field">
+      <label>Новая цена (₽)</label>
+      <input type="number" id="newPrice" placeholder="500" />
+    </div>
+    <button class="admin-action-btn btn-orange" onclick="adminUpdatePrice()">💰 Обновить цену</button>
+
+    <div class="section-title" style="margin-top:20px;">📦 Изменить количество</div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="qtyCategory" onchange="updateQtySelectAdmin()">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Товар</label>
+      <select id="qtyItem"><option value="">-- Выберите --</option></select>
+    </div>
+    <div class="field">
+      <label>Новое количество</label>
+      <input type="number" id="newQty" placeholder="10" />
+    </div>
+    <button class="admin-action-btn btn-cyan" onclick="adminUpdateQty()">📦 Обновить количество</button>
+
+    <div class="section-title" style="margin-top:20px;">🎁 Выдать скидку по ID</div>
+    <div class="field">
+      <label>Short ID пользователя</label>
+      <input type="text" id="promoShortId" placeholder="SWW-XXXX-XXXX" />
+    </div>
+    <div class="field">
+      <label>Размер скидки (%)</label>
+      <input type="number" id="promoShortDiscount" value="10" />
+    </div>
+    <button class="admin-action-btn btn-green" onclick="adminGivePromoByShortId()">🎁 Выдать скидку</button>
+
+    <div class="section-title" style="margin-top:20px;">🎫 Создать скидку</div>
     <div class="field">
       <label>User ID (пусто = для всех)</label>
       <input type="text" id="promoUserId" placeholder="tg_123456789" />
@@ -2153,9 +2109,35 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-orange" onclick="adminCreatePromo()">🎫 Создать скидку</button>
 
-    <div class="section-title" style="margin-top:20px;">Тема</div>
-    <button class="admin-action-btn btn-cyan" onclick="toggleWinter()">❄️ Зимняя тема</button>
+    <div class="section-title" style="margin-top:20px;">📋 Все скидки</div>
+    <div id="allPromosList"></div>
+    <button class="admin-action-btn btn-purple" onclick="renderAllPromosAdmin()">🔄 Обновить список</button>
+
+    <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID</div>
+    <div class="field">
+      <label>Пользователь</label>
+      <select id="userIdEdit">
+        <option value="">-- Выберите --</option>
+        ${Object.values(users).map(u => `<option value="${u.id}">${u.firstName} (${u.shortId || u.id})</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Новый Short ID</label>
+      <input type="text" id="newShortId" placeholder="SWW-XXXX-XXXX" />
+    </div>
+    <button class="admin-action-btn btn-purple" onclick="adminUpdateShortId()">🆔 Обновить ID</button>
+
+    <div class="section-title" style="margin-top:20px;">🎨 Тема</div>
+    <button class="admin-action-btn btn-cyan" onclick="toggleWinter()">❄️ Переключить зимнюю тему</button>
+
+    <div class="section-title" style="margin-top:20px;color:var(--danger);">Опасная зона</div>
+    <button class="admin-action-btn btn-red" onclick="adminLogout()">🚪 Выйти из админ-панели</button>
   `;
+
+  updateDelSelect();
+  updatePriceSelectAdmin();
+  updateQtySelectAdmin();
+  renderAllPromosAdmin();
 }
 
 function renderAllOrders() {
@@ -2218,7 +2200,6 @@ async function adminCancelOrder(orderId) {
   const order = snap.val();
   if (!order) return;
 
-  // Возвращаем товары
   for (const item of (order.items || [])) {
     if (item.type === 'flavor') {
       const currentSnap = await db.ref(`assortment/${item.category}/${item.lineIndex}/flavors/${item.flavorIndex}/quantity`).once('value');
@@ -2266,7 +2247,7 @@ function renderConsole() {
   const el = document.getElementById('consoleContent');
   el.innerHTML = `
     <div class="field">
-      <label>Кому (User ID)</label>
+      <label>Кому (пользователь)</label>
       <select id="consoleUser" class="field">
         <option value="">-- Выберите --</option>
         ${Object.values(users).map(u => `<option value="${u.id}">${u.firstName} (${u.shortId || u.id})</option>`).join('')}
@@ -2322,10 +2303,9 @@ async function adminAddProduct() {
   await db.ref('assortment').set(data);
   toast('✅ Товар добавлен', '✅');
 
-  // Очищаем
   document.getElementById('addName').value = '';
   document.getElementById('addPrice').value = '';
-  document.getElementById('addAddFlavors') && (document.getElementById('addFlavors').value = '');
+  document.getElementById('addFlavors').value = '';
 }
 
 async function adminCreatePromo() {
@@ -2378,6 +2358,189 @@ function adminBroadcast() {
 }
 
 /* =========================================================
+   АДМИН: УДАЛЕНИЕ / ИЗМЕНЕНИЕ
+   ========================================================= */
+function updateDelSelect() {
+  const cat = document.getElementById('delCategory')?.value;
+  const sel = document.getElementById('delItem');
+  if (!sel || !data[cat]) return;
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    sel.innerHTML += `<option value="${i}">${item.name} (${item.price}₽)</option>`;
+  });
+}
+
+function updatePriceSelectAdmin() {
+  const cat = document.getElementById('priceCategory')?.value;
+  const sel = document.getElementById('priceItem');
+  if (!sel || !data[cat]) return;
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    sel.innerHTML += `<option value="${i}">${item.name} (${item.price}₽)</option>`;
+  });
+}
+
+function updateQtySelectAdmin() {
+  const cat = document.getElementById('qtyCategory')?.value;
+  const sel = document.getElementById('qtyItem');
+  if (!sel || !data[cat]) return;
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    const qty = cat === 'liquids' || cat === 'pouches'
+      ? (item.flavors || []).reduce((s, f) => s + (f.quantity || 0), 0)
+      : (item.quantity || 0);
+    sel.innerHTML += `<option value="${i}">${item.name} (${qty} шт)</option>`;
+  });
+}
+
+async function adminDeleteProduct() {
+  if (!user.isAdmin) return;
+  const cat = document.getElementById('delCategory').value;
+  const idx = parseInt(document.getElementById('delItem').value);
+  if (isNaN(idx)) { toast('❌ Выберите товар', '❌'); return; }
+  if (!confirm(`Удалить "${data[cat][idx].name}"?`)) return;
+
+  data[cat].splice(idx, 1);
+  await db.ref('assortment').set(data);
+  toast('🗑️ Товар удалён', '🗑️');
+  renderAdmin();
+}
+
+async function adminUpdatePrice() {
+  if (!user.isAdmin) return;
+  const cat = document.getElementById('priceCategory').value;
+  const idx = parseInt(document.getElementById('priceItem').value);
+  const price = parseInt(document.getElementById('newPrice').value);
+  if (isNaN(idx) || isNaN(price) || price < 0) { toast('❌ Заполните поля', '❌'); return; }
+
+  data[cat][idx].price = price;
+  await db.ref('assortment').set(data);
+  toast('💰 Цена обновлена: ' + price + '₽', '💰');
+  document.getElementById('newPrice').value = '';
+  renderAdmin();
+}
+
+async function adminUpdateQty() {
+  if (!user.isAdmin) return;
+  const cat = document.getElementById('qtyCategory').value;
+  const idx = parseInt(document.getElementById('qtyItem').value);
+  const qty = parseInt(document.getElementById('newQty').value);
+  if (isNaN(idx) || isNaN(qty) || qty < 0) { toast('❌ Заполните поля', '❌'); return; }
+
+  if (cat === 'liquids' || cat === 'pouches') {
+    const flavors = data[cat][idx].flavors;
+    const perFlavor = Math.floor(qty / flavors.length);
+    const remainder = qty % flavors.length;
+    flavors.forEach((f, fi) => {
+      f.quantity = perFlavor + (fi < remainder ? 1 : 0);
+      f.inStock = f.quantity > 0;
+    });
+  } else {
+    data[cat][idx].quantity = qty;
+    data[cat][idx].inStock = qty > 0;
+  }
+
+  await db.ref('assortment').set(data);
+  toast('📦 Количество обновлено', '📦');
+  document.getElementById('newQty').value = '';
+  renderAdmin();
+}
+
+function renderAllPromosAdmin() {
+  const el = document.getElementById('allPromosList');
+  if (!el) return;
+  const list = Object.entries(promos);
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="icon">🎫</div><h3>Скидок нет</h3></div>';
+    return;
+  }
+  el.innerHTML = list.sort((a, b) => (b[1].created || 0) - (a[1].created || 0)).map(([code, p]) => {
+    const owner = p.userId ? (users[p.userId]?.firstName || p.userId) : 'Для всех';
+    return `
+      <div class="order-card" style="padding:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;color:var(--warning);font-size:14px;">${p.discount}% · ${code}</div>
+            <div style="font-size:11px;color:var(--text-dim);">${owner} · ${p.used ? '❌ использована' : '✅ активна'}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="adminDeletePromo('${code}')">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function adminDeletePromo(code) {
+  if (!user.isAdmin) return;
+  if (!confirm(`Удалить скидку ${code}?`)) return;
+  await db.ref('promos/' + code).remove();
+  toast('🗑️ Скидка удалена', '🗑️');
+  renderAllPromosAdmin();
+}
+
+async function adminUpdateShortId() {
+  if (!user.isAdmin) return;
+  const uid = document.getElementById('userIdEdit').value;
+  const newId = document.getElementById('newShortId').value.trim().toUpperCase();
+  if (!uid || !newId) { toast('❌ Заполните поля', '❌'); return; }
+  if (!/^[A-Z0-9\-]+$/.test(newId)) { toast('❌ Только A-Z, 0-9 и дефис', '❌'); return; }
+
+  await db.ref('users/' + uid + '/shortId').set(newId);
+  toast('🆔 ID обновлён: ' + newId, '🆔');
+  document.getElementById('newShortId').value = '';
+
+  if (uid === user.id) {
+    user.shortId = newId;
+    render();
+  }
+}
+
+async function adminGivePromoByShortId() {
+  if (!user.isAdmin) return;
+  const shortId = document.getElementById('promoShortId').value.trim().toUpperCase();
+  const discount = parseInt(document.getElementById('promoShortDiscount').value) || 10;
+  if (!shortId) { toast('❌ Введите Short ID', '❌'); return; }
+
+  const found = Object.values(users).find(u => u.shortId === shortId);
+  if (!found) { toast('❌ Пользователь не найден', '❌'); return; }
+
+  const code = 'GIFT-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  await db.ref('promos/' + code).set({
+    discount,
+    used: false,
+    created: Date.now(),
+    type: 'gift',
+    userId: found.id,
+    userName: found.firstName,
+    uses: 0,
+    maxUses: 1
+  });
+
+  toast(`🎁 Скидка ${discount}% выдана ${found.firstName}`, '🎁');
+
+  if (found.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: found.telegramId,
+        text: `🎁 Вам выдана скидка ${discount}%!\n\nОна применится автоматически при следующем заказе.`
+      })
+    }).catch(() => {});
+  }
+
+  document.getElementById('promoShortId').value = '';
+}
+
+function adminLogout() {
+  if (!confirm('Выйти из режима администратора?')) return;
+  localStorage.removeItem('sww_admin');
+  closeOverlay('adminOverlay');
+  toast('👋 Вы вышли из админ-панели', '👋');
+  setTimeout(() => location.reload(), 500);
+}
+
+/* =========================================================
    УТИЛИТЫ
    ========================================================= */
 function openOverlay(id) {
@@ -2410,16 +2573,12 @@ function copyText(text) {
 
 function openSupport() {
   const tg = window.Telegram?.WebApp;
-  const url = 'https://t.me/naaleevoo';  // ← ваш @username поддержки
+  const url = 'https://t.me/bmqna';
   if (tg?.openTelegramLink) tg.openTelegramLink(url);
   else window.open(url, '_blank');
 }
 
-/* =========================================================
-   ТЕМЫ
-   ========================================================= */
 function toggleTheme() {
-  const themes = ['dark', 'light'];
   const current = document.body.classList.contains('light') ? 'light' : 'dark';
   const next = current === 'light' ? 'dark' : 'light';
   document.body.classList.remove('light', 'dark');
@@ -2455,11 +2614,10 @@ function removeSnow() {
   document.querySelectorAll('.snowflake').forEach(f => f.remove());
 }
 
-// =========================================================
-// СТАРТ
-// =========================================================
+/* =========================================================
+   СТАРТ
+   ========================================================= */
 window.addEventListener('load', () => {
-  // Тема
   const savedTheme = localStorage.getItem('sww_theme') || 'dark';
   if (savedTheme === 'light') document.body.classList.add('light');
 
@@ -2468,18 +2626,15 @@ window.addEventListener('load', () => {
     createSnow();
   }
 
-  // Инициализация
   initUser();
   loadAssortment();
   loadPromos();
   loadUsers();
 
-  // Навигация
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.page));
   });
 
-  // Тема
   document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
   if (window.Telegram?.WebApp) {
