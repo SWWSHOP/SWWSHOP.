@@ -256,10 +256,11 @@
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px; background: var(--bg-2);
     border-radius: 12px; margin-bottom: 8px; gap: 8px;
+    flex-wrap: wrap;
   }
-  .cart-item-info { flex: 1; min-width: 0; }
+  .cart-item-info { flex: 1; min-width: 150px; }
   .cart-item-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .cart-item-price { font-size: 14px; font-weight: 700; color: var(--accent); }
+  .cart-item-price { font-size: 13px; font-weight: 700; color: var(--accent); }
   .cart-total {
     display: flex; justify-content: space-between;
     font-size: 18px; font-weight: 800;
@@ -271,6 +272,19 @@
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
+
+  .qty-btn {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: var(--bg-2); border: 1px solid var(--border);
+    color: var(--text); font-size: 16px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; padding: 0; line-height: 1;
+  }
+  .qty-btn:hover:not(:disabled) {
+    border-color: var(--accent); color: var(--accent); transform: scale(1.05);
+  }
+  .qty-btn:active:not(:disabled) { transform: scale(0.9); }
+  .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
   .promo-welcomed {
     background: linear-gradient(135deg, rgba(255,176,32,0.15), rgba(255,77,109,0.1));
@@ -848,43 +862,25 @@
 
 <script>
 /* =========================================================
-   SWWSHOP 2.5 — ФИНАЛЬНАЯ ВЕРСИЯ
+   SWWSHOP 2.6 — ФИНАЛЬНАЯ
    ========================================================= */
 
-/* =========================================================
-   КОНФИГ — ВСЁ ВАЖНОЕ ЗДЕСЬ
-   ========================================================= */
 const CONFIG = {
-  // Токен бота от @BotFather
   BOT_TOKEN: '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',
-
-  // Chat ID для уведомлений о заказах
   CHAT_ID: '5993502384',
-
-  // Telegram ID владельца
   ADMIN_TELEGRAM_ID: 5993502384,
-
-  // Username бота БЕЗ @
   BOT_USERNAME: 'SWWSHOPBOT',
-
-  // Имя Mini App (short_name из @BotFather)
   APP_NAME: 'SHOP',
-
-  // Username поддержки
   SUPPORT_USERNAME: '@bmqna',
-
-  // Стартовое число для счётчика пользователей
   BASE_USERS_COUNT: 79,
 
-  // Реферальная система
   REFERRAL: {
-    NEW_USER_DISCOUNT: 5,        // скидка новичку на первый заказ (%)
-    REFERRER_REWARD: 10,          // % вознаграждения за каждую 1000₽
-    MIN_REFERRAL_SUM: 1000,       // минимум сумма заказов реферала (₽)
-    MIN_REFERRAL_ORDERS: 3        // минимум заказов реферала
+    NEW_USER_DISCOUNT: 5,
+    REFERRER_REWARD: 10,
+    MIN_REFERRAL_SUM: 1000,
+    MIN_REFERRAL_ORDERS: 3
   },
 
-  // Firebase
   FIREBASE: {
     apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
     authDomain: "swwshop.firebaseapp.com",
@@ -904,9 +900,6 @@ const CHAT_ID = CONFIG.CHAT_ID;
 const ADMIN_TELEGRAM_ID = CONFIG.ADMIN_TELEGRAM_ID;
 const BASE_USERS_COUNT = CONFIG.BASE_USERS_COUNT;
 
-/* =========================================================
-   СОСТОЯНИЕ
-   ========================================================= */
 let user = null;
 let isAdmin = false;
 let data = { liquids: [], pouches: [], coils: [], devices: [] };
@@ -958,6 +951,29 @@ async function getUniqueShortId() {
 }
 
 /* =========================================================
+   ПОЛУЧЕНИЕ START_PARAM С ОЖИДАНИЕМ
+   ========================================================= */
+async function waitForStartParam(maxWaitMs = 3000) {
+  const start = Date.now();
+  while (Date.now() - start < maxWaitMs) {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      try { tg.ready(); tg.expand(); } catch (_) {}
+      const sp = tg.initDataUnsafe?.start_param;
+      if (sp && sp.startsWith('ref_')) {
+        console.log('✅ start_param получен:', sp);
+        return sp;
+      }
+      const spRaw = tg.initDataUnsafe?.start_param;
+      if (spRaw) return spRaw;
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+  console.log('⚠️ start_param не получен за', maxWaitMs, 'мс');
+  return '';
+}
+
+/* =========================================================
    РЕФЕРАЛЬНАЯ СИСТЕМА
    ========================================================= */
 async function getOrCreateReferralCode(uid) {
@@ -969,50 +985,70 @@ async function getOrCreateReferralCode(uid) {
   return code;
 }
 
-// Реферальная ссылка — открывает Mini App сразу
 function getReferralLink() {
   if (!user?.referralCode) return '';
   return `https://t.me/${CONFIG.BOT_USERNAME}/${CONFIG.APP_NAME}?startapp=ref_${user.referralCode}`;
 }
 
-async function handleReferralOnFirstLogin(uid) {
-  const tg = window.Telegram?.WebApp;
-  const startParam = tg?.initDataUnsafe?.start_param || '';
-
-  console.log('🔍 START_PARAM:', startParam);
-
-  if (!startParam || !startParam.startsWith('ref_')) return;
+/**
+ * Обрабатывает реферальную ссылку.
+ * Работает в двух случаях:
+ * 1. Новый пользователь
+ * 2. Существующий, но ещё не привязан к рефереру
+ */
+async function handleReferral(startParam, uid, existingUserData) {
+  if (!startParam || !startParam.startsWith('ref_')) {
+    console.log('❌ Реферальный параметр отсутствует или неверный');
+    return false;
+  }
 
   const refCode = startParam.replace('ref_', '').toUpperCase();
+  console.log('🔍 Ищем реферера с кодом:', refCode);
 
+  // Если уже привязан — не перезаписываем
+  if (existingUserData?.referredBy) {
+    console.log('ℹ️ Пользователь уже привязан к рефереру:', existingUserData.referredBy);
+    return false;
+  }
+
+  // Ищем пользователя с таким реферальным кодом
   const snap = await db.ref('users').orderByChild('referralCode').equalTo(refCode).once('value');
   const found = snap.val();
 
   if (!found) {
-    console.warn('❌ Реферальный код не найден:', refCode);
-    return;
+    console.warn('❌ Реферер с кодом', refCode, 'не найден в базе');
+    return false;
   }
 
   const referrerUid = Object.keys(found)[0];
-  if (referrerUid === uid) return;
 
+  // Нельзя пригласить самого себя
+  if (referrerUid === uid) {
+    console.warn('❌ Попытка самоприглашения');
+    return false;
+  }
+
+  console.log('✅ Найден реферер:', referrerUid, '→', found[referrerUid].firstName);
+
+  // Записываем связь
   await db.ref('users/' + uid).update({
     referredBy: referrerUid,
-    referredAt: Date.now()
+    referredAt: Date.now(),
+    referralCodeUsed: refCode
   });
 
-  user.referredBy = referrerUid;
-
+  // Записываем в статистику реферера
   await db.ref('users/' + referrerUid + '/referrals/' + uid).set({
     joinedAt: Date.now(),
-    firstName: user.firstName,
-    username: user.username,
+    firstName: user.firstName || 'Пользователь',
+    username: user.username || '',
+    telegramId: user.telegramId || null,
     totalOrders: 0,
     totalSum: 0
   });
 
-  const refSnap = await db.ref('users/' + referrerUid + '/telegramId').once('value');
-  const refTgId = refSnap.val();
+  // Уведомляем реферера
+  const refTgId = found[referrerUid].telegramId;
   if (refTgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -1020,13 +1056,15 @@ async function handleReferralOnFirstLogin(uid) {
       body: JSON.stringify({
         chat_id: refTgId,
         text: `🎉 По вашей ссылке зарегистрировался новый пользователь!\n\n` +
-              `👤 ${user.firstName} ${user.username ? '@' + user.username : ''}\n\n` +
+              `👤 ${user.firstName}${user.username ? ' @' + user.username : ''}\n\n` +
               `💰 За каждые ${CONFIG.REFERRAL.MIN_REFERRAL_SUM}₽ его покупок (мин. ${CONFIG.REFERRAL.MIN_REFERRAL_ORDERS} заказа) вы получите ${CONFIG.REFERRAL.REFERRER_REWARD}%!`
       })
     }).catch(() => {});
   }
 
+  user.referredBy = referrerUid;
   toast('🎉 Вы пришли по реферальной ссылке!', '🎁');
+  return true;
 }
 
 async function checkReferralRewards(uid) {
@@ -1151,9 +1189,15 @@ async function initUser() {
     };
   }
 
+  // 🔑 ЖДЁМ start_param (потому что Telegram иногда не сразу отдаёт)
+  const startParam = await waitForStartParam(3000);
+  console.log('📎 START_PARAM:', startParam);
+
   const snap = await db.ref('users/' + uid).once('value');
   const u = snap.val();
+  console.log('👤 Пользователь в базе:', u ? 'есть' : 'нет');
 
+  // Short ID
   if (uid === 'tg_' + ADMIN_TELEGRAM_ID) {
     user.shortId = 'SWWSHOP-OWNER';
   } else if (u?.shortId && u.shortId.startsWith('SWW-')) {
@@ -1169,9 +1213,10 @@ async function initUser() {
   user.referralCode = u?.referralCode || await getOrCreateReferralCode(uid);
   user.referredBy = u?.referredBy || null;
 
-  // Обработка реферальной ссылки ТОЛЬКО при первом входе
-  if (!u) {
-    await handleReferralOnFirstLogin(uid);
+  // 📌 Обрабатываем реферальную ссылку
+  // Работает и для новых, и для существующих пользователей без реферера
+  if (startParam.startsWith('ref_')) {
+    await handleReferral(startParam, uid, u);
   }
 
   if (u) {
@@ -1181,6 +1226,7 @@ async function initUser() {
     user.phone = u.phone || '';
     user.contactUsername = u.contactUsername || '';
     if (!user.photoUrl && u.photoUrl) user.photoUrl = u.photoUrl;
+    if (u.referredBy) user.referredBy = u.referredBy;
   } else {
     user.phone = '';
     user.contactUsername = '';
@@ -1569,14 +1615,55 @@ function saveCart() {
 function updateCartBadge() {
   const badge = document.getElementById('cartBadge');
   if (badge) {
-    badge.style.display = cart.length > 0 ? 'block' : 'none';
-    badge.textContent = cart.length;
+    const totalQty = cart.reduce((s, c) => s + (c.qty || 1), 0);
+    badge.style.display = totalQty > 0 ? 'block' : 'none';
+    badge.textContent = totalQty;
   }
 }
 
 function openCart() {
   renderCart();
   openOverlay('cartOverlay');
+}
+
+/* =========================================================
+   КОЛИЧЕСТВО В КОРЗИНЕ
+   ========================================================= */
+function getStockForCartItem(cartItem) {
+  if (!cartItem) return 1;
+
+  if (cartItem.type === 'flavor') {
+    const line = data[cartItem.category]?.[cartItem.lineIndex];
+    if (line && line.flavors?.[cartItem.flavorIndex]) {
+      return line.flavors[cartItem.flavorIndex].quantity || 0;
+    }
+    return 0;
+  }
+
+  if (cartItem.type === 'simple') {
+    const item = data[cartItem.category]?.[cartItem.index];
+    return item?.quantity || 0;
+  }
+
+  return 1;
+}
+
+function changeCartQty(index, delta) {
+  const item = cart[index];
+  if (!item) return;
+
+  const maxStock = getStockForCartItem(item);
+  const currentQty = item.qty || 1;
+  const newQty = currentQty + delta;
+
+  if (newQty < 1) { toast('❌ Минимум 1 шт', '❌'); return; }
+  if (newQty > maxStock) { toast(`❌ На складе только ${maxStock} шт`, '❌'); return; }
+
+  cart[index].qty = newQty;
+  saveCart();
+  renderCart();
+
+  if (currentPage === 'order') renderOrder();
 }
 
 function renderCart() {
@@ -1589,15 +1676,27 @@ function renderCart() {
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
 
   el.innerHTML = `
-    ${cart.map(c => `
-      <div class="cart-item">
-        <div class="cart-item-info">
-          <div class="cart-item-name">${c.name}</div>
-          <div class="cart-item-price">${c.price} ₽</div>
+    ${cart.map((c, i) => {
+      const stockMax = getStockForCartItem(c);
+      const currentQty = c.qty || 1;
+      return `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${c.name}</div>
+            <div class="cart-item-price">${c.price} ₽ × ${currentQty} = <strong>${c.price * currentQty} ₽</strong></div>
+            ${stockMax > 1 ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">На складе: ${stockMax} шт</div>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            ${stockMax > 1 ? `
+              <button class="qty-btn" onclick="changeCartQty(${i}, -1)" ${currentQty <= 1 ? 'disabled' : ''}>−</button>
+              <span style="min-width:24px;text-align:center;font-weight:700;font-size:14px;">${currentQty}</span>
+              <button class="qty-btn" onclick="changeCartQty(${i}, 1)" ${currentQty >= stockMax ? 'disabled' : ''}>+</button>
+            ` : ''}
+            <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.id}')" style="margin-left:6px;">✕</button>
+          </div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.id}')">✕</button>
-      </div>
-    `).join('')}
+      `;
+    }).join('')}
     <div class="cart-total">
       <span>Итого:</span>
       <span>${subtotal} ₽</span>
@@ -1615,6 +1714,7 @@ function renderOrder() {
   if (appliedDiscount?.locked) useDiscountInOrder = true;
 
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
+  const totalQty = cart.reduce((s, c) => s + (c.qty || 1), 0);
 
   document.getElementById('app').innerHTML = `
     <section class="hero" style="padding:16px 0;">
@@ -1623,16 +1723,27 @@ function renderOrder() {
     </section>
 
     <section class="section">
-      <div class="section-title">🛒 Корзина (${cart.length})</div>
-      ${cart.length ? cart.map(c => `
-        <div class="cart-item">
-          <div class="cart-item-info">
-            <div class="cart-item-name">${c.name}</div>
-            <div class="cart-item-price">${c.price} ₽</div>
+      <div class="section-title">🛒 Корзина (${totalQty} шт)</div>
+      ${cart.length ? cart.map((c, i) => {
+        const stockMax = getStockForCartItem(c);
+        const currentQty = c.qty || 1;
+        return `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${c.name}</div>
+              <div class="cart-item-price">${c.price} ₽ × ${currentQty} = <strong>${c.price * currentQty} ₽</strong></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              ${stockMax > 1 ? `
+                <button class="qty-btn" onclick="changeCartQty(${i}, -1)" ${currentQty <= 1 ? 'disabled' : ''}>−</button>
+                <span style="min-width:24px;text-align:center;font-weight:700;font-size:14px;">${currentQty}</span>
+                <button class="qty-btn" onclick="changeCartQty(${i}, 1)" ${currentQty >= stockMax ? 'disabled' : ''}>+</button>
+              ` : ''}
+              <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.id}')" style="margin-left:6px;">✕</button>
+            </div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.id}')">✕</button>
-        </div>
-      `).join('') : '<div class="empty-state"><div class="icon">📦</div><h3>Корзина пуста</h3><p>Перейдите в каталог</p></div>'}
+        `;
+      }).join('') : '<div class="empty-state"><div class="icon">📦</div><h3>Корзина пуста</h3><p>Перейдите в каталог</p></div>'}
 
       ${cart.length ? `
         <div class="cart-total">
@@ -1761,17 +1872,19 @@ async function submitOrder() {
     await db.ref('orders/' + orderId).set(orderData);
 
     for (const item of cart) {
+      const qtyToSubtract = item.qty || 1;
+
       if (item.type === 'flavor') {
         const line = data[item.category]?.[item.lineIndex];
         if (line) {
           const currentQty = line.flavors[item.flavorIndex]?.quantity || 0;
           await db.ref(`assortment/${item.category}/${item.lineIndex}/flavors/${item.flavorIndex}/quantity`)
-            .set(Math.max(0, currentQty - 1));
+            .set(Math.max(0, currentQty - qtyToSubtract));
         }
       } else {
         const currentQty = data[item.category]?.[item.index]?.quantity || 0;
         await db.ref(`assortment/${item.category}/${item.index}/quantity`)
-          .set(Math.max(0, currentQty - 1));
+          .set(Math.max(0, currentQty - qtyToSubtract));
       }
     }
 
@@ -1791,7 +1904,7 @@ async function submitOrder() {
     adminMsg += `🆔 ID клиента: ${user.shortId}\n\n`;
     adminMsg += `📋 Товары:\n`;
     cart.forEach((item, i) => {
-      adminMsg += `${i + 1}. ${item.name} - ${item.price}₽\n`;
+      adminMsg += `${i + 1}. ${item.name} × ${item.qty || 1} — ${item.price * (item.qty || 1)}₽\n`;
     });
     if (discount > 0) {
       adminMsg += `\n💎 Скидка ${appliedDiscount.discount}% (-${discount}₽) [${appliedDiscount.code}]`;
@@ -1811,7 +1924,7 @@ async function submitOrder() {
       let userMsg = `✅ Заказ #${orderId} принят!\n\n`;
       userMsg += `📋 Товары:\n`;
       cart.forEach((item, i) => {
-        userMsg += `${i + 1}. ${item.name} - ${item.price}₽\n`;
+        userMsg += `${i + 1}. ${item.name} × ${item.qty || 1} — ${item.price * (item.qty || 1)}₽\n`;
       });
       if (discount > 0) userMsg += `\n💎 Скидка: -${discount}₽`;
       userMsg += `\n💰 Итого: ${total}₽`;
@@ -2194,9 +2307,9 @@ function renderProfile() {
         </div>
         <div class="menu-text">
           <div class="title">Корзина</div>
-          <div class="sub">${cart.length} товаров</div>
+          <div class="sub">${cart.reduce((s, c) => s + (c.qty || 1), 0)} товаров</div>
         </div>
-        ${cart.length ? `<span class="menu-badge">${cart.length}</span>` : ''}
+        ${cart.length ? `<span class="menu-badge">${cart.reduce((s, c) => s + (c.qty || 1), 0)}</span>` : ''}
         <span class="menu-arrow">›</span>
       </button>
 
@@ -2326,7 +2439,7 @@ function renderMyOrders() {
           <span class="order-status ${st.cls}">${st.txt}</span>
         </div>
         <div class="order-items">
-          ${(o.items || []).map(it => `• ${it.name} — ${it.price}₽`).join('<br>')}
+          ${(o.items || []).map(it => `• ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽`).join('<br>')}
         </div>
         ${o.discount > 0 ? `<div style="font-size:11px;color:var(--warning);">💎 Скидка: -${o.discount}₽ (${o.discountCode})</div>` : ''}
         <div class="order-total">${o.total} ₽</div>
@@ -2676,7 +2789,7 @@ function renderAllOrders() {
           <span class="order-status ${st.cls}">${st.txt}</span>
         </div>
         <div class="order-items">
-          ${(o.items || []).map(it => `• ${it.name} — ${it.price}₽`).join('<br>')}
+          ${(o.items || []).map(it => `• ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽`).join('<br>')}
         </div>
         ${o.discount > 0 ? `<div style="font-size:11px;color:var(--warning);">💎 -${o.discount}₽</div>` : ''}
         <div class="order-total">${o.total} ₽</div>
@@ -2719,14 +2832,16 @@ async function adminCancelOrder(orderId) {
   if (!order) return;
 
   for (const item of (order.items || [])) {
+    const qtyToReturn = item.qty || 1;
+
     if (item.type === 'flavor') {
       const currentSnap = await db.ref(`assortment/${item.category}/${item.lineIndex}/flavors/${item.flavorIndex}/quantity`).once('value');
       const q = currentSnap.val() || 0;
-      await db.ref(`assortment/${item.category}/${item.lineIndex}/flavors/${item.flavorIndex}/quantity`).set(q + 1);
+      await db.ref(`assortment/${item.category}/${item.lineIndex}/flavors/${item.flavorIndex}/quantity`).set(q + qtyToReturn);
     } else {
       const currentSnap = await db.ref(`assortment/${item.category}/${item.index}/quantity`).once('value');
       const q = currentSnap.val() || 0;
-      await db.ref(`assortment/${item.category}/${item.index}/quantity`).set(q + 1);
+      await db.ref(`assortment/${item.category}/${item.index}/quantity`).set(q + qtyToReturn);
     }
   }
 
