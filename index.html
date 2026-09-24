@@ -291,6 +291,7 @@
   }
   .promo-toggle:hover { border-color: var(--warning); }
   .promo-toggle.active { border-color: var(--warning); background: rgba(255,176,32,0.08); }
+  .promo-toggle.locked { cursor: default; }
   .promo-toggle .left { display: flex; align-items: center; gap: 10px; }
   .promo-toggle .left .icon { font-size: 20px; }
   .promo-toggle .left .label { font-size: 14px; font-weight: 600; }
@@ -396,6 +397,14 @@
   .menu-arrow { color: var(--text-dim); font-size: 16px; flex-shrink: 0; }
   .menu-item.admin-only { border-color: rgba(255,215,0,0.3); }
   .menu-item.admin-only .menu-icon { color: #ffd700; background: rgba(255,215,0,0.1); }
+
+  .info-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 14px; margin-bottom: 8px;
+    transition: all 0.25s;
+  }
+  .info-row:hover { border-color: var(--accent); }
 
   .overlay {
     position: fixed; inset: 0; z-index: 500;
@@ -645,6 +654,28 @@
     box-shadow: 0 0 0 4px rgba(0,212,255,0.1);
   }
 
+  .referral-card {
+    background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(124,58,237,0.08));
+    border: 1px solid var(--accent);
+    border-radius: 18px; padding: 16px; margin-bottom: 8px;
+  }
+  .referral-link {
+    background: var(--bg-2); border: 1px dashed var(--accent);
+    border-radius: 12px; padding: 12px; font-size: 11px;
+    font-family: 'Courier New', monospace; color: var(--accent);
+    word-break: break-all; margin-bottom: 10px;
+  }
+  .ref-stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    margin-top: 10px;
+  }
+  .ref-stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px; text-align: center;
+  }
+  .ref-stat .val { font-size: 18px; font-weight: 800; }
+  .ref-stat .lbl { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
   @media (min-width: 480px) {
     .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
   }
@@ -760,6 +791,16 @@
   </div>
 </div>
 
+<div class="overlay" id="contactEditorOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>📞 Контакты для заказов</h2>
+      <button class="modal-close" onclick="closeOverlay('contactEditorOverlay')">✕</button>
+    </div>
+    <div id="contactEditorContent"></div>
+  </div>
+</div>
+
 <div class="overlay" id="adminOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -807,25 +848,65 @@
 
 <script>
 /* =========================================================
-   SWWSHOP 2.2
+   SWWSHOP 2.5 — ФИНАЛЬНАЯ ВЕРСИЯ
    ========================================================= */
 
-const BOT_TOKEN = '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY';
-const CHAT_ID = '5993502384';
-const ADMIN_TELEGRAM_ID = 5993502384;
-const BASE_USERS_COUNT = 79;
+/* =========================================================
+   КОНФИГ — ВСЁ ВАЖНОЕ ЗДЕСЬ
+   ========================================================= */
+const CONFIG = {
+  // Токен бота от @BotFather
+  BOT_TOKEN: '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',
 
-firebase.initializeApp({
-  apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
-  authDomain: "swwshop.firebaseapp.com",
-  databaseURL: "https://swwshop-default-rtdb.firebaseio.com",
-  projectId: "swwshop",
-  storageBucket: "swwshop.firebasestorage.app",
-  messagingSenderId: "698268675105",
-  appId: "1:698268675105:web:15814d169ee2e74c8e4760"
-});
+  // Chat ID для уведомлений о заказах
+  CHAT_ID: '5993502384',
+
+  // Telegram ID владельца
+  ADMIN_TELEGRAM_ID: 5993502384,
+
+  // Username бота БЕЗ @
+  BOT_USERNAME: 'SWWSHOPBOT',
+
+  // Имя Mini App (short_name из @BotFather)
+  APP_NAME: 'SHOP',
+
+  // Username поддержки
+  SUPPORT_USERNAME: '@bmqna',
+
+  // Стартовое число для счётчика пользователей
+  BASE_USERS_COUNT: 79,
+
+  // Реферальная система
+  REFERRAL: {
+    NEW_USER_DISCOUNT: 5,        // скидка новичку на первый заказ (%)
+    REFERRER_REWARD: 10,          // % вознаграждения за каждую 1000₽
+    MIN_REFERRAL_SUM: 1000,       // минимум сумма заказов реферала (₽)
+    MIN_REFERRAL_ORDERS: 3        // минимум заказов реферала
+  },
+
+  // Firebase
+  FIREBASE: {
+    apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
+    authDomain: "swwshop.firebaseapp.com",
+    databaseURL: "https://swwshop-default-rtdb.firebaseio.com",
+    projectId: "swwshop",
+    storageBucket: "swwshop.firebasestorage.app",
+    messagingSenderId: "698268675105",
+    appId: "1:698268675105:web:15814d169ee2e74c8e4760"
+  }
+};
+
+firebase.initializeApp(CONFIG.FIREBASE);
 const db = firebase.database();
 
+const BOT_TOKEN = CONFIG.BOT_TOKEN;
+const CHAT_ID = CONFIG.CHAT_ID;
+const ADMIN_TELEGRAM_ID = CONFIG.ADMIN_TELEGRAM_ID;
+const BASE_USERS_COUNT = CONFIG.BASE_USERS_COUNT;
+
+/* =========================================================
+   СОСТОЯНИЕ
+   ========================================================= */
 let user = null;
 let isAdmin = false;
 let data = { liquids: [], pouches: [], coils: [], devices: [] };
@@ -853,7 +934,6 @@ function getUserId() {
   return id;
 }
 
-// Fallback: детерминированный хеш (используется если счётчик недоступен)
 function generateShortId(uid) {
   if (uid === 'tg_' + ADMIN_TELEGRAM_ID) return 'SWWSHOP-OWNER';
   let hash = 0;
@@ -866,7 +946,6 @@ function generateShortId(uid) {
   return 'SWW-' + padded.slice(0, 4) + '-' + padded.slice(4, 8);
 }
 
-// Уникальный ID через счётчик Firebase
 async function getUniqueShortId() {
   const counterRef = db.ref('meta/shortIdCounter');
   const result = await counterRef.transaction(current => {
@@ -876,6 +955,164 @@ async function getUniqueShortId() {
   const num = result.snapshot.val();
   const base = num.toString(36).toUpperCase().padStart(8, '0');
   return 'SWW-' + base.slice(0, 4) + '-' + base.slice(4, 8);
+}
+
+/* =========================================================
+   РЕФЕРАЛЬНАЯ СИСТЕМА
+   ========================================================= */
+async function getOrCreateReferralCode(uid) {
+  const snap = await db.ref('users/' + uid + '/referralCode').once('value');
+  const existing = snap.val();
+  if (existing) return existing;
+  const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  await db.ref('users/' + uid + '/referralCode').set(code);
+  return code;
+}
+
+// Реферальная ссылка — открывает Mini App сразу
+function getReferralLink() {
+  if (!user?.referralCode) return '';
+  return `https://t.me/${CONFIG.BOT_USERNAME}/${CONFIG.APP_NAME}?startapp=ref_${user.referralCode}`;
+}
+
+async function handleReferralOnFirstLogin(uid) {
+  const tg = window.Telegram?.WebApp;
+  const startParam = tg?.initDataUnsafe?.start_param || '';
+
+  console.log('🔍 START_PARAM:', startParam);
+
+  if (!startParam || !startParam.startsWith('ref_')) return;
+
+  const refCode = startParam.replace('ref_', '').toUpperCase();
+
+  const snap = await db.ref('users').orderByChild('referralCode').equalTo(refCode).once('value');
+  const found = snap.val();
+
+  if (!found) {
+    console.warn('❌ Реферальный код не найден:', refCode);
+    return;
+  }
+
+  const referrerUid = Object.keys(found)[0];
+  if (referrerUid === uid) return;
+
+  await db.ref('users/' + uid).update({
+    referredBy: referrerUid,
+    referredAt: Date.now()
+  });
+
+  user.referredBy = referrerUid;
+
+  await db.ref('users/' + referrerUid + '/referrals/' + uid).set({
+    joinedAt: Date.now(),
+    firstName: user.firstName,
+    username: user.username,
+    totalOrders: 0,
+    totalSum: 0
+  });
+
+  const refSnap = await db.ref('users/' + referrerUid + '/telegramId').once('value');
+  const refTgId = refSnap.val();
+  if (refTgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: refTgId,
+        text: `🎉 По вашей ссылке зарегистрировался новый пользователь!\n\n` +
+              `👤 ${user.firstName} ${user.username ? '@' + user.username : ''}\n\n` +
+              `💰 За каждые ${CONFIG.REFERRAL.MIN_REFERRAL_SUM}₽ его покупок (мин. ${CONFIG.REFERRAL.MIN_REFERRAL_ORDERS} заказа) вы получите ${CONFIG.REFERRAL.REFERRER_REWARD}%!`
+      })
+    }).catch(() => {});
+  }
+
+  toast('🎉 Вы пришли по реферальной ссылке!', '🎁');
+}
+
+async function checkReferralRewards(uid) {
+  const referralsSnap = await db.ref('users/' + uid + '/referrals').once('value');
+  const referrals = referralsSnap.val();
+  if (!referrals) return;
+
+  for (const refUid of Object.keys(referrals)) {
+    const ordersSnap = await db.ref('orders').orderByChild('userId').equalTo(refUid).once('value');
+    const orders = ordersSnap.val() || {};
+    const orderList = Object.values(orders);
+    const completedOrders = orderList.filter(o => o.status === 'completed');
+
+    if (completedOrders.length >= CONFIG.REFERRAL.MIN_REFERRAL_ORDERS) {
+      const totalSum = completedOrders.reduce((s, o) => s + (o.total || 0), 0);
+
+      if (totalSum >= CONFIG.REFERRAL.MIN_REFERRAL_SUM) {
+        const rewardSnap = await db.ref('users/' + uid + '/referrals/' + refUid + '/rewardPaid').once('value');
+        if (!rewardSnap.val()) {
+          await giveReferrerReward(uid, refUid, totalSum);
+        }
+      }
+    }
+
+    await db.ref('users/' + uid + '/referrals/' + refUid).update({
+      totalOrders: orderList.length,
+      totalSum: orderList.reduce((s, o) => s + (o.total || 0), 0),
+      lastUpdated: Date.now()
+    });
+  }
+}
+
+async function giveReferrerReward(referrerUid, referralUid, referralSum) {
+  const thousands = Math.floor(referralSum / CONFIG.REFERRAL.MIN_REFERRAL_SUM);
+  const rewardPercent = thousands * CONFIG.REFERRAL.REFERRER_REWARD;
+
+  if (rewardPercent <= 0) return;
+
+  const code = 'REF-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+
+  await db.ref('promos/' + code).set({
+    discount: rewardPercent,
+    used: false,
+    created: Date.now(),
+    type: 'referral',
+    userId: referrerUid,
+    uses: 0,
+    maxUses: 1
+  });
+
+  await db.ref('users/' + referrerUid + '/referrals/' + referralUid + '/rewardPaid').set({
+    paid: true,
+    code: code,
+    percent: rewardPercent,
+    sum: referralSum,
+    paidAt: Date.now()
+  });
+
+  const tgSnap = await db.ref('users/' + referrerUid + '/telegramId').once('value');
+  const tgId = tgSnap.val();
+  if (tgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: tgId,
+        text: `🎁 <b>Реферальная награда!</b>\n\n` +
+              `Ваш реферал сделал заказов на <b>${referralSum}₽</b>\n` +
+              `Вам начислена скидка <b>${rewardPercent}%</b>\n\n` +
+              `Промокод: <code>${code}</code>\n` +
+              `Применится автоматически при следующем заказе.`,
+        parse_mode: 'HTML'
+      })
+    }).catch(() => {});
+  }
+}
+
+async function getUserReferralStats() {
+  const snap = await db.ref('users/' + user.id + '/referrals').once('value');
+  const refs = snap.val() || {};
+  const list = Object.values(refs);
+  const totalReferrals = list.length;
+  const totalOrders = list.reduce((s, r) => s + (r.totalOrders || 0), 0);
+  const totalSum = list.reduce((s, r) => s + (r.totalSum || 0), 0);
+  const activeReferrals = list.filter(r => (r.totalOrders || 0) >= CONFIG.REFERRAL.MIN_REFERRAL_ORDERS).length;
+  return { totalReferrals, totalOrders, totalSum, activeReferrals };
 }
 
 /* =========================================================
@@ -914,36 +1151,45 @@ async function initUser() {
     };
   }
 
-  // Проверяем запись в Firebase
   const snap = await db.ref('users/' + uid).once('value');
   const u = snap.val();
 
-  // Определяем shortId
   if (uid === 'tg_' + ADMIN_TELEGRAM_ID) {
     user.shortId = 'SWWSHOP-OWNER';
   } else if (u?.shortId && u.shortId.startsWith('SWW-')) {
-    // Уже есть уникальный ID — используем
     user.shortId = u.shortId;
   } else {
-    // Генерируем новый уникальный
     try {
       user.shortId = await getUniqueShortId();
     } catch (e) {
-      console.warn('Counter недоступен, fallback на hash');
       user.shortId = generateShortId(uid);
     }
+  }
+
+  user.referralCode = u?.referralCode || await getOrCreateReferralCode(uid);
+  user.referredBy = u?.referredBy || null;
+
+  // Обработка реферальной ссылки ТОЛЬКО при первом входе
+  if (!u) {
+    await handleReferralOnFirstLogin(uid);
   }
 
   if (u) {
     user.savedDiscount = u.savedDiscount || null;
     user.email = u.email || null;
     user.firstSeen = u.firstSeen;
+    user.phone = u.phone || '';
+    user.contactUsername = u.contactUsername || '';
     if (!user.photoUrl && u.photoUrl) user.photoUrl = u.photoUrl;
+  } else {
+    user.phone = '';
+    user.contactUsername = '';
   }
 
   await db.ref('users/' + uid).update({
     id: uid,
     shortId: user.shortId,
+    referralCode: user.referralCode,
     firstName: user.firstName,
     lastName: user.lastName,
     username: user.username,
@@ -954,7 +1200,9 @@ async function initUser() {
     firstSeen: u?.firstSeen || Date.now()
   });
 
-  applySavedPromo();
+  try { await checkReferralRewards(uid); } catch (_) {}
+
+  await applySavedPromo();
   loadUserOrders();
 
   if (isAdmin) {
@@ -964,6 +1212,22 @@ async function initUser() {
 
 async function applySavedPromo() {
   const uid = getUserId();
+
+  const ordersSnap = await db.ref('orders').orderByChild('userId').equalTo(uid).once('value');
+  const ordersVal = ordersSnap.val() || {};
+  const hasOrders = Object.values(ordersVal).some(o => o.status === 'completed' || o.status === 'pending');
+
+  if (!hasOrders && !isAdmin) {
+    appliedDiscount = {
+      code: 'FIRST-' + CONFIG.REFERRAL.NEW_USER_DISCOUNT,
+      discount: CONFIG.REFERRAL.NEW_USER_DISCOUNT,
+      type: 'first_order',
+      locked: true
+    };
+    useDiscountInOrder = true;
+    return;
+  }
+
   const allPromos = promos || {};
   const myPromos = Object.entries(allPromos).filter(([code, p]) => {
     if (p.used) return false;
@@ -974,10 +1238,16 @@ async function applySavedPromo() {
 
   if (myPromos.length > 0) {
     const best = myPromos.reduce((a, b) => (a[1].discount > b[1].discount ? a : b));
-    appliedDiscount = { code: best[0], discount: best[1].discount };
+    appliedDiscount = {
+      code: best[0],
+      discount: best[1].discount,
+      type: best[1].type || 'promo',
+      locked: false
+    };
     db.ref('users/' + uid + '/savedDiscount').set(appliedDiscount);
   } else {
-    appliedDiscount = user?.savedDiscount || null;
+    appliedDiscount = null;
+    useDiscountInOrder = false;
   }
 }
 
@@ -987,6 +1257,9 @@ function loadUserOrders() {
     const val = s.val();
     userOrders = val ? Object.values(val) : [];
     if (currentPage === 'profile') renderProfile();
+    applySavedPromo().then(() => {
+      if (currentPage === 'order') renderOrder();
+    });
   });
 
   if (isAdmin) {
@@ -1025,7 +1298,9 @@ function loadAssortment() {
 function loadPromos() {
   db.ref('promos').on('value', s => {
     promos = s.val() || {};
-    applySavedPromo();
+    applySavedPromo().then(() => {
+      if (currentPage === 'order') renderOrder();
+    });
   });
 }
 
@@ -1337,6 +1612,8 @@ function renderCart() {
    ЗАКАЗ
    ========================================================= */
 function renderOrder() {
+  if (appliedDiscount?.locked) useDiscountInOrder = true;
+
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
 
   document.getElementById('app').innerHTML = `
@@ -1368,12 +1645,16 @@ function renderOrder() {
     ${cart.length && appliedDiscount ? `
       <section class="section">
         <div class="section-title">🎫 Ваша скидка</div>
-        <div class="promo-toggle ${useDiscountInOrder ? 'active' : ''}" onclick="toggleDiscount()">
+        <div class="promo-toggle ${useDiscountInOrder ? 'active' : ''} ${appliedDiscount.locked ? 'locked' : ''}"
+             onclick="${appliedDiscount.locked ? '' : 'toggleDiscount()'}">
           <div class="left">
-            <span class="icon">💎</span>
+            <span class="icon">${appliedDiscount.locked ? '🎉' : '💎'}</span>
             <div>
-              <div class="label">Скидка ${appliedDiscount.discount}%</div>
-              <div class="sub">${appliedDiscount.code}</div>
+              <div class="label">
+                Скидка ${appliedDiscount.discount}%
+                ${appliedDiscount.locked ? ' <span style="font-size:10px;color:var(--success);">(новичок)</span>' : ''}
+              </div>
+              <div class="sub">${appliedDiscount.code}${appliedDiscount.locked ? ' · нельзя отключить' : ''}</div>
             </div>
           </div>
           <div class="toggle-switch ${useDiscountInOrder ? 'on' : ''}"></div>
@@ -1389,8 +1670,12 @@ function renderOrder() {
           <input type="text" id="orderName" placeholder="Иван Иванов" value="${user.firstName || ''}" />
         </div>
         <div class="field">
-          <label>Телефон или @username *</label>
-          <input type="text" id="orderContact" placeholder="+7 999 123-45-67 или @ivan" />
+          <label>Телефон *</label>
+          <input type="tel" id="orderPhone" placeholder="+7 999 123-45-67" value="${user.phone || ''}" />
+        </div>
+        <div class="field">
+          <label>Username Telegram *</label>
+          <input type="text" id="orderUsername" placeholder="@username" value="${user.contactUsername || (user.username ? '@' + user.username : '')}" />
         </div>
         <div class="field">
           <label>Способ оплаты *</label>
@@ -1414,6 +1699,10 @@ function renderOrder() {
 }
 
 function toggleDiscount() {
+  if (appliedDiscount?.locked) {
+    toast('🔒 Скидку новичка нельзя отключить', '🔒');
+    return;
+  }
   useDiscountInOrder = !useDiscountInOrder;
   renderOrder();
 }
@@ -1422,14 +1711,21 @@ async function submitOrder() {
   if (!cart.length) { toast('❌ Корзина пуста', '❌'); return; }
 
   const name = document.getElementById('orderName').value.trim();
-  const contact = document.getElementById('orderContact').value.trim();
+  const phone = document.getElementById('orderPhone').value.trim();
+  const contactUsername = document.getElementById('orderUsername').value.trim();
   const payment = document.getElementById('orderPayment').value;
   const comment = document.getElementById('orderComment').value.trim();
 
-  if (!name || !contact || !payment) {
+  if (!name || !phone || !contactUsername || !payment) {
     toast('❌ Заполните все обязательные поля', '❌');
     return;
   }
+
+  const contact = phone + ' / ' + contactUsername;
+
+  user.phone = phone;
+  user.contactUsername = contactUsername;
+  db.ref('users/' + user.id).update({ phone, contactUsername }).catch(() => {});
 
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
   let discount = 0;
@@ -1445,6 +1741,8 @@ async function submitOrder() {
     userId: user.id,
     userShortId: user.shortId,
     userName: name,
+    userPhone: phone,
+    userUsername: contactUsername,
     userContact: contact,
     username: user.username,
     telegramId: user.telegramId,
@@ -1477,7 +1775,7 @@ async function submitOrder() {
       }
     }
 
-    if (useDiscountInOrder && appliedDiscount?.code && promos[appliedDiscount.code]) {
+    if (useDiscountInOrder && appliedDiscount?.code && !appliedDiscount.locked && promos[appliedDiscount.code]) {
       await db.ref('promos/' + appliedDiscount.code).update({
         used: true,
         usedBy: user.id,
@@ -1784,15 +2082,78 @@ function renderProfile() {
       </div>
     </div>
 
+    <section class="section">
+      <div class="section-title">📞 Контакты для заказов</div>
+      <div class="info-row" onclick="openContactEditor()" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--bg-2);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;">Телефон</div>
+            <div style="font-size:12px;color:var(--text-dim);">${user.phone || 'Не указан'}</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:600;">${user.phone ? 'Изменить' : 'Добавить'}</div>
+      </div>
+
+      <div class="info-row" onclick="openContactEditor()" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--bg-2);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;">Username Telegram</div>
+            <div style="font-size:12px;color:var(--text-dim);">${user.contactUsername || 'Не указан'}</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:600;">${user.contactUsername ? 'Изменить' : 'Добавить'}</div>
+      </div>
+    </section>
+
     ${appliedDiscount ? `
       <div class="promo-welcomed">
-        <span class="icon">💎</span>
+        <span class="icon">${appliedDiscount.locked ? '🎉' : '💎'}</span>
         <div class="info">
-          <div class="title">Ваша скидка: ${appliedDiscount.discount}%</div>
+          <div class="title">Ваша скидка: ${appliedDiscount.discount}%${appliedDiscount.locked ? ' (новичок)' : ''}</div>
           <div class="text">Применится автоматически при заказе</div>
         </div>
       </div>
     ` : ''}
+
+    <section class="section">
+      <div class="section-title">🤝 Реферальная программа</div>
+      <div class="referral-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:26px;">🎁</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;">Приглашай друзей</div>
+            <div style="font-size:12px;color:var(--text-dim);">
+              +${CONFIG.REFERRAL.REFERRER_REWARD}% за каждые ${CONFIG.REFERRAL.MIN_REFERRAL_SUM}₽ (мин. ${CONFIG.REFERRAL.MIN_REFERRAL_ORDERS} заказа)
+            </div>
+          </div>
+        </div>
+        <div class="referral-link" id="refLink">
+          ${getReferralLink() || 'Ссылка недоступна'}
+        </div>
+        <button class="btn btn-primary btn-block" onclick="copyReferralLink()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Скопировать ссылку
+        </button>
+        <button class="btn btn-ghost btn-block" onclick="shareReferral()" style="margin-top:8px;">
+          📤 Поделиться
+        </button>
+        <div id="referralStats" style="margin-top:10px;"></div>
+      </div>
+    </section>
 
     <div class="menu-list">
       <button class="menu-item" onclick="openOverlay('ordersOverlay');renderMyOrders()">
@@ -1847,7 +2208,7 @@ function renderProfile() {
         </div>
         <div class="menu-text">
           <div class="title">Поддержка</div>
-          <div class="sub">@bmqna</div>
+          <div class="sub">${CONFIG.SUPPORT_USERNAME}</div>
         </div>
         <span class="menu-arrow">›</span>
       </button>
@@ -1901,6 +2262,27 @@ function renderProfile() {
       SWWSHOP © ${new Date().getFullYear()} · Все права защищены
     </p>
   `;
+
+  getUserReferralStats().then(st => {
+    const el = document.getElementById('referralStats');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="ref-stats-grid">
+        <div class="ref-stat">
+          <div class="val" style="color:var(--accent);">${st.totalReferrals}</div>
+          <div class="lbl">Приглашено</div>
+        </div>
+        <div class="ref-stat">
+          <div class="val" style="color:var(--warning);">${st.activeReferrals}</div>
+          <div class="lbl">Активных</div>
+        </div>
+        <div class="ref-stat">
+          <div class="val" style="color:var(--success);">${st.totalSum.toLocaleString('ru-RU')} ₽</div>
+          <div class="lbl">Оборот</div>
+        </div>
+      </div>
+    `;
+  }).catch(() => {});
 }
 
 function tryLoginAsAdmin() {
@@ -1969,6 +2351,7 @@ function renderMyPromos() {
         <div>
           <div style="font-size:15px;font-weight:800;color:var(--warning);">${p.discount}% скидка</div>
           <div style="font-size:11px;font-family:monospace;color:var(--accent);margin-top:4px;">${code}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${p.type === 'referral' ? '🤝 реферальная' : p.type === 'roulette' ? '🎰 рулетка' : p.type === 'gift' ? '🎁 подарок' : ''}</div>
         </div>
         <span class="order-status ${p.used ? 'status-cancelled' : 'status-completed'}">
           ${p.used ? 'Использована' : 'Активна'}
@@ -1979,6 +2362,75 @@ function renderMyPromos() {
       </div>
     </div>
   `).join('');
+}
+
+/* =========================================================
+   КОНТАКТЫ
+   ========================================================= */
+function openContactEditor() {
+  const el = document.getElementById('contactEditorContent');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="field">
+      <label>Номер телефона</label>
+      <input type="tel" id="editPhone" placeholder="+7 999 123-45-67" value="${user.phone || ''}" />
+    </div>
+    <div class="field">
+      <label>Username в Telegram</label>
+      <input type="text" id="editContactUsername" placeholder="@username" value="${user.contactUsername || ''}" />
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">
+      Эти данные автоматически подставятся при оформлении заказа.
+    </p>
+    <button class="btn btn-primary btn-block" onclick="saveContacts()">💾 Сохранить</button>
+  `;
+  openOverlay('contactEditorOverlay');
+}
+
+async function saveContacts() {
+  const phone = document.getElementById('editPhone').value.trim();
+  const contactUsername = document.getElementById('editContactUsername').value.trim();
+
+  user.phone = phone;
+  user.contactUsername = contactUsername;
+
+  await db.ref('users/' + user.id).update({
+    phone: phone,
+    contactUsername: contactUsername
+  });
+
+  toast('✅ Контакты сохранены', '✅');
+  closeOverlay('contactEditorOverlay');
+  renderProfile();
+}
+
+/* =========================================================
+   РЕФЕРАЛЬНЫЕ ФУНКЦИИ
+   ========================================================= */
+function copyReferralLink() {
+  const link = getReferralLink();
+  if (!link) { toast('❌ Ссылка недоступна', '❌'); return; }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => {
+      toast('📋 Ссылка скопирована!', '📋');
+    });
+  }
+}
+
+function shareReferral() {
+  const link = getReferralLink();
+  if (!link) { toast('❌ Ссылка недоступна', '❌'); return; }
+
+  const text = `🎁 Заходи в SWWSHOP — качественные жидкости, шайбы и устройства!\n\n` +
+    `По моей ссылке получишь скидку ${CONFIG.REFERRAL.NEW_USER_DISCOUNT}% на первый заказ:\n${link}`;
+
+  const tg = window.Telegram?.WebApp;
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+  } else {
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`, '_blank');
+  }
 }
 
 /* =========================================================
@@ -2243,6 +2695,17 @@ async function adminCompleteOrder(orderId) {
   if (!user.isAdmin) return;
   if (!confirm('Подтвердить заказ #' + orderId + '?')) return;
   await db.ref('orders/' + orderId).update({ status: 'completed', completedAt: Date.now() });
+
+  const orderSnap = await db.ref('orders/' + orderId).once('value');
+  const order = orderSnap.val();
+  if (order?.userId) {
+    const userSnap = await db.ref('users/' + order.userId + '/referredBy').once('value');
+    const referrerUid = userSnap.val();
+    if (referrerUid) {
+      await checkReferralRewards(referrerUid);
+    }
+  }
+
   toast('✅ Заказ выполнен', '✅');
   renderAllOrders();
 }
@@ -2289,6 +2752,7 @@ function renderUsers() {
           <div style="font-size:11px;color:var(--text-dim);">
             ${u.username ? '@' + u.username : ''} · ${u.shortId || u.id}
           </div>
+          ${u.referredBy ? `<div style="font-size:11px;color:var(--accent);margin-top:2px;">🤝 приглашён</div>` : ''}
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
             Последний раз: ${new Date(u.lastSeen || 0).toLocaleString('ru-RU')}
           </div>
@@ -2511,11 +2975,12 @@ function renderAllPromosAdmin() {
   }
   el.innerHTML = list.sort((a, b) => (b[1].created || 0) - (a[1].created || 0)).map(([code, p]) => {
     const owner = p.userId ? (users[p.userId]?.firstName || p.userId) : 'Для всех';
+    const typeIcon = p.type === 'referral' ? '🤝' : p.type === 'roulette' ? '🎰' : p.type === 'gift' ? '🎁' : '🎫';
     return `
       <div class="order-card" style="padding:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;color:var(--warning);font-size:14px;">${p.discount}% · ${code}</div>
+            <div style="font-weight:700;color:var(--warning);font-size:14px;">${typeIcon} ${p.discount}% · ${code}</div>
             <div style="font-size:11px;color:var(--text-dim);">${owner} · ${p.used ? '❌ использована' : '✅ активна'}</div>
           </div>
           <button class="btn btn-danger btn-sm" onclick="adminDeletePromo('${code}')">✕</button>
@@ -2599,15 +3064,12 @@ async function adminMigrateShortIds() {
 
   let count = 0;
   for (const [uid, u] of entries) {
-    // Пропускаем владельца
     if (uid === 'tg_' + ADMIN_TELEGRAM_ID) {
       await db.ref('users/' + uid + '/shortId').set('SWWSHOP-OWNER');
       continue;
     }
     try {
-      // Проверяем, есть ли уже нормальный SWW-ID
       if (u.shortId && /^SWW-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(u.shortId)) {
-        // Уже правильный формат — пропускаем
         continue;
       }
       const newId = await getUniqueShortId();
@@ -2620,7 +3082,6 @@ async function adminMigrateShortIds() {
 
   toast(`✅ Обновлено ${count} пользователей`, '✅');
 
-  // Если мы сами - обновляем локально
   const mySnap = await db.ref('users/' + user.id + '/shortId').once('value');
   const myNewId = mySnap.val();
   if (myNewId) {
@@ -2671,7 +3132,7 @@ function copyText(text) {
 
 function openSupport() {
   const tg = window.Telegram?.WebApp;
-  const url = 'https://t.me/bmqna';
+  const url = 'https://t.me/' + CONFIG.SUPPORT_USERNAME.replace('@', '');
   if (tg?.openTelegramLink) tg.openTelegramLink(url);
   else window.open(url, '_blank');
 }
