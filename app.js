@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 3.0 — ЭКОСИСТЕМА SWWCOIN
+   SWWSHOP 3.1 — КЕЙСЫ + РЕДАКТОР
    ========================================================= */
 
 const CONFIG = {
@@ -17,6 +17,12 @@ const CONFIG = {
     REFERRER_REWARD: 10,
     MIN_REFERRAL_SUM: 1000,
     MIN_REFERRAL_ORDERS: 3
+  },
+
+  // Настройки кейсов
+  CASES: {
+    COUPON_COOLDOWN_MS: 3 * 24 * 60 * 60 * 1000,  // 3 дня
+    COIN_COOLDOWN_MS:   7 * 24 * 60 * 60 * 1000   // 7 дней
   },
 
   FIREBASE: {
@@ -51,11 +57,16 @@ let useDiscountInOrder = true;
 let useBalanceInOrder = false;
 let currentPage = 'catalog';
 let currentCategory = '';
-let lastSpin = parseInt(localStorage.getItem('sww_last_spin') || '0');
-let spinning = false;
 let initialized = false;
 let submittingOrder = false;
 let editorMode = false;
+
+// Кейсы — состояние
+let caseOpening = { coupon: false, coin: false };
+let caseLastOpen = {
+  coupon: parseInt(localStorage.getItem('sww_case_coupon_last') || '0'),
+  coin: parseInt(localStorage.getItem('sww_case_coin_last') || '0')
+};
 
 /* =========================================================
    ID ПОЛЬЗОВАТЕЛЯ
@@ -200,13 +211,8 @@ async function giveReferrerReward(referrerUid, referralUid, referralSum) {
 
   const code = 'REF-' + Math.random().toString(36).slice(2, 6).toUpperCase();
   await db.ref('promos/' + code).set({
-    discount: rewardPercent,
-    used: false,
-    created: Date.now(),
-    type: 'referral',
-    userId: referrerUid,
-    uses: 0,
-    maxUses: 1
+    discount: rewardPercent, used: false, created: Date.now(),
+    type: 'referral', userId: referrerUid, uses: 0, maxUses: 1
   });
 
   await db.ref('users/' + referrerUid + '/referrals/' + referralUid + '/rewardPaid').set({
@@ -303,16 +309,10 @@ async function initUser() {
   }
 
   await db.ref('users/' + uid).update({
-    id: uid,
-    shortId: user.shortId,
-    referralCode: user.referralCode,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    username: user.username,
-    telegramId: user.telegramId,
-    photoUrl: user.photoUrl || null,
-    balance: user.balance,
-    isAdmin,
+    id: uid, shortId: user.shortId, referralCode: user.referralCode,
+    firstName: user.firstName, lastName: user.lastName, username: user.username,
+    telegramId: user.telegramId, photoUrl: user.photoUrl || null,
+    balance: user.balance, isAdmin,
     lastSeen: Date.now(),
     firstSeen: u?.firstSeen || Date.now()
   });
@@ -457,9 +457,7 @@ function toast(text, icon = '✅') {
 }
 
 function copyText(text) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => toast('📋 Скопировано', '📋'));
-  }
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('📋 Скопировано', '📋'));
 }
 
 function openSupport() {
@@ -518,7 +516,7 @@ function render() {
   updateBalanceUI();
   if (currentPage === 'catalog') renderCatalog();
   else if (currentPage === 'order') renderOrder();
-  else if (currentPage === 'roulette') renderRoulette();
+  else if (currentPage === 'cases') renderCases();
   else if (currentPage === 'profile') renderProfile();
   updateCartBadge();
 }
@@ -537,7 +535,7 @@ function renderCatalog() {
     <section class="hero">
       <div class="hero-badge"><span class="dot"></span> Каталог</div>
       <h1>Добро пожаловать в<br><span class="grad">SWWSHOP</span></h1>
-      <p>Кешбек <b style="color:var(--gold);">10%</b> SWWCOIN с каждого заказа</p>
+      <p>Премиальные жидкости, шайбы и устройства</p>
     </section>
     <section class="section">
       <div class="section-title">Категории</div>
@@ -589,9 +587,7 @@ function openCategory(catId) {
 
 function renderProducts(catId) {
   const items = data[catId] || [];
-  if (!items.length) {
-    return '<div class="empty-state"><div class="icon">📦</div><h3>Товаров пока нет</h3></div>';
-  }
+  if (!items.length) return '<div class="empty-state"><div class="icon">📦</div><h3>Товаров пока нет</h3></div>';
 
   if (catId === 'liquids' || catId === 'pouches') {
     return items.map((line, i) => {
@@ -688,7 +684,6 @@ function openLine(catId, index) {
       let sc = 'status-in-stock', st = 'В наличии';
       if (inCart) { sc = 'status-in-cart'; st = '✓ В корзине'; }
       else if (qty === 0) { sc = 'status-out-stock'; st = 'Нет'; }
-
       return `
         <div class="flavor-row">
           <span class="flavor-name">${f.name}</span>
@@ -715,8 +710,7 @@ function addToCartSimple(catId, index) {
   if (cart.some(c => c.id === item.id)) { toast('❌ Уже в корзине', '❌'); return; }
   cart.push({
     id: item.id, name: item.name, price: item.price, qty: 1,
-    category: catId, index, type: 'simple',
-    cashback: getCashback(item)
+    category: catId, index, type: 'simple', cashback: getCashback(item)
   });
   saveCart();
   toast('✅ Добавлено', '🛒');
@@ -1001,12 +995,10 @@ async function submitOrder() {
   db.ref('users/' + user.id).update({ phone, contactUsername }).catch(() => {});
 
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
-
   let discount = 0;
   if (useDiscountInOrder && appliedDiscount) {
     discount = Math.round(subtotal * appliedDiscount.discount / 100);
   }
-
   const afterDiscount = subtotal - discount;
   const coinSpend = useBalanceInOrder ? Math.min(user.balance || 0, afterDiscount) : 0;
   const total = afterDiscount - coinSpend;
@@ -1017,23 +1009,13 @@ async function submitOrder() {
   const orderId = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
 
   const orderData = {
-    id: orderId,
-    userId: user.id,
-    userShortId: user.shortId,
-    userName: name,
-    userPhone: phone,
-    userUsername: contactUsername,
-    userContact: contact,
-    username: user.username,
-    telegramId: user.telegramId,
-    items: [...cart],
-    subtotal, discount,
+    id: orderId, userId: user.id, userShortId: user.shortId,
+    userName: name, userPhone: phone, userUsername: contactUsername,
+    userContact: contact, username: user.username, telegramId: user.telegramId,
+    items: [...cart], subtotal, discount,
     discountCode: useDiscountInOrder ? appliedDiscount?.code : null,
-    coinSpent: coinSpend,
-    total, cashbackEarned,
-    payment, comment,
-    status: 'pending',
-    date: Date.now()
+    coinSpent: coinSpend, total, cashbackEarned,
+    payment, comment, status: 'pending', date: Date.now()
   };
 
   try {
@@ -1068,39 +1050,29 @@ async function submitOrder() {
       });
     }
 
-    let adminMsg = `🛒 НОВЫЙ ЗАКАЗ #${orderId}\n\n`;
-    adminMsg += `👤 ${name}\n📱 ${contact}\n💳 ${payment}\n🆔 ${user.shortId}\n\n📋 Товары:\n`;
-    cart.forEach((it, i) => {
-      adminMsg += `${i + 1}. ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽\n`;
-    });
+    let adminMsg = `🛒 НОВЫЙ ЗАКАЗ #${orderId}\n\n👤 ${name}\n📱 ${contact}\n💳 ${payment}\n🆔 ${user.shortId}\n\n📋 Товары:\n`;
+    cart.forEach((it, i) => { adminMsg += `${i + 1}. ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽\n`; });
     if (discount > 0) adminMsg += `\n💎 Скидка ${appliedDiscount.discount}% (−${discount}₽)`;
     if (coinSpend > 0) adminMsg += `\n🪙 SWWCOIN: −${coinSpend}`;
-    adminMsg += `\n💰 Итого: ${total}₽`;
-    adminMsg += `\n🪙 Кешбек: +${cashbackEarned}`;
+    adminMsg += `\n💰 Итого: ${total}₽\n🪙 Кешбек: +${cashbackEarned}`;
     if (comment) adminMsg += `\n\n💬 ${comment}`;
 
     if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: CHAT_ID, text: adminMsg })
       }).catch(() => {});
     }
 
     if (user.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
       let userMsg = `✅ Заказ #${orderId} принят!\n\n📋 Товары:\n`;
-      cart.forEach((it, i) => {
-        userMsg += `${i + 1}. ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽\n`;
-      });
+      cart.forEach((it, i) => { userMsg += `${i + 1}. ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽\n`; });
       if (discount > 0) userMsg += `\n💎 Скидка: −${discount}₽`;
       if (coinSpend > 0) userMsg += `\n🪙 SWWCOIN: −${coinSpend}`;
-      userMsg += `\n💰 Итого: ${total}₽`;
-      userMsg += `\n🪙 Начислим кешбек: +${cashbackEarned}`;
-      userMsg += `\n\n⏳ Ожидает подтверждения`;
+      userMsg += `\n💰 Итого: ${total}₽\n🪙 Начислим кешбек: +${cashbackEarned}\n\n⏳ Ожидает подтверждения`;
 
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: user.telegramId, text: userMsg })
       }).catch(() => {});
     }
@@ -1130,7 +1102,7 @@ async function userCancelOrder(orderId) {
   if (!order) { toast('❌ Заказ не найден', '❌'); return; }
   if (order.userId !== user.id) { toast('❌ Это не ваш заказ', '❌'); return; }
   if (order.status !== 'pending') { toast('❌ Нельзя отменить', '❌'); return; }
-  if (!confirm('Отменить заказ #' + orderId + '? Товары вернутся на склад.')) return;
+  if (!confirm('Отменить заказ #' + orderId + '?')) return;
 
   try {
     for (const it of (order.items || [])) {
@@ -1143,7 +1115,6 @@ async function userCancelOrder(orderId) {
         await db.ref(`assortment/${it.category}/${it.index}/quantity`).set((s.val() || 0) + q);
       }
     }
-
     if (order.coinSpent > 0) {
       const bs = await db.ref('users/' + user.id + '/balance').once('value');
       await db.ref('users/' + user.id + '/balance').set((bs.val() || 0) + order.coinSpent);
@@ -1151,175 +1122,275 @@ async function userCancelOrder(orderId) {
         type: 'refund', amount: order.coinSpent, orderId, date: Date.now()
       });
     }
-
     await db.ref('orders/' + orderId).update({ status: 'cancelled', cancelledAt: Date.now(), cancelledBy: 'user' });
     toast('❌ Заказ отменён', '❌');
     renderMyOrders();
     if (currentPage === 'profile') renderProfile();
-  } catch (e) {
-    console.error(e);
-    toast('❌ Ошибка', '❌');
-  }
+  } catch (e) { console.error(e); toast('❌ Ошибка', '❌'); }
 }
 
 /* =========================================================
-   РУЛЕТКА SWWCOIN
+   КЕЙСЫ
    ========================================================= */
-function renderRoulette() {
-  const now = Date.now();
-  const week = 7 * 24 * 60 * 60 * 1000;
-  const canSpin = user.isAdmin || (now - lastSpin >= week);
+const CASE_COUPON_ITEMS = [
+  { label: '0%',  discount: 0,  rarity: 'common',    weight: 75 },
+  { label: '5%',  discount: 5,  rarity: 'uncommon',  weight: 25 },
+  { label: '10%', discount: 10, rarity: 'rare',      weight: 15 },
+  { label: '15%', discount: 15, rarity: 'epic',      weight: 10 },
+  { label: '30%', discount: 30, rarity: 'legendary', weight: 1 }
+];
 
-  const segments = [
-    { amount: 10, color: '#334155' },
-    { amount: 50, color: '#00d4ff' },
-    { amount: 10, color: '#334155' },
-    { amount: 100, color: '#ffd700' },
-    { amount: 10, color: '#334155' },
-    { amount: 50, color: '#00d4ff' },
-    { amount: 10, color: '#334155' },
-    { amount: 100, color: '#ffd700' }
-  ];
+const CASE_COIN_ITEMS = [
+  { label: '0',   amount: 0,   rarity: 'common',    weight: 75 },
+  { label: '10',  amount: 10,  rarity: 'uncommon',  weight: 25 },
+  { label: '30',  amount: 30,  rarity: 'rare',      weight: 15 },
+  { label: '50',  amount: 50,  rarity: 'epic',      weight: 5 },
+  { label: '100', amount: 100, rarity: 'legendary', weight: 1 }
+];
 
-  const segAngle = 360 / segments.length;
-  const conic = segments.map((s, i) => {
-    const from = i * segAngle;
-    const to = (i + 1) * segAngle;
-    return `${s.color} ${from}deg ${to}deg`;
-  }).join(', ');
+function pickWeighted(items) {
+  const total = items.reduce((s, it) => s + it.weight, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < items.length; i++) {
+    r -= items[i].weight;
+    if (r <= 0) return i;
+  }
+  return items.length - 1;
+}
 
+function formatCooldown(ms) {
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if (d > 0) return `${d}д ${h}ч ${m}м`;
+  if (h > 0) return `${h}ч ${m}м ${s}с`;
+  return `${m}м ${s}с`;
+}
+
+function renderCases() {
   document.getElementById('app').innerHTML = `
     <section class="hero" style="padding:16px 0;">
-      <h1 style="font-size:24px;">🎡 <span class="grad">Колесо удачи</span></h1>
-      <p>Крути раз в неделю — выигрывай SWWCOIN</p>
+      <h1 style="font-size:24px;">🎁 <span class="grad">Кейсы</span></h1>
+      <p>Открывай и получай бонусы</p>
     </section>
 
-    <section class="roulette-container">
-      <div class="wheel-wrap">
-        <div class="wheel-pointer"></div>
-        <div class="wheel" id="wheelEl" style="background: conic-gradient(${conic});">
-          ${segments.map((s, i) => {
-            const angle = i * segAngle + segAngle / 2;
-            return `<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(${angle}deg) translateY(-90px);font-size:16px;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.8);pointer-events:none;">
-              ${s.amount}
-            </div>`;
-          }).join('')}
-          <div class="wheel-center">🪙</div>
+    <div class="cases-container">
+      ${renderCaseCard('coupon')}
+      ${renderCaseCard('coin')}
+    </div>
+  `;
+  updateCaseTimers();
+}
+
+function renderCaseCard(type) {
+  const isCoupon = type === 'coupon';
+  const lastOpen = caseLastOpen[type];
+  const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
+  const canOpen = user.isAdmin || (Date.now() - lastOpen >= cooldown);
+
+  const stripItems = isCoupon
+    ? buildStrip(CASE_COUPON_ITEMS, '%')
+    : buildStrip(CASE_COIN_ITEMS, '');
+
+  return `
+    <div class="case-card ${isCoupon ? '' : 'premium'}">
+      <div class="case-head">
+        <div class="case-icon">${isCoupon ? '🎫' : '🪙'}</div>
+        <div class="case-info">
+          <div class="case-name">${isCoupon ? 'Кейс со скидками' : 'Кейс с монетами'}</div>
+          <div class="case-desc">${isCoupon ? 'Купоны на скидку' : 'Монеты SWWCOIN'}</div>
         </div>
       </div>
 
-      <button class="spin-btn" id="spinBtn" ${canSpin ? '' : 'disabled'} onclick="spinRoulette()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-          <path d="M21 3v5h-5"/>
-        </svg>
-        ${canSpin ? 'КРУТИТЬ' : 'ЖДИ'}
+      <div class="case-strip-wrap">
+        <div class="case-strip-pointer"></div>
+        <div class="case-strip" id="strip-${type}">
+          ${stripItems}
+        </div>
+      </div>
+
+      <button class="case-open-btn" id="btn-${type}" ${canOpen ? '' : 'disabled'}
+              onclick="openCase('${type}')">
+        ${canOpen ? (isCoupon ? '🎁 Открыть кейс' : '🪙 Открыть кейс') : '⏳ Ждите'}
       </button>
 
-      <div class="roulette-timer" id="rouletteTimer"></div>
-      <div class="roulette-result" id="rouletteResult"></div>
-    </section>
-
-    ${user.isAdmin ? `
-      <div class="promo-welcomed" style="margin-top:16px;">
-        <span class="icon">👑</span>
-        <div class="info">
-          <div class="title">Админ-режим</div>
-          <div class="text">Крути без ограничений</div>
-        </div>
-      </div>
-    ` : ''}
+      <div class="case-timer" id="timer-${type}"></div>
+      <div class="case-result" id="result-${type}"></div>
+    </div>
   `;
-  updateSpinTimer();
 }
 
-function updateSpinTimer() {
-  const t = document.getElementById('rouletteTimer');
-  if (!t) return;
-  if (user.isAdmin) {
-    t.innerHTML = '<span style="color:#06ffa5;">✅ Безлимит</span>';
-    return;
-  }
-  const now = Date.now();
-  const week = 7 * 24 * 60 * 60 * 1000;
-  const left = week - (now - lastSpin);
-  if (left <= 0) {
-    t.innerHTML = '<span style="color:#06ffa5;">✅ Можно крутить!</span>';
-    const b = document.getElementById('spinBtn');
-    if (b) { b.disabled = false; b.innerHTML = '🎡 КРУТИТЬ'; }
-  } else {
-    const d = Math.floor(left / 86400000);
-    const h = Math.floor((left % 86400000) / 3600000);
-    const m = Math.floor((left % 3600000) / 60000);
-    t.innerHTML = `⏳ Через: <span style="color:#ffb020;font-weight:700;">${d}д ${h}ч ${m}м</span>`;
-  }
-}
-
-function spinRoulette() {
-  if (spinning) return;
-  if (!user.isAdmin && Date.now() - lastSpin < 7 * 24 * 60 * 60 * 1000) {
-    updateSpinTimer();
-    return;
-  }
-  spinning = true;
-  const btn = document.getElementById('spinBtn');
-  btn.disabled = true;
-  btn.innerHTML = '🎡 Крутится...';
-
-  const r = Math.random();
-  let segmentIndex;
-  if (r < 0.01) segmentIndex = 3;
-  else if (r < 0.06) segmentIndex = [1, 5][Math.floor(Math.random() * 2)];
-  else segmentIndex = [0, 2, 4, 6][Math.floor(Math.random() * 4)];
-
-  const segAngle = 45;
-  const targetAngle = 360 - (segmentIndex * segAngle + segAngle / 2);
-  const fullSpins = user.isAdmin ? 8 : 6;
-  const finalRot = fullSpins * 360 + targetAngle;
-
-  const wheel = document.getElementById('wheelEl');
-  wheel.style.setProperty('--final-rotation', finalRot + 'deg');
-  wheel.classList.remove('wheel-spinning');
-  void wheel.offsetWidth;
-  wheel.classList.add('wheel-spinning');
-
-  if (!user.isAdmin) {
-    lastSpin = Date.now();
-    localStorage.setItem('sww_last_spin', lastSpin.toString());
-  }
-
-  const duration = 4500;
-  setTimeout(() => {
-    const amount = [10, 50, 10, 100, 10, 50, 10, 100][segmentIndex];
-    spinning = false;
-    btn.disabled = false;
-    updateSpinTimer();
-
-    db.ref('users/' + user.id + '/balance').once('value').then(s => {
-      const cur = s.val() || 0;
-      db.ref('users/' + user.id + '/balance').set(cur + amount);
-      db.ref('users/' + user.id + '/balanceHistory').push({
-        type: 'roulette', amount, date: Date.now()
-      });
-    });
-
-    document.getElementById('rouletteResult').innerHTML = `
-      <div style="color:var(--gold);font-size:14px;">🎉 Вы выиграли</div>
-      <span class="prize">+${amount} SWWCOIN</span>
-      <div style="font-size:12px;color:var(--text-dim);">Зачислено на баланс</div>
+function buildStrip(items, suffix) {
+  // Создаём длинную полосу из "случайных" элементов
+  const total = 60;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const idx = pickWeighted(items);
+    const it = items[idx];
+    const label = suffix ? `${it.label} ${suffix}` : it.label;
+    const icon = suffix === '%' ? (it.discount === 0 ? '❌' : it.discount >= 30 ? '💎' : it.discount >= 15 ? '⭐' : '🎫') : '🪙';
+    html += `
+      <div class="case-item rarity-${it.rarity}">
+        <div class="case-item-icon">${icon}</div>
+        <div class="case-item-label">${label}</div>
+      </div>
     `;
+  }
+  return html;
+}
+
+function updateCaseTimers() {
+  ['coupon', 'coin'].forEach(type => {
+    const timerEl = document.getElementById(`timer-${type}`);
+    const btnEl = document.getElementById(`btn-${type}`);
+    if (!timerEl || !btnEl) return;
+
+    if (user.isAdmin) {
+      timerEl.innerHTML = '<span style="color:#06ffa5;">✅ Безлимит</span>';
+      btnEl.disabled = false;
+      btnEl.textContent = type === 'coupon' ? '🎁 Открыть кейс' : '🪙 Открыть кейс';
+      return;
+    }
+
+    const cooldown = type === 'coupon' ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
+    const left = cooldown - (Date.now() - caseLastOpen[type]);
+
+    if (left <= 0) {
+      timerEl.innerHTML = '<span style="color:#06ffa5;">✅ Можно открыть!</span>';
+      btnEl.disabled = false;
+      btnEl.textContent = type === 'coupon' ? '🎁 Открыть кейс' : '🪙 Открыть кейс';
+    } else {
+      timerEl.innerHTML = `⏳ Через: <span style="color:#ffb020;font-weight:700;">${formatCooldown(left)}</span>`;
+      btnEl.disabled = true;
+      btnEl.textContent = '⏳ Ждите';
+    }
+  });
+}
+
+setInterval(() => {
+  if (currentPage === 'cases') updateCaseTimers();
+}, 1000);
+
+async function openCase(type) {
+  if (caseOpening[type]) return;
+
+  const isCoupon = type === 'coupon';
+  const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
+
+  if (!user.isAdmin && Date.now() - caseLastOpen[type] < cooldown) {
+    updateCaseTimers();
+    return;
+  }
+
+  caseOpening[type] = true;
+  const btn = document.getElementById(`btn-${type}`);
+  if (btn) { btn.disabled = true; btn.textContent = '🎁 Открываем...'; }
+
+  const items = isCoupon ? CASE_COUPON_ITEMS : CASE_COIN_ITEMS;
+  const winnerIndex = pickWeighted(items);
+  const winner = items[winnerIndex];
+
+  // Находим позицию нужного элемента в ленте
+  const strip = document.getElementById(`strip-${type}`);
+  if (!strip) { caseOpening[type] = false; return; }
+
+  const allItems = strip.querySelectorAll('.case-item');
+  const itemWidth = 110;
+  const wrapWidth = strip.parentElement.clientWidth;
+  const centerOffset = wrapWidth / 2 - itemWidth / 2;
+
+  // Ищем в ленте элемент, соответствующий победителю
+  let targetPos = -1;
+  for (let i = allItems.length - 1; i >= 20; i--) {
+    const el = allItems[i];
+    const label = el.querySelector('.case-item-label').textContent.trim();
+    const expectedLabel = isCoupon ? `${winner.label} %` : winner.label;
+    if (label === expectedLabel) {
+      targetPos = i;
+      break;
+    }
+  }
+  if (targetPos === -1) targetPos = 30;
+
+  const targetX = -(targetPos * itemWidth - centerOffset);
+
+  // Сброс и запуск анимации
+  strip.style.transition = 'none';
+  strip.style.transform = 'translateX(0)';
+  void strip.offsetWidth;
+
+  strip.style.transition = 'transform 5s cubic-bezier(0.15, 0.85, 0.25, 1)';
+  strip.style.transform = `translateX(${targetX}px)`;
+
+  // Таймер следующего открытия
+  if (!user.isAdmin) {
+    caseLastOpen[type] = Date.now();
+    localStorage.setItem(`sww_case_${type}_last`, String(caseLastOpen[type]));
+  }
+
+  setTimeout(async () => {
+    caseOpening[type] = false;
+    const resultEl = document.getElementById(`result-${type}`);
+    const btnEl = document.getElementById(`btn-${type}`);
+    if (btnEl) {
+      btnEl.disabled = false;
+      updateCaseTimers();
+    }
+
+    if (isCoupon) {
+      if (winner.discount > 0) {
+        // Создаём промокод
+        const code = 'CASE-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+        await db.ref('promos/' + code).set({
+          discount: winner.discount, used: false, created: Date.now(),
+          type: 'case', userId: user.id, userName: user.firstName,
+          uses: 0, maxUses: 1
+        });
+        if (resultEl) resultEl.innerHTML = `
+          <div style="color:var(--warning);font-size:14px;">🎉 Ваш купон</div>
+          <div style="font-size:26px;font-weight:900;color:var(--warning);margin:8px 0;">${winner.discount}% скидка</div>
+          <div style="font-size:12px;color:var(--text-dim);">Код: <b style="color:var(--accent);font-family:monospace;">${code}</b></div>
+        `;
+      } else {
+        if (resultEl) resultEl.innerHTML = `
+          <div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Попробуй в следующий раз!</div>
+        `;
+      }
+    } else {
+      if (winner.amount > 0) {
+        const balSnap = await db.ref('users/' + user.id + '/balance').once('value');
+        const cur = balSnap.val() || 0;
+        await db.ref('users/' + user.id + '/balance').set(cur + winner.amount);
+        await db.ref('users/' + user.id + '/balanceHistory').push({
+          type: 'case', amount: winner.amount, date: Date.now()
+        });
+        if (resultEl) resultEl.innerHTML = `
+          <div style="color:var(--gold);font-size:14px;">🎉 Вы выиграли</div>
+          <div style="font-size:26px;font-weight:900;color:var(--gold);margin:8px 0;">+${winner.amount} SWWCOIN</div>
+          <div style="font-size:12px;color:var(--text-dim);">Зачислено на баланс</div>
+        `;
+      } else {
+        if (resultEl) resultEl.innerHTML = `
+          <div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Попробуй в следующий раз!</div>
+        `;
+      }
+    }
 
     if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: user.telegramId || CHAT_ID,
-          text: `🎡 ${user.firstName} выиграл +${amount} SWWCOIN в колесе!`
+          text: isCoupon
+            ? `🎫 ${user.firstName} открыл кейс со скидками — выпало: ${winner.label}%`
+            : `🪙 ${user.firstName} открыл кейс с монетами — выпало: ${winner.label} SWWCOIN`
         })
       }).catch(() => {});
     }
-  }, duration + 100);
+  }, 5200);
 }
 
 /* =========================================================
@@ -1359,7 +1430,7 @@ function renderProfile() {
           <div class="lbl">SWWCOIN · 1 = 1 ₽</div>
         </div>
       </div>
-      <button class="btn btn-gold btn-sm" onclick="navigate('roulette')">Заработать</button>
+      <button class="btn btn-gold btn-sm" onclick="navigate('cases')">Кейсы</button>
     </div>
 
     <section class="section">
@@ -1531,9 +1602,6 @@ function openMyOrderDetail(orderId) {
   showOrderDetail(order, false);
 }
 
-/* =========================================================
-   ОВЕРЛЕЙ ДЕТАЛИ ЗАКАЗА
-   ========================================================= */
 function showOrderDetail(order, isAdminView) {
   const statusMap = {
     pending: { cls: 'status-pending', txt: '⏳ Ожидает' },
@@ -1598,7 +1666,7 @@ function renderMyPromos() {
   const mine = Object.entries(promos).filter(([_, p]) => p.userId === uid);
 
   if (!mine.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🎫</div><h3>Скидок пока нет</h3><p>Крутите рулетку</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="icon">🎫</div><h3>Скидок пока нет</h3><p>Открывай кейсы</p></div>';
     return;
   }
 
@@ -1608,6 +1676,7 @@ function renderMyPromos() {
         <div>
           <div style="font-size:15px;font-weight:800;color:var(--warning);">${p.discount}% скидка</div>
           <div style="font-size:11px;font-family:monospace;color:var(--accent);margin-top:4px;">${code}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${p.type === 'referral' ? '🤝 реферальная' : p.type === 'case' ? '🎁 кейс' : p.type === 'gift' ? '🎁 подарок' : ''}</div>
         </div>
         <span class="order-status ${p.used ? 'status-cancelled' : 'status-completed'}">
           ${p.used ? 'Использована' : 'Активна'}
@@ -1646,9 +1715,6 @@ async function saveContacts() {
   renderProfile();
 }
 
-/* =========================================================
-   РЕФЕРАЛЬНЫЕ ФУНКЦИИ
-   ========================================================= */
 function copyReferralLink() {
   const l = getReferralLink();
   if (!l) return;
@@ -1665,14 +1731,17 @@ function shareReferral() {
 }
 
 /* =========================================================
-   РЕДАКТОР ТОВАРОВ
+   РЕДАКТОР ТОВАРОВ (ПОЧИНЕНО)
    ========================================================= */
 function toggleEditorMode() {
   editorMode = !editorMode;
   const b = document.getElementById('editorBanner');
   if (b) b.classList.toggle('show', editorMode);
   toast(editorMode ? '🔧 Редактор включён' : '✅ Редактор выключен', '🔧');
-  if (currentCategory) renderProductsInPlace();
+  // Перерисовываем текущую категорию, чтобы обновить обработчики
+  if (currentCategory && currentPage === 'catalog') {
+    renderProductsInPlace();
+  }
 }
 
 function openEditor(catId, index) {
@@ -1754,7 +1823,7 @@ async function saveEditedProduct(catId, index) {
   await db.ref('assortment').set(data);
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
-  renderProductsInPlace();
+  if (currentCategory) renderProductsInPlace();
 }
 
 async function deleteProductFromEditor(catId, index) {
@@ -1763,7 +1832,7 @@ async function deleteProductFromEditor(catId, index) {
   await db.ref('assortment').set(data);
   toast('🗑️ Удалён', '🗑️');
   closeOverlay('editProductOverlay');
-  renderProductsInPlace();
+  if (currentCategory) renderProductsInPlace();
 }
 
 /* =========================================================
@@ -1805,34 +1874,59 @@ function renderAdmin() {
     </div>
 
     <div class="section-title" style="margin-top:20px;">🔧 Редактор товаров</div>
-    <button class="admin-action-btn btn-orange" onclick="closeOverlay('adminOverlay');navigate('catalog');setTimeout(toggleEditorMode, 300)">
+    <button class="admin-action-btn btn-orange" onclick="editorToggleFromAdmin()">
       ${editorMode ? '❌ Выключить редактор' : '✏️ Включить редактор'}
     </button>
     <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">
-      После включения перейди в категорию и тыкни на товар — сможешь менять цену, наличие и кешбек.
+      После включения перейди в категорию и тыкни на товар — сможешь менять цену, наличие, кешбек и название.
     </p>
 
-    <div class="section-title" style="margin-top:20px;">💰 Баланс пользователя</div>
+    <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID пользователя</div>
     <div class="field">
-      <label>User ID</label>
-      <input type="text" id="balanceUserId" placeholder="tg_123456789" />
+      <label>Пользователь</label>
+      <select id="shortIdUserSelect">
+        <option value="">-- Выберите --</option>
+        ${Object.values(users).map(u => `<option value="${u.id}">${u.firstName || 'Без имени'} (${u.shortId || u.id})</option>`).join('')}
+      </select>
     </div>
     <div class="field">
-      <label>Сумма (+ / −)</label>
-      <input type="number" id="balanceAmount" placeholder="100" />
+      <label>Новый Short ID</label>
+      <input type="text" id="newShortIdValue" placeholder="SWW-XXXX-XXXX" />
     </div>
-    <button class="admin-action-btn btn-gold" onclick="adminAdjustBalance()">💰 Изменить баланс</button>
+    <button class="admin-action-btn btn-purple" onclick="adminUpdateShortId()">🆔 Обновить ID</button>
 
     <div class="section-title" style="margin-top:20px;">🎁 Выдать скидку по ID</div>
     <div class="field">
-      <label>Short ID</label>
+      <label>Short ID пользователя</label>
       <input type="text" id="promoShortId" placeholder="SWW-XXXX-XXXX" />
     </div>
     <div class="field">
       <label>Скидка (%)</label>
       <input type="number" id="promoShortDiscount" value="10" />
     </div>
-    <button class="admin-action-btn btn-green" onclick="adminGivePromoByShortId()">🎁 Выдать</button>
+    <button class="admin-action-btn btn-green" onclick="adminGivePromoByShortId()">🎁 Выдать скидку</button>
+
+    <div class="section-title" style="margin-top:20px;">🪙 Выдать монеты по ID</div>
+    <div class="field">
+      <label>Short ID пользователя</label>
+      <input type="text" id="coinShortId" placeholder="SWW-XXXX-XXXX" />
+    </div>
+    <div class="field">
+      <label>Сумма SWWCOIN (+ начислить / − списать)</label>
+      <input type="number" id="coinAmount" placeholder="100" />
+    </div>
+    <button class="admin-action-btn btn-gold" onclick="adminGiveCoinsByShortId()">🪙 Выдать монеты</button>
+
+    <div class="section-title" style="margin-top:20px;">💰 Изменить баланс (по User ID)</div>
+    <div class="field">
+      <label>User ID (tg_xxx)</label>
+      <input type="text" id="balanceUserId" placeholder="tg_123456789" />
+    </div>
+    <div class="field">
+      <label>Сумма (+ / −)</label>
+      <input type="number" id="balanceAmount" placeholder="100" />
+    </div>
+    <button class="admin-action-btn btn-gold" onclick="adminAdjustBalance()">💰 Изменить</button>
 
     <div class="section-title" style="margin-top:20px;">📋 Все скидки</div>
     <div id="allPromosList"></div>
@@ -1846,6 +1940,83 @@ function renderAdmin() {
   `;
 
   renderAllPromosAdmin();
+}
+
+function editorToggleFromAdmin() {
+  closeOverlay('adminOverlay');
+  navigate('catalog');
+  setTimeout(() => toggleEditorMode(), 300);
+}
+
+async function adminUpdateShortId() {
+  const uid = document.getElementById('shortIdUserSelect').value;
+  const newId = document.getElementById('newShortIdValue').value.trim().toUpperCase();
+  if (!uid || !newId) { toast('❌ Заполни поля', '❌'); return; }
+  if (!/^[A-Z0-9\-]+$/.test(newId)) { toast('❌ Только A-Z, 0-9 и дефис', '❌'); return; }
+
+  await db.ref('users/' + uid + '/shortId').set(newId);
+  toast('🆔 ID обновлён: ' + newId, '🆔');
+  document.getElementById('newShortIdValue').value = '';
+
+  if (uid === user.id) {
+    user.shortId = newId;
+  }
+}
+
+async function adminGivePromoByShortId() {
+  const shortId = document.getElementById('promoShortId').value.trim().toUpperCase();
+  const discount = parseInt(document.getElementById('promoShortDiscount').value) || 10;
+  if (!shortId) { toast('❌ Введите ID', '❌'); return; }
+  const found = Object.values(users).find(u => u.shortId === shortId);
+  if (!found) { toast('❌ Не найден', '❌'); return; }
+
+  const code = 'GIFT-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  await db.ref('promos/' + code).set({
+    discount, used: false, created: Date.now(),
+    type: 'gift', userId: found.id, userName: found.firstName,
+    uses: 0, maxUses: 1
+  });
+  toast(`🎁 ${discount}% → ${found.firstName}`, '🎁');
+  document.getElementById('promoShortId').value = '';
+
+  if (found.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: found.telegramId,
+        text: `🎁 Вам выдана скидка ${discount}%!`
+      })
+    }).catch(() => {});
+  }
+}
+
+async function adminGiveCoinsByShortId() {
+  const shortId = document.getElementById('coinShortId').value.trim().toUpperCase();
+  const amount = parseInt(document.getElementById('coinAmount').value);
+  if (!shortId || isNaN(amount)) { toast('❌ Заполни поля', '❌'); return; }
+  const found = Object.values(users).find(u => u.shortId === shortId);
+  if (!found) { toast('❌ Не найден', '❌'); return; }
+
+  const snap = await db.ref('users/' + found.id + '/balance').once('value');
+  const cur = snap.val() || 0;
+  const newBal = Math.max(0, cur + amount);
+  await db.ref('users/' + found.id + '/balance').set(newBal);
+  await db.ref('users/' + found.id + '/balanceHistory').push({
+    type: 'admin_adjust', amount, date: Date.now(), by: user.id
+  });
+  toast(`🪙 ${amount > 0 ? '+' : ''}${amount} SWWCOIN → ${found.firstName}`, '🪙');
+  document.getElementById('coinShortId').value = '';
+  document.getElementById('coinAmount').value = '';
+
+  if (found.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: found.telegramId,
+        text: `🪙 Вам ${amount > 0 ? 'начислено' : 'списано'} ${Math.abs(amount)} SWWCOIN`
+      })
+    }).catch(() => {});
+  }
 }
 
 async function adminAdjustBalance() {
@@ -1924,17 +2095,16 @@ async function adminCompleteOrder(orderId) {
     if (us.val()) await checkReferralRewards(us.val());
   }
 
-  toast(`✅ Выполнен · +${cb} SWWCOIN кешбек`, '✅');
+  toast(`✅ Выполнен · +${cb} SWWCOIN`, '✅');
   closeOverlay('orderDetailOverlay');
   renderAllOrders();
 
   if (order.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: order.telegramId,
-        text: `✅ Заказ #${orderId} выполнен!\n🪙 Начислено ${cb} SWWCOIN кешбека`
+        text: `✅ Заказ #${orderId} выполнен!\n🪙 +${cb} SWWCOIN кешбека`
       })
     }).catch(() => {});
   }
@@ -1981,12 +2151,67 @@ function renderUsers() {
     return;
   }
   el.innerHTML = list.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0)).map(u => `
-    <div class="order-card" style="cursor:default;">
+    <div class="order-card" style="cursor:pointer;" onclick="openUserEditor('${u.id}')">
       <div style="font-weight:700;font-size:14px;">${u.firstName || 'Юзер'} ${u.isAdmin ? '👑' : ''}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${u.username ? '@' + u.username : ''} · ${u.shortId || u.id}</div>
       <div style="font-size:11px;color:var(--gold);margin-top:4px;">🪙 ${u.balance || 0} SWWCOIN</div>
     </div>
   `).join('');
+}
+
+function openUserEditor(uid) {
+  const u = users[uid];
+  if (!u) return;
+  document.getElementById('editUserContent').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;">${u.firstName || 'Юзер'} ${u.username ? '@' + u.username : ''}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;font-family:monospace;">${uid}</div>
+    </div>
+    <div class="field">
+      <label>Short ID</label>
+      <input type="text" id="euShortId" value="${u.shortId || ''}" placeholder="SWW-XXXX-XXXX" />
+    </div>
+    <div class="field">
+      <label>Баланс SWWCOIN</label>
+      <input type="number" id="euBalance" value="${u.balance || 0}" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="saveUserEditor('${uid}')">💾 Сохранить</button>
+    <button class="btn btn-gold btn-block" style="margin-top:8px;" onclick="quickGivePromo('${uid}')">🎁 Выдать скидку 10%</button>
+    <button class="btn btn-warning btn-block" style="margin-top:8px;" onclick="quickGiveCoins('${uid}', 100)">🪙 Выдать 100 монет</button>
+  `;
+  openOverlay('editUserOverlay');
+}
+
+async function saveUserEditor(uid) {
+  const newShortId = document.getElementById('euShortId').value.trim().toUpperCase();
+  const newBalance = parseInt(document.getElementById('euBalance').value) || 0;
+  if (!newShortId || !/^[A-Z0-9\-]+$/.test(newShortId)) { toast('❌ Неверный ID', '❌'); return; }
+
+  await db.ref('users/' + uid).update({ shortId: newShortId, balance: newBalance });
+  toast('✅ Сохранено', '✅');
+  closeOverlay('editUserOverlay');
+  renderUsers();
+}
+
+async function quickGivePromo(uid) {
+  const code = 'GIFT-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  await db.ref('promos/' + code).set({
+    discount: 10, used: false, created: Date.now(),
+    type: 'gift', userId: uid, uses: 0, maxUses: 1
+  });
+  toast('🎁 Скидка 10% выдана', '🎁');
+  closeOverlay('editUserOverlay');
+}
+
+async function quickGiveCoins(uid, amount) {
+  const snap = await db.ref('users/' + uid + '/balance').once('value');
+  const cur = snap.val() || 0;
+  await db.ref('users/' + uid + '/balance').set(cur + amount);
+  await db.ref('users/' + uid + '/balanceHistory').push({
+    type: 'admin_adjust', amount, date: Date.now(), by: user.id
+  });
+  toast(`🪙 +${amount} SWWCOIN`, '🪙');
+  closeOverlay('editUserOverlay');
 }
 
 function renderConsole() {
@@ -2019,8 +2244,7 @@ function adminSendToUser() {
   const u = users[uid];
   if (!u?.telegramId) { toast('❌ Нет Telegram', '❌'); return; }
   fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: u.telegramId, text: '📨 От админа:\n\n' + msg })
   }).catch(() => {});
   toast('✅ Отправлено', '📨');
@@ -2034,8 +2258,7 @@ function adminBroadcast() {
   let sent = 0;
   const promises = Object.values(users).filter(u => u.telegramId).map(u =>
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: u.telegramId, text: '📢 SWWSHOP:\n\n' + msg })
     }).then(() => sent++).catch(() => {})
   );
@@ -2072,23 +2295,6 @@ async function adminDeletePromo(code) {
   await db.ref('promos/' + code).remove();
   toast('🗑️ Удалено', '🗑️');
   renderAllPromosAdmin();
-}
-
-async function adminGivePromoByShortId() {
-  const shortId = document.getElementById('promoShortId').value.trim().toUpperCase();
-  const discount = parseInt(document.getElementById('promoShortDiscount').value) || 10;
-  if (!shortId) { toast('❌ Введите ID', '❌'); return; }
-  const found = Object.values(users).find(u => u.shortId === shortId);
-  if (!found) { toast('❌ Не найден', '❌'); return; }
-
-  const code = 'GIFT-' + Math.random().toString(36).slice(2, 6).toUpperCase();
-  await db.ref('promos/' + code).set({
-    discount, used: false, created: Date.now(),
-    type: 'gift', userId: found.id, userName: found.firstName,
-    uses: 0, maxUses: 1
-  });
-  toast(`🎁 ${discount}% → ${found.firstName}`, '🎁');
-  document.getElementById('promoShortId').value = '';
 }
 
 function adminLogout() {
