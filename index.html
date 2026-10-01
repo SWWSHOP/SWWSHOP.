@@ -13,13 +13,11 @@
 
 <div class="bg-orbs"></div>
 
-<!-- РЕДАКТОР БАННЕР -->
 <div class="editor-banner" id="editorBanner" onclick="toggleEditorMode()">
   <span class="pulse"></span>
   <span>🔧 Режим редактора · тыкай на товар</span>
 </div>
 
-<!-- ХЕДЕР -->
 <header class="header">
   <div class="logo">
     <svg class="logo-svg" viewBox="0 0 48 48" fill="none">
@@ -44,7 +42,7 @@
     <span>SWWSHOP</span>
   </div>
   <div class="header-actions">
-    <div class="balance-chip" onclick="navigate('profile')" title="SWWCOIN баланс">
+    <div class="balance-chip" onclick="navigate('profile')">
       <div class="coin-icon">₴</div>
       <span class="balance-value" id="headerBalance">0</span>
     </div>
@@ -57,7 +55,6 @@
   </div>
 </header>
 
-<!-- ОСНОВНОЙ КОНТЕЙНЕР -->
 <main class="container" id="app">
   <div class="empty-state">
     <div class="icon">⏳</div>
@@ -65,7 +62,6 @@
   </div>
 </main>
 
-<!-- НИЖНЯЯ НАВИГАЦИЯ -->
 <nav class="bottom-nav" id="bottomNav">
   <button class="nav-item active" data-page="catalog">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -85,12 +81,12 @@
     <span>Заказать</span>
     <span class="nav-badge" id="cartBadge" style="display:none;">0</span>
   </button>
-  <button class="nav-item" data-page="roulette">
+  <button class="nav-item" data-page="cases">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>
     </svg>
-    <span>Рулетка</span>
+    <span>Кейсы</span>
   </button>
   <button class="nav-item" data-page="profile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -101,121 +97,29 @@
   </button>
 </nav>
 
-<!-- ОВЕРЛЕЙ: КОРЗИНА -->
-<div class="overlay" id="cartOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>🛒 Корзина</h2>
-      <button class="modal-close" onclick="closeOverlay('cartOverlay')">✕</button>
-    </div>
-    <div id="cartContent"></div>
-  </div>
-</div>
+<div class="overlay" id="cartOverlay"><div class="modal"><div class="modal-head"><h2>🛒 Корзина</h2><button class="modal-close" onclick="closeOverlay('cartOverlay')">✕</button></div><div id="cartContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: МОИ ЗАКАЗЫ -->
-<div class="overlay" id="ordersOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>📋 Мои заказы</h2>
-      <button class="modal-close" onclick="closeOverlay('ordersOverlay')">✕</button>
-    </div>
-    <div id="ordersContent"></div>
-  </div>
-</div>
+<div class="overlay" id="ordersOverlay"><div class="modal"><div class="modal-head"><h2>📋 Мои заказы</h2><button class="modal-close" onclick="closeOverlay('ordersOverlay')">✕</button></div><div id="ordersContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: ДЕТАЛИ ЗАКАЗА -->
-<div class="overlay" id="orderDetailOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 id="orderDetailTitle">📦 Заказ</h2>
-      <button class="modal-close" onclick="closeOverlay('orderDetailOverlay')">✕</button>
-    </div>
-    <div id="orderDetailContent"></div>
-  </div>
-</div>
+<div class="overlay" id="orderDetailOverlay"><div class="modal"><div class="modal-head"><h2 id="orderDetailTitle">📦 Заказ</h2><button class="modal-close" onclick="closeOverlay('orderDetailOverlay')">✕</button></div><div id="orderDetailContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: МОИ СКИДКИ -->
-<div class="overlay" id="promosOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>🎫 Мои скидки</h2>
-      <button class="modal-close" onclick="closeOverlay('promosOverlay')">✕</button>
-    </div>
-    <div id="promosContent"></div>
-  </div>
-</div>
+<div class="overlay" id="promosOverlay"><div class="modal"><div class="modal-head"><h2>🎫 Мои скидки</h2><button class="modal-close" onclick="closeOverlay('promosOverlay')">✕</button></div><div id="promosContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: КОНТАКТЫ -->
-<div class="overlay" id="contactEditorOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>📞 Контакты</h2>
-      <button class="modal-close" onclick="closeOverlay('contactEditorOverlay')">✕</button>
-    </div>
-    <div id="contactEditorContent"></div>
-  </div>
-</div>
+<div class="overlay" id="contactEditorOverlay"><div class="modal"><div class="modal-head"><h2>📞 Контакты</h2><button class="modal-close" onclick="closeOverlay('contactEditorOverlay')">✕</button></div><div id="contactEditorContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: АДМИНКА -->
-<div class="overlay" id="adminOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>👑 Админ-панель</h2>
-      <button class="modal-close" onclick="closeOverlay('adminOverlay')">✕</button>
-    </div>
-    <div id="adminContent"></div>
-  </div>
-</div>
+<div class="overlay" id="adminOverlay"><div class="modal"><div class="modal-head"><h2>👑 Админ-панель</h2><button class="modal-close" onclick="closeOverlay('adminOverlay')">✕</button></div><div id="adminContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: ВСЕ ЗАКАЗЫ -->
-<div class="overlay" id="allOrdersOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>📋 Все заказы</h2>
-      <button class="modal-close" onclick="closeOverlay('allOrdersOverlay')">✕</button>
-    </div>
-    <div id="allOrdersContent"></div>
-  </div>
-</div>
+<div class="overlay" id="allOrdersOverlay"><div class="modal"><div class="modal-head"><h2>📋 Все заказы</h2><button class="modal-close" onclick="closeOverlay('allOrdersOverlay')">✕</button></div><div id="allOrdersContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: КОНСОЛЬ -->
-<div class="overlay" id="consoleOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>💬 Консоль</h2>
-      <button class="modal-close" onclick="closeOverlay('consoleOverlay')">✕</button>
-    </div>
-    <div id="consoleContent"></div>
-  </div>
-</div>
+<div class="overlay" id="consoleOverlay"><div class="modal"><div class="modal-head"><h2>💬 Консоль</h2><button class="modal-close" onclick="closeOverlay('consoleOverlay')">✕</button></div><div id="consoleContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: ПОЛЬЗОВАТЕЛИ -->
-<div class="overlay" id="usersOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>👥 Пользователи</h2>
-      <button class="modal-close" onclick="closeOverlay('usersOverlay')">✕</button>
-    </div>
-    <div id="usersContent"></div>
-  </div>
-</div>
+<div class="overlay" id="usersOverlay"><div class="modal"><div class="modal-head"><h2>👥 Пользователи</h2><button class="modal-close" onclick="closeOverlay('usersOverlay')">✕</button></div><div id="usersContent"></div></div></div>
 
-<!-- ОВЕРЛЕЙ: РЕДАКТОР ТОВАРА -->
-<div class="overlay" id="editProductOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>🔧 Редактор товара</h2>
-      <button class="modal-close" onclick="closeOverlay('editProductOverlay')">✕</button>
-    </div>
-    <div id="editProductContent"></div>
-  </div>
-</div>
+<div class="overlay" id="editProductOverlay"><div class="modal"><div class="modal-head"><h2>🔧 Редактор товара</h2><button class="modal-close" onclick="closeOverlay('editProductOverlay')">✕</button></div><div id="editProductContent"></div></div></div>
 
-<!-- TOAST -->
-<div class="toast" id="toast">
-  <span id="toastIcon">✅</span>
-  <span id="toastText">Готово</span>
-</div>
+<div class="overlay" id="editUserOverlay"><div class="modal"><div class="modal-head"><h2>👤 Редактор пользователя</h2><button class="modal-close" onclick="closeOverlay('editUserOverlay')">✕</button></div><div id="editUserContent"></div></div></div>
+
+<div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastText">Готово</span></div>
 
 <script src="app.js"></script>
 </body>
