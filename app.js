@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 3.1 — КЕЙСЫ + РЕДАКТОР
+   SWWSHOP 3.2 — ПОЛНАЯ АДМИНКА + КЕЙСЫ
    ========================================================= */
 
 const CONFIG = {
@@ -19,10 +19,9 @@ const CONFIG = {
     MIN_REFERRAL_ORDERS: 3
   },
 
-  // Настройки кейсов
   CASES: {
-    COUPON_COOLDOWN_MS: 3 * 24 * 60 * 60 * 1000,  // 3 дня
-    COIN_COOLDOWN_MS:   7 * 24 * 60 * 60 * 1000   // 7 дней
+    COUPON_COOLDOWN_MS: 3 * 24 * 60 * 60 * 1000,
+    COIN_COOLDOWN_MS:   7 * 24 * 60 * 60 * 1000
   },
 
   FIREBASE: {
@@ -61,7 +60,6 @@ let initialized = false;
 let submittingOrder = false;
 let editorMode = false;
 
-// Кейсы — состояние
 let caseOpening = { coupon: false, coin: false };
 let caseLastOpen = {
   coupon: parseInt(localStorage.getItem('sww_case_coupon_last') || '0'),
@@ -1222,7 +1220,6 @@ function renderCaseCard(type) {
 }
 
 function buildStrip(items, suffix) {
-  // Создаём длинную полосу из "случайных" элементов
   const total = 60;
   let html = '';
   for (let i = 0; i < total; i++) {
@@ -1291,7 +1288,6 @@ async function openCase(type) {
   const winnerIndex = pickWeighted(items);
   const winner = items[winnerIndex];
 
-  // Находим позицию нужного элемента в ленте
   const strip = document.getElementById(`strip-${type}`);
   if (!strip) { caseOpening[type] = false; return; }
 
@@ -1300,7 +1296,6 @@ async function openCase(type) {
   const wrapWidth = strip.parentElement.clientWidth;
   const centerOffset = wrapWidth / 2 - itemWidth / 2;
 
-  // Ищем в ленте элемент, соответствующий победителю
   let targetPos = -1;
   for (let i = allItems.length - 1; i >= 20; i--) {
     const el = allItems[i];
@@ -1315,7 +1310,6 @@ async function openCase(type) {
 
   const targetX = -(targetPos * itemWidth - centerOffset);
 
-  // Сброс и запуск анимации
   strip.style.transition = 'none';
   strip.style.transform = 'translateX(0)';
   void strip.offsetWidth;
@@ -1323,7 +1317,6 @@ async function openCase(type) {
   strip.style.transition = 'transform 5s cubic-bezier(0.15, 0.85, 0.25, 1)';
   strip.style.transform = `translateX(${targetX}px)`;
 
-  // Таймер следующего открытия
   if (!user.isAdmin) {
     caseLastOpen[type] = Date.now();
     localStorage.setItem(`sww_case_${type}_last`, String(caseLastOpen[type]));
@@ -1340,7 +1333,6 @@ async function openCase(type) {
 
     if (isCoupon) {
       if (winner.discount > 0) {
-        // Создаём промокод
         const code = 'CASE-' + Math.random().toString(36).slice(2, 6).toUpperCase();
         await db.ref('promos/' + code).set({
           discount: winner.discount, used: false, created: Date.now(),
@@ -1731,14 +1723,13 @@ function shareReferral() {
 }
 
 /* =========================================================
-   РЕДАКТОР ТОВАРОВ (ПОЧИНЕНО)
+   РЕДАКТОР ТОВАРОВ
    ========================================================= */
 function toggleEditorMode() {
   editorMode = !editorMode;
   const b = document.getElementById('editorBanner');
   if (b) b.classList.toggle('show', editorMode);
   toast(editorMode ? '🔧 Редактор включён' : '✅ Редактор выключен', '🔧');
-  // Перерисовываем текущую категорию, чтобы обновить обработчики
   if (currentCategory && currentPage === 'catalog') {
     renderProductsInPlace();
   }
@@ -1873,15 +1864,133 @@ function renderAdmin() {
       </button>
     </div>
 
+    <!-- ===== ДОБАВЛЕНИЕ ТОВАРОВ ===== -->
+    <div class="section-title" style="margin-top:20px;">➕ Добавить линейку (жидкости/шайбы)</div>
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="addLineName" placeholder="Например: HQD Sweet" />
+    </div>
+    <div class="field">
+      <label>Цена (₽)</label>
+      <input type="number" id="addLinePrice" placeholder="500" />
+    </div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="addLineCategory">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Количество (на каждый вкус)</label>
+      <input type="number" id="addLineQty" value="1" />
+    </div>
+    <div class="field">
+      <label>Кешбек (%)</label>
+      <input type="number" id="addLineCashback" value="10" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Вкусы (по одному на строку, опционально YES)</label>
+      <textarea id="addLineFlavors" placeholder="Манго,YES&#10;Клубника,YES&#10;Арбуз,YES"></textarea>
+    </div>
+    <button class="admin-action-btn btn-green" onclick="adminAddLine()">➕ Добавить линейку</button>
+
+    <div class="section-title" style="margin-top:20px;">➕ Добавить товар (испарители/устройства)</div>
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="addItemName" placeholder="Например: Voopoo PnP VM1" />
+    </div>
+    <div class="field">
+      <label>Цена (₽)</label>
+      <input type="number" id="addItemPrice" placeholder="300" />
+    </div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="addItemCategory">
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Количество</label>
+      <input type="number" id="addItemQty" value="1" />
+    </div>
+    <div class="field">
+      <label>Кешбек (%)</label>
+      <input type="number" id="addItemCashback" value="10" min="0" max="100" />
+    </div>
+    <button class="admin-action-btn btn-green" onclick="adminAddItem()">➕ Добавить товар</button>
+
+    <!-- ===== УДАЛЕНИЕ ===== -->
+    <div class="section-title" style="margin-top:20px;">🗑️ Удалить товар</div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="delCategory" onchange="updateDelSelect()">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Товар</label>
+      <select id="delItem"><option value="">-- Выберите --</option></select>
+    </div>
+    <button class="admin-action-btn btn-red" onclick="adminDeleteProduct()">🗑️ Удалить</button>
+
+    <!-- ===== ИЗМЕНИТЬ ЦЕНУ ===== -->
+    <div class="section-title" style="margin-top:20px;">💰 Изменить цену</div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="priceCategory" onchange="updatePriceSelectAdmin()">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Товар</label>
+      <select id="priceItem"><option value="">-- Выберите --</option></select>
+    </div>
+    <div class="field">
+      <label>Новая цена (₽)</label>
+      <input type="number" id="newPrice" placeholder="500" />
+    </div>
+    <button class="admin-action-btn btn-orange" onclick="adminUpdatePrice()">💰 Обновить цену</button>
+
+    <!-- ===== ИЗМЕНИТЬ КОЛИЧЕСТВО ===== -->
+    <div class="section-title" style="margin-top:20px;">📦 Изменить количество</div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="qtyCategory" onchange="updateQtySelectAdmin()">
+        <option value="liquids">Жидкости</option>
+        <option value="pouches">Шайбы</option>
+        <option value="coils">Испарители</option>
+        <option value="devices">Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Товар</label>
+      <select id="qtyItem"><option value="">-- Выберите --</option></select>
+    </div>
+    <div class="field">
+      <label>Новое количество</label>
+      <input type="number" id="newQty" placeholder="10" />
+    </div>
+    <button class="admin-action-btn btn-cyan" onclick="adminUpdateQty()">📦 Обновить количество</button>
+
+    <!-- ===== РЕДАКТОР ===== -->
     <div class="section-title" style="margin-top:20px;">🔧 Редактор товаров</div>
     <button class="admin-action-btn btn-orange" onclick="editorToggleFromAdmin()">
       ${editorMode ? '❌ Выключить редактор' : '✏️ Включить редактор'}
     </button>
     <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">
-      После включения перейди в категорию и тыкни на товар — сможешь менять цену, наличие, кешбек и название.
+      После включения перейди в категорию и тыкни на товар.
     </p>
 
-    <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID пользователя</div>
+    <!-- ===== SHORT ID ===== -->
+    <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID</div>
     <div class="field">
       <label>Пользователь</label>
       <select id="shortIdUserSelect">
@@ -1893,33 +2002,36 @@ function renderAdmin() {
       <label>Новый Short ID</label>
       <input type="text" id="newShortIdValue" placeholder="SWW-XXXX-XXXX" />
     </div>
-    <button class="admin-action-btn btn-purple" onclick="adminUpdateShortId()">🆔 Обновить ID</button>
+    <button class="admin-action-btn btn-purple" onclick="adminUpdateShortId()">🆔 Обновить</button>
 
+    <!-- ===== ВЫДАТЬ СКИДКУ ===== -->
     <div class="section-title" style="margin-top:20px;">🎁 Выдать скидку по ID</div>
     <div class="field">
-      <label>Short ID пользователя</label>
+      <label>Short ID</label>
       <input type="text" id="promoShortId" placeholder="SWW-XXXX-XXXX" />
     </div>
     <div class="field">
       <label>Скидка (%)</label>
       <input type="number" id="promoShortDiscount" value="10" />
     </div>
-    <button class="admin-action-btn btn-green" onclick="adminGivePromoByShortId()">🎁 Выдать скидку</button>
+    <button class="admin-action-btn btn-green" onclick="adminGivePromoByShortId()">🎁 Выдать</button>
 
-    <div class="section-title" style="margin-top:20px;">🪙 Выдать монеты по ID</div>
+    <!-- ===== ВЫДАТЬ МОНЕТЫ ===== -->
+    <div class="section-title" style="margin-top:20px;">🪙 Выдать монеты</div>
     <div class="field">
-      <label>Short ID пользователя</label>
+      <label>Short ID</label>
       <input type="text" id="coinShortId" placeholder="SWW-XXXX-XXXX" />
     </div>
     <div class="field">
-      <label>Сумма SWWCOIN (+ начислить / − списать)</label>
+      <label>Сумма (+ / −)</label>
       <input type="number" id="coinAmount" placeholder="100" />
     </div>
-    <button class="admin-action-btn btn-gold" onclick="adminGiveCoinsByShortId()">🪙 Выдать монеты</button>
+    <button class="admin-action-btn btn-gold" onclick="adminGiveCoinsByShortId()">🪙 Выдать</button>
 
-    <div class="section-title" style="margin-top:20px;">💰 Изменить баланс (по User ID)</div>
+    <!-- ===== БАЛАНС по User ID ===== -->
+    <div class="section-title" style="margin-top:20px;">💰 Баланс (User ID)</div>
     <div class="field">
-      <label>User ID (tg_xxx)</label>
+      <label>User ID</label>
       <input type="text" id="balanceUserId" placeholder="tg_123456789" />
     </div>
     <div class="field">
@@ -1928,6 +2040,7 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-gold" onclick="adminAdjustBalance()">💰 Изменить</button>
 
+    <!-- ===== ВСЕ СКИДКИ ===== -->
     <div class="section-title" style="margin-top:20px;">📋 Все скидки</div>
     <div id="allPromosList"></div>
     <button class="admin-action-btn btn-purple" onclick="renderAllPromosAdmin()">🔄 Обновить</button>
@@ -1939,6 +2052,9 @@ function renderAdmin() {
     <button class="admin-action-btn btn-red" onclick="adminLogout()">🚪 Выйти из админки</button>
   `;
 
+  updateDelSelect();
+  updatePriceSelectAdmin();
+  updateQtySelectAdmin();
   renderAllPromosAdmin();
 }
 
@@ -1948,6 +2064,157 @@ function editorToggleFromAdmin() {
   setTimeout(() => toggleEditorMode(), 300);
 }
 
+/* =========================================================
+   АДМИН: ДОБАВЛЕНИЕ ТОВАРОВ
+   ========================================================= */
+async function adminAddLine() {
+  if (!user.isAdmin) return;
+  const name = document.getElementById('addLineName').value.trim();
+  const price = parseInt(document.getElementById('addLinePrice').value);
+  const category = document.getElementById('addLineCategory').value;
+  const qty = parseInt(document.getElementById('addLineQty').value) || 1;
+  const cashback = parseInt(document.getElementById('addLineCashback').value);
+  const flavorsText = document.getElementById('addLineFlavors').value.trim();
+
+  if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
+  if (!flavorsText) { toast('❌ Добавь хотя бы один вкус', '❌'); return; }
+  if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+
+  const flavors = flavorsText.split('\n').filter(l => l.trim()).map(l => {
+    const parts = l.split(',');
+    return {
+      id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      name: parts[0].trim(),
+      inStock: (parts[1] || '').trim().toUpperCase() === 'YES',
+      quantity: qty
+    };
+  });
+
+  if (!data[category]) data[category] = [];
+  data[category].push({ name, price, cashback, flavors });
+  await db.ref('assortment').set(data);
+  toast('✅ Линейка добавлена', '✅');
+
+  document.getElementById('addLineName').value = '';
+  document.getElementById('addLinePrice').value = '';
+  document.getElementById('addLineFlavors').value = '';
+  document.getElementById('addLineQty').value = '1';
+}
+
+async function adminAddItem() {
+  if (!user.isAdmin) return;
+  const name = document.getElementById('addItemName').value.trim();
+  const price = parseInt(document.getElementById('addItemPrice').value);
+  const category = document.getElementById('addItemCategory').value;
+  const qty = parseInt(document.getElementById('addItemQty').value) || 1;
+  const cashback = parseInt(document.getElementById('addItemCashback').value);
+
+  if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
+  if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+
+  if (!data[category]) data[category] = [];
+  data[category].push({
+    id: 'i_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name, price, cashback,
+    quantity: qty,
+    inStock: qty > 0
+  });
+  await db.ref('assortment').set(data);
+  toast('✅ Товар добавлен', '✅');
+
+  document.getElementById('addItemName').value = '';
+  document.getElementById('addItemPrice').value = '';
+  document.getElementById('addItemQty').value = '1';
+}
+
+/* =========================================================
+   АДМИН: УДАЛЕНИЕ / ИЗМЕНЕНИЕ ТОВАРОВ
+   ========================================================= */
+function updateDelSelect() {
+  const cat = document.getElementById('delCategory')?.value;
+  const sel = document.getElementById('delItem');
+  if (!sel || !data[cat]) return;
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    sel.innerHTML += `<option value="${i}">${item.name} (${item.price}₽)</option>`;
+  });
+}
+
+function updatePriceSelectAdmin() {
+  const cat = document.getElementById('priceCategory')?.value;
+  const sel = document.getElementById('priceItem');
+  if (!sel || !data[cat]) return;
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    sel.innerHTML += `<option value="${i}">${item.name} (${item.price}₽)</option>`;
+  });
+}
+
+function updateQtySelectAdmin() {
+  const cat = document.getElementById('qtyCategory')?.value;
+  const sel = document.getElementById('qtyItem');
+  if (!sel || !data[cat]) return;
+  sel.innerHTML = '<option value="">-- Выберите --</option>';
+  data[cat].forEach((item, i) => {
+    const qty = cat === 'liquids' || cat === 'pouches'
+      ? (item.flavors || []).reduce((s, f) => s + (f.quantity || 0), 0)
+      : (item.quantity || 0);
+    sel.innerHTML += `<option value="${i}">${item.name} (${qty} шт)</option>`;
+  });
+}
+
+async function adminDeleteProduct() {
+  const cat = document.getElementById('delCategory').value;
+  const idx = parseInt(document.getElementById('delItem').value);
+  if (isNaN(idx)) { toast('❌ Выбери товар', '❌'); return; }
+  if (!confirm(`Удалить "${data[cat][idx].name}"?`)) return;
+
+  data[cat].splice(idx, 1);
+  await db.ref('assortment').set(data);
+  toast('🗑️ Удалён', '🗑️');
+  renderAdmin();
+}
+
+async function adminUpdatePrice() {
+  const cat = document.getElementById('priceCategory').value;
+  const idx = parseInt(document.getElementById('priceItem').value);
+  const price = parseInt(document.getElementById('newPrice').value);
+  if (isNaN(idx) || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
+
+  data[cat][idx].price = price;
+  await db.ref('assortment').set(data);
+  toast('💰 Цена обновлена: ' + price + '₽', '💰');
+  document.getElementById('newPrice').value = '';
+  renderAdmin();
+}
+
+async function adminUpdateQty() {
+  const cat = document.getElementById('qtyCategory').value;
+  const idx = parseInt(document.getElementById('qtyItem').value);
+  const qty = parseInt(document.getElementById('newQty').value);
+  if (isNaN(idx) || isNaN(qty) || qty < 0) { toast('❌ Заполни поля', '❌'); return; }
+
+  if (cat === 'liquids' || cat === 'pouches') {
+    const flavors = data[cat][idx].flavors;
+    const per = Math.floor(qty / flavors.length);
+    const rem = qty % flavors.length;
+    flavors.forEach((f, i) => {
+      f.quantity = per + (i < rem ? 1 : 0);
+      f.inStock = f.quantity > 0;
+    });
+  } else {
+    data[cat][idx].quantity = qty;
+    data[cat][idx].inStock = qty > 0;
+  }
+  await db.ref('assortment').set(data);
+  toast('📦 Обновлено', '📦');
+  document.getElementById('newQty').value = '';
+  renderAdmin();
+}
+
+/* =========================================================
+   АДМИН: SHORT ID / СКИДКИ / МОНЕТЫ / БАЛАНС
+   ========================================================= */
 async function adminUpdateShortId() {
   const uid = document.getElementById('shortIdUserSelect').value;
   const newId = document.getElementById('newShortIdValue').value.trim().toUpperCase();
@@ -1957,10 +2224,7 @@ async function adminUpdateShortId() {
   await db.ref('users/' + uid + '/shortId').set(newId);
   toast('🆔 ID обновлён: ' + newId, '🆔');
   document.getElementById('newShortIdValue').value = '';
-
-  if (uid === user.id) {
-    user.shortId = newId;
-  }
+  if (uid === user.id) user.shortId = newId;
 }
 
 async function adminGivePromoByShortId() {
@@ -2004,7 +2268,7 @@ async function adminGiveCoinsByShortId() {
   await db.ref('users/' + found.id + '/balanceHistory').push({
     type: 'admin_adjust', amount, date: Date.now(), by: user.id
   });
-  toast(`🪙 ${amount > 0 ? '+' : ''}${amount} SWWCOIN → ${found.firstName}`, '🪙');
+  toast(`🪙 ${amount > 0 ? '+' : ''}${amount} → ${found.firstName}`, '🪙');
   document.getElementById('coinShortId').value = '';
   document.getElementById('coinAmount').value = '';
 
@@ -2031,11 +2295,14 @@ async function adminAdjustBalance() {
   await db.ref('users/' + uid + '/balanceHistory').push({
     type: 'admin_adjust', amount, date: Date.now(), by: user.id
   });
-  toast(`💰 ${amount > 0 ? '+' : ''}${amount} SWWCOIN (${newBal} всего)`, '💰');
+  toast(`💰 ${amount > 0 ? '+' : ''}${amount} SWWCOIN`, '💰');
   document.getElementById('balanceUserId').value = '';
   document.getElementById('balanceAmount').value = '';
 }
 
+/* =========================================================
+   АДМИН: ЗАКАЗЫ
+   ========================================================= */
 function renderAllOrders() {
   const el = document.getElementById('allOrdersContent');
   if (!orders.length) {
@@ -2077,7 +2344,7 @@ async function adminCompleteOrder(orderId) {
 
   const snap = await db.ref('orders/' + orderId).once('value');
   const order = snap.val();
-  if (!order) { toast('❌ Заказ не найден', '❌'); return; }
+  if (!order) { toast('❌ Не найден', '❌'); return; }
 
   await db.ref('orders/' + orderId).update({ status: 'completed', completedAt: Date.now() });
 
@@ -2143,6 +2410,9 @@ async function adminCancelOrder(orderId) {
   renderAllOrders();
 }
 
+/* =========================================================
+   АДМИН: ПОЛЬЗОВАТЕЛИ
+   ========================================================= */
 function renderUsers() {
   const el = document.getElementById('usersContent');
   const list = Object.values(users);
@@ -2169,7 +2439,7 @@ function openUserEditor(uid) {
     </div>
     <div class="field">
       <label>Short ID</label>
-      <input type="text" id="euShortId" value="${u.shortId || ''}" placeholder="SWW-XXXX-XXXX" />
+      <input type="text" id="euShortId" value="${u.shortId || ''}" />
     </div>
     <div class="field">
       <label>Баланс SWWCOIN</label>
@@ -2186,7 +2456,6 @@ async function saveUserEditor(uid) {
   const newShortId = document.getElementById('euShortId').value.trim().toUpperCase();
   const newBalance = parseInt(document.getElementById('euBalance').value) || 0;
   if (!newShortId || !/^[A-Z0-9\-]+$/.test(newShortId)) { toast('❌ Неверный ID', '❌'); return; }
-
   await db.ref('users/' + uid).update({ shortId: newShortId, balance: newBalance });
   toast('✅ Сохранено', '✅');
   closeOverlay('editUserOverlay');
@@ -2214,6 +2483,9 @@ async function quickGiveCoins(uid, amount) {
   closeOverlay('editUserOverlay');
 }
 
+/* =========================================================
+   АДМИН: КОНСОЛЬ
+   ========================================================= */
 function renderConsole() {
   document.getElementById('consoleContent').innerHTML = `
     <div class="field">
@@ -2266,6 +2538,9 @@ function adminBroadcast() {
   document.getElementById('broadcastMsg').value = '';
 }
 
+/* =========================================================
+   АДМИН: ВСЕ СКИДКИ
+   ========================================================= */
 function renderAllPromosAdmin() {
   const el = document.getElementById('allPromosList');
   if (!el) return;
