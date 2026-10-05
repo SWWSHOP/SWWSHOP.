@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 3.7 — ИНДИВИДУАЛЬНОЕ КОЛИЧЕСТВО ВКУСОВ
+   SWWSHOP 3.8 — ПОЛНЫЙ РЕДАКТОР ВКУСОВ
    ========================================================= */
 
 const CONFIG = {
@@ -111,10 +111,7 @@ let caseLastOpen = {
       const r = R * (0.75 + Math.sin(t * Math.PI) * 0.15);
       const x = cx + Math.cos(angle) * r * 0.9;
       const y = cy - R * 0.55 + Math.sin(angle) * R * 0.45;
-      points.push({
-        x: x + (Math.random() - 0.5) * 3,
-        y: y + (Math.random() - 0.5) * 3
-      });
+      points.push({ x: x + (Math.random() - 0.5) * 3, y: y + (Math.random() - 0.5) * 3 });
     }
 
     for (let i = 0; i < totalBottom; i++) {
@@ -123,10 +120,7 @@ let caseLastOpen = {
       const r = R * (0.75 + Math.sin(t * Math.PI) * 0.15);
       const x = cx + Math.cos(angle) * r * 0.9;
       const y = cy + R * 0.55 + Math.sin(angle) * R * 0.45;
-      points.push({
-        x: x + (Math.random() - 0.5) * 3,
-        y: y + (Math.random() - 0.5) * 3
-      });
+      points.push({ x: x + (Math.random() - 0.5) * 3, y: y + (Math.random() - 0.5) * 3 });
     }
 
     for (let i = 0; i < totalMid; i++) {
@@ -134,10 +128,7 @@ let caseLastOpen = {
       const angle = Math.PI * (0.55 + t * 0.9);
       const x = cx + Math.cos(angle) * R * 0.6;
       const y = cy - R * 0.15 + t * R * 0.55;
-      points.push({
-        x: x + (Math.random() - 0.5) * 3,
-        y: y + (Math.random() - 0.5) * 3
-      });
+      points.push({ x: x + (Math.random() - 0.5) * 3, y: y + (Math.random() - 0.5) * 3 });
     }
 
     return points;
@@ -188,7 +179,6 @@ let caseLastOpen = {
         const dx = (this.target.x + this.offsetX * 2) - this.x;
         const dy = (this.target.y + this.offsetY * 2) - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-
         const force = Math.min(0.02, 0.8 / (dist + 20));
         this.vx += dx * force;
         this.vy += dy * force;
@@ -198,7 +188,6 @@ let caseLastOpen = {
           this.vx += Math.cos(angle) * 0.05;
           this.vy += Math.sin(angle) * 0.05;
         }
-
         this.vx *= 0.92;
         this.vy *= 0.92;
       } else {
@@ -261,21 +250,18 @@ let caseLastOpen = {
         ctx.lineTo(this.x, this.y + drawSize * 2);
         ctx.stroke();
       }
-
       ctx.globalAlpha = 1;
     }
   }
 
   const particles = [];
   const TOTAL = 240;
-
   for (let i = 0; i < TOTAL; i++) {
-    const p = new Particle(
+    particles.push(new Particle(
       Math.random() * width,
       Math.random() * height,
       S_POINTS[i % S_POINTS.length]
-    );
-    particles.push(p);
+    ));
   }
 
   setTimeout(() => {
@@ -288,7 +274,6 @@ let caseLastOpen = {
 
   function animate(now) {
     if (!running) return;
-
     ctx.fillStyle = 'rgba(10, 14, 23, 0.18)';
     ctx.fillRect(0, 0, width, height);
 
@@ -304,7 +289,6 @@ let caseLastOpen = {
       particles[i].update(now);
       particles[i].draw();
     }
-
     rafId = requestAnimationFrame(animate);
   }
   rafId = requestAnimationFrame(animate);
@@ -312,7 +296,6 @@ let caseLastOpen = {
   window.__stopPreloader = function stopPreloader() {
     const preloader = document.getElementById('preloader');
     if (!preloader || preloader.classList.contains('hide')) return;
-
     particles.forEach(p => {
       p.attracted = false;
       const dx = p.x - cx;
@@ -324,7 +307,6 @@ let caseLastOpen = {
       p.alpha = 1;
       p.size *= 1.3;
     });
-
     setTimeout(() => {
       preloader.classList.add('hide');
       setTimeout(() => {
@@ -2060,28 +2042,40 @@ function openEditor(catId, index) {
   const isSimple = catId === 'coils' || catId === 'devices';
   const cb = getCashback(item);
 
-  // Для жидкостей/шайб — редактор вкусов с индивидуальным количеством
+  // ===== ЖИДКОСТИ/ШАЙБЫ — редактор вкусов =====
   if (!isSimple) {
     const flavorsHTML = (item.flavors || []).map((f, fi) => `
-      <div class="flavor-editor-row" style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            ${f.name}
-          </div>
-          <div style="font-size:11px;color:var(--text-dim);">
+      <div class="flavor-editor-row" 
+           id="flavor-row-${fi}"
+           data-original-id="${f.id || ''}"
+           data-original-name="${(f.name || '').replace(/"/g, '&quot;')}"
+           style="display:flex;align-items:center;gap:6px;padding:10px;background:var(--bg-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+          <input
+            type="text"
+            id="flavor-name-${fi}"
+            value="${(f.name || '').replace(/"/g, '&quot;')}"
+            placeholder="Название вкуса"
+            style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;outline:none;"
+          />
+          <div style="font-size:10px;color:var(--text-dim);font-family:monospace;">
             ID: ${f.id ? f.id.slice(-6) : '—'}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-          <button class="qty-btn" onclick="changeFlavorQty(${fi}, -1)">−</button>
+          <button type="button" class="qty-btn" onclick="changeFlavorQty(${fi}, -1)">−</button>
           <input
             type="number"
             id="flavor-qty-${fi}"
             value="${f.quantity || 0}"
             min="0"
-            style="width:60px;padding:6px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;outline:none;"
+            style="width:56px;padding:6px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;outline:none;"
           />
-          <button class="qty-btn" onclick="changeFlavorQty(${fi}, 1)">+</button>
+          <button type="button" class="qty-btn" onclick="changeFlavorQty(${fi}, 1)">+</button>
+          <button type="button" class="qty-btn" 
+                  onclick="removeFlavorFromEditor(${fi})" 
+                  style="background:rgba(255,77,109,0.15);border-color:var(--danger);color:var(--danger);"
+                  title="Удалить вкус">🗑️</button>
         </div>
       </div>
     `).join('');
@@ -2090,8 +2084,8 @@ function openEditor(catId, index) {
       <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">${item.name}</h3>
 
       <div class="field">
-        <label>Название</label>
-        <input type="text" id="edName" value="${item.name}" />
+        <label>Название линейки</label>
+        <input type="text" id="edName" value="${item.name.replace(/"/g, '&quot;')}" />
       </div>
       <div class="field">
         <label>Цена (₽)</label>
@@ -2105,42 +2099,46 @@ function openEditor(catId, index) {
 
       <div class="field" style="margin-top:14px;">
         <label style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Количество по вкусам (${item.flavors.length})</span>
+          <span>Вкусы (<span id="flavorCountLabel">${item.flavors.length}</span>)</span>
           <span style="font-size:10px;color:var(--text-dim);">
             Всего: <b id="flavorTotalCount" style="color:var(--accent);">${item.flavors.reduce((s, f) => s + (f.quantity || 0), 0)}</b> шт
           </span>
         </label>
       </div>
 
-      <div style="max-height:280px;overflow-y:auto;padding-right:4px;margin-bottom:12px;">
-        ${flavorsHTML}
+      <div id="flavorsEditorList" style="max-height:300px;overflow-y:auto;padding-right:4px;margin-bottom:10px;">
+        ${flavorsHTML || '<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:13px;">Нет вкусов. Добавьте первый 👇</div>'}
       </div>
 
+      <button type="button" class="btn btn-success btn-block" 
+              onclick="addNewFlavorRow()" 
+              style="margin-bottom:12px;">
+        ➕ Добавить вкус
+      </button>
+
       <button class="btn btn-primary btn-block" onclick="saveEditedProduct('${catId}', ${index})">💾 Сохранить</button>
-      <button class="btn btn-danger btn-block" style="margin-top:8px;" onclick="deleteProductFromEditor('${catId}', ${index})">🗑️ Удалить товар</button>
+      <button class="btn btn-danger btn-block" style="margin-top:8px;" onclick="deleteProductFromEditor('${catId}', ${index})">🗑️ Удалить линейку</button>
     `;
 
-    // Автообновление общей суммы
-    (item.flavors || []).forEach((f, fi) => {
-      const input = document.getElementById(`flavor-qty-${fi}`);
-      if (input) {
-        input.addEventListener('input', () => {
-          updateFlavorTotal();
-        });
-      }
-    });
+    setTimeout(() => {
+      const qtyInputs = document.querySelectorAll('[id^="flavor-qty-"]');
+      qtyInputs.forEach(inp => {
+        inp.addEventListener('input', updateFlavorTotal);
+      });
+      updateFlavorTotal();
+    }, 50);
 
     openOverlay('editProductOverlay');
     return;
   }
 
-  // Для испарителей/устройств — старая логика (одно количество)
+  // ===== ИСПАРИТЕЛИ/УСТРОЙСТВА =====
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">${item.name}</h3>
 
     <div class="field">
       <label>Название</label>
-      <input type="text" id="edName" value="${item.name}" />
+      <input type="text" id="edName" value="${item.name.replace(/"/g, '&quot;')}" />
     </div>
     <div class="field">
       <label>Цена (₽)</label>
@@ -2164,7 +2162,7 @@ function openEditor(catId, index) {
 }
 
 /* =========================================================
-   ИЗМЕНЕНИЕ КОЛИЧЕСТВА ВКУСА
+   РЕДАКТОР ВКУСОВ
    ========================================================= */
 function changeFlavorQty(fi, delta) {
   const input = document.getElementById(`flavor-qty-${fi}`);
@@ -2183,6 +2181,95 @@ function updateFlavorTotal() {
   });
   const el = document.getElementById('flavorTotalCount');
   if (el) el.textContent = total;
+}
+
+function removeFlavorFromEditor(fi) {
+  if (!confirm('Удалить этот вкус?')) return;
+  const row = document.getElementById(`flavor-row-${fi}`);
+  if (!row) return;
+  row.style.transition = 'all 0.3s';
+  row.style.opacity = '0';
+  row.style.transform = 'translateX(-20px)';
+  setTimeout(() => {
+    row.remove();
+    reindexFlavorRows();
+    updateFlavorTotal();
+  }, 300);
+}
+
+function reindexFlavorRows() {
+  const list = document.getElementById('flavorsEditorList');
+  if (!list) return;
+  const rows = list.querySelectorAll('.flavor-editor-row');
+  rows.forEach((row, newIdx) => {
+    row.id = `flavor-row-${newIdx}`;
+    const nameInput = row.querySelector('[id^="flavor-name-"]');
+    const qtyInput = row.querySelector('[id^="flavor-qty-"]');
+    if (nameInput) nameInput.id = `flavor-name-${newIdx}`;
+    if (qtyInput) qtyInput.id = `flavor-qty-${newIdx}`;
+    const btns = row.querySelectorAll('button');
+    if (btns[0]) btns[0].setAttribute('onclick', `changeFlavorQty(${newIdx}, -1)`);
+    if (btns[1]) btns[1].setAttribute('onclick', `changeFlavorQty(${newIdx}, 1)`);
+    if (btns[2]) btns[2].setAttribute('onclick', `removeFlavorFromEditor(${newIdx})`);
+  });
+  const label = document.getElementById('flavorCountLabel');
+  if (label) label.textContent = rows.length;
+}
+
+function addNewFlavorRow() {
+  const list = document.getElementById('flavorsEditorList');
+  if (!list) return;
+  
+  const empty = list.querySelector('div[style*="text-align:center"]');
+  if (empty && !list.querySelector('.flavor-editor-row')) {
+    empty.remove();
+  }
+  
+  const currentCount = list.querySelectorAll('.flavor-editor-row').length;
+  const newIdx = currentCount;
+  
+  const row = document.createElement('div');
+  row.className = 'flavor-editor-row';
+  row.id = `flavor-row-${newIdx}`;
+  row.dataset.originalId = '';
+  row.dataset.originalName = '';
+  row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:10px;background:var(--bg-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--success);';
+  row.innerHTML = `
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+      <input
+        type="text"
+        id="flavor-name-${newIdx}"
+        value=""
+        placeholder="Название вкуса"
+        style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;outline:none;"
+      />
+      <div style="font-size:10px;color:var(--success);font-family:monospace;">
+        ✨ Новый
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+      <button type="button" class="qty-btn" onclick="changeFlavorQty(${newIdx}, -1)">−</button>
+      <input
+        type="number"
+        id="flavor-qty-${newIdx}"
+        value="1"
+        min="0"
+        style="width:56px;padding:6px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;outline:none;"
+      />
+      <button type="button" class="qty-btn" onclick="changeFlavorQty(${newIdx}, 1)">+</button>
+      <button type="button" class="qty-btn" 
+              onclick="removeFlavorFromEditor(${newIdx})" 
+              style="background:rgba(255,77,109,0.15);border-color:var(--danger);color:var(--danger);">🗑️</button>
+    </div>
+  `;
+  list.appendChild(row);
+  row.querySelector('[id^="flavor-name-"]').focus();
+  
+  const qtyInput = row.querySelector('[id^="flavor-qty-"]');
+  if (qtyInput) qtyInput.addEventListener('input', updateFlavorTotal);
+  
+  updateFlavorTotal();
+  reindexFlavorRows();
 }
 
 /* =========================================================
@@ -2212,18 +2299,59 @@ async function saveEditedProduct(catId, index) {
     item.quantity = newQty;
     item.inStock = newQty > 0;
   } else {
-    const flavors = item.flavors || [];
-    for (let i = 0; i < flavors.length; i++) {
-      const inp = document.getElementById(`flavor-qty-${i}`);
-      if (!inp) continue;
-      const q = parseInt(inp.value);
-      if (isNaN(q) || q < 0) {
-        toast(`❌ Количество вкуса "${flavors[i].name}" неверно`, '❌');
+    const list = document.getElementById('flavorsEditorList');
+    if (!list) return;
+    
+    const rows = list.querySelectorAll('.flavor-editor-row');
+    const newFlavors = [];
+    
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const nameInp = row.querySelector('[id^="flavor-name-"]');
+      const qtyInp = row.querySelector('[id^="flavor-qty-"]');
+      
+      const fName = nameInp ? nameInp.value.trim() : '';
+      const fQty = qtyInp ? parseInt(qtyInp.value) : 0;
+      
+      if (!fName) {
+        toast(`❌ Заполните название вкуса #${i + 1}`, '❌');
+        if (nameInp) nameInp.focus();
         return;
       }
-      flavors[i].quantity = q;
-      flavors[i].inStock = q > 0;
+      if (isNaN(fQty) || fQty < 0) {
+        toast(`❌ Неверное количество вкуса "${fName}"`, '❌');
+        return;
+      }
+      
+      if (newFlavors.some(x => x.name.toLowerCase() === fName.toLowerCase())) {
+        toast(`❌ Вкус "${fName}" уже есть в списке`, '❌');
+        return;
+      }
+      
+      // Сохраняем ID, если это существующий вкус (не переименован)
+      let flavorId = row.dataset.originalId || '';
+      const originalName = row.dataset.originalName || '';
+      
+      // Если название изменилось — всё равно сохраняем ID (чтобы корзина не сломалась)
+      // Если ID нет — создаём новый
+      if (!flavorId) {
+        flavorId = 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      }
+      
+      newFlavors.push({
+        id: flavorId,
+        name: fName,
+        quantity: fQty,
+        inStock: fQty > 0
+      });
     }
+    
+    if (newFlavors.length === 0) {
+      toast('❌ Добавьте хотя бы один вкус', '❌');
+      return;
+    }
+    
+    item.flavors = newFlavors;
   }
 
   await db.ref('assortment').set(data);
@@ -2311,7 +2439,7 @@ function renderAdmin() {
       </select>
     </div>
     <div class="field">
-      <label>Количество (на каждый вкус)</label>
+      <label>Количество по умолчанию (если не указывать у вкуса)</label>
       <input type="number" id="addLineQty" value="1" />
     </div>
     <div class="field">
@@ -2319,9 +2447,13 @@ function renderAdmin() {
       <input type="number" id="addLineCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
     </div>
     <div class="field">
-      <label>Вкусы (по одному на строку, опционально YES)</label>
-      <textarea id="addLineFlavors" placeholder="Манго,YES&#10;Клубника,YES&#10;Арбуз,YES"></textarea>
+      <label>Вкусы (название,количество — по одному на строку)</label>
+      <textarea id="addLineFlavors" placeholder="Манго,3&#10;Клубника,5&#10;Арбуз,2"></textarea>
     </div>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:6px;margin-bottom:6px;">
+      💡 Формат: <b>Манго,3</b> — название и количество через запятую.<br>
+      Если количество не указывать — возьмётся из поля выше.
+    </p>
     <button class="admin-action-btn btn-green" onclick="adminAddLine()">➕ Добавить линейку</button>
 
     <div class="section-title" style="margin-top:20px;">➕ Добавить товар (испарители/устройства)</div>
@@ -2411,7 +2543,8 @@ function renderAdmin() {
       ${editorMode ? '❌ Выключить редактор' : '✏️ Включить редактор'}
     </button>
     <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">
-      После включения перейди в категорию и тыкни на товар. Для жидкостей/шайб сможешь менять количество каждого вкуса отдельно.
+      После включения перейди в категорию и тыкни на товар.<br>
+      Для жидкостей/шайб: можешь <b>менять / удалять / добавлять вкусы</b>.
     </p>
 
     <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID</div>
@@ -2529,7 +2662,7 @@ async function adminAddLine() {
   const name = document.getElementById('addLineName').value.trim();
   const price = parseInt(document.getElementById('addLinePrice').value);
   const category = document.getElementById('addLineCategory').value;
-  const qty = parseInt(document.getElementById('addLineQty').value) || 1;
+  const defaultQty = parseInt(document.getElementById('addLineQty').value) || 1;
   const cashback = parseInt(document.getElementById('addLineCashback').value);
   const flavorsText = document.getElementById('addLineFlavors').value.trim();
 
@@ -2537,20 +2670,37 @@ async function adminAddLine() {
   if (!flavorsText) { toast('❌ Добавь хотя бы один вкус', '❌'); return; }
   if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
 
+  // Парсим вкусы: "Манго,3" или "Манго" (тогда defaultQty)
   const flavors = flavorsText.split('\n').filter(l => l.trim()).map(l => {
     const parts = l.split(',');
+    const fName = parts[0].trim();
+    let fQty = defaultQty;
+    
+    if (parts.length >= 2) {
+      const rawVal = parts[1].trim();
+      // Поддержка старого формата YES
+      if (rawVal.toUpperCase() === 'YES') {
+        fQty = defaultQty;
+      } else {
+        const parsed = parseInt(rawVal);
+        if (!isNaN(parsed) && parsed >= 0) {
+          fQty = parsed;
+        }
+      }
+    }
+    
     return {
       id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-      name: parts[0].trim(),
-      inStock: (parts[1] || '').trim().toUpperCase() === 'YES',
-      quantity: qty
+      name: fName,
+      quantity: fQty,
+      inStock: fQty > 0
     };
   });
 
   if (!data[category]) data[category] = [];
   data[category].push({ name, price, cashback, flavors });
   await db.ref('assortment').set(data);
-  toast('✅ Линейка добавлена', '✅');
+  toast(`✅ Линейка добавлена (${flavors.length} вкусов)`, '✅');
 
   document.getElementById('addLineName').value = '';
   document.getElementById('addLinePrice').value = '';
