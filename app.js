@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 3.5 — ПРЕЛОАДЕР + ВСЕ ФУНКЦИИ
+   SWWSHOP 3.6 — ПРЕЛОАДЕР V2 + ВСЕ ФУНКЦИИ
    ========================================================= */
 
 const CONFIG = {
@@ -68,7 +68,7 @@ let caseLastOpen = {
 };
 
 /* =========================================================
-   ПРЕЛОАДЕР — ЧАСТИЦЫ В БУКВЕ S
+   ПРЕЛОАДЕР V2 — ПЛАВНЕЕ + ЭФФЕКТЫ
    ========================================================= */
 (function initPreloader() {
   const canvas = document.getElementById('preloaderCanvas');
@@ -77,12 +77,11 @@ let caseLastOpen = {
   const ctx = canvas.getContext('2d');
   let width = window.innerWidth;
   let height = window.innerHeight;
-  let dpr = window.devicePixelRatio || 1;
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   function resize() {
     width = window.innerWidth;
     height = window.innerHeight;
-    dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     canvas.style.width = width + 'px';
@@ -93,47 +92,51 @@ let caseLastOpen = {
   window.addEventListener('resize', resize);
 
   const COLORS = [
-    '#3b82f6',
-    '#93c5fd',
-    '#bfdbfe',
-    '#60a5fa',
-    '#2563eb',
-    '#1d4ed8'
+    '#3b82f6', '#60a5fa', '#93c5fd',
+    '#bfdbfe', '#2563eb', '#1d4ed8',
+    '#ffffff'
   ];
 
   function getSPoints(count, cx, cy, radius) {
     const points = [];
-    const centerX = cx;
-    const centerY = cy;
     const R = radius;
 
-    const totalTop = Math.floor(count * 0.4);
-    const totalBottom = Math.floor(count * 0.4);
+    const totalTop = Math.floor(count * 0.35);
+    const totalBottom = Math.floor(count * 0.35);
     const totalMid = count - totalTop - totalBottom;
 
     for (let i = 0; i < totalTop; i++) {
       const t = i / totalTop;
-      const angle = Math.PI * (1.15 - t * 1.3);
-      const x = centerX + Math.cos(angle) * R * 0.85;
-      const y = centerY - R * 0.6 + Math.sin(angle) * R * 0.4;
-      points.push({ x, y });
+      const angle = Math.PI * (1.15 - t * 1.35);
+      const r = R * (0.75 + Math.sin(t * Math.PI) * 0.15);
+      const x = cx + Math.cos(angle) * r * 0.9;
+      const y = cy - R * 0.55 + Math.sin(angle) * R * 0.45;
+      points.push({
+        x: x + (Math.random() - 0.5) * 3,
+        y: y + (Math.random() - 0.5) * 3
+      });
     }
 
     for (let i = 0; i < totalBottom; i++) {
       const t = i / totalBottom;
-      const angle = Math.PI * (-0.15 + t * 1.3);
-      const x = centerX + Math.cos(angle) * R * 0.85;
-      const y = centerY + R * 0.6 + Math.sin(angle) * R * 0.4;
-      points.push({ x, y });
+      const angle = Math.PI * (-0.15 + t * 1.35);
+      const r = R * (0.75 + Math.sin(t * Math.PI) * 0.15);
+      const x = cx + Math.cos(angle) * r * 0.9;
+      const y = cy + R * 0.55 + Math.sin(angle) * R * 0.45;
+      points.push({
+        x: x + (Math.random() - 0.5) * 3,
+        y: y + (Math.random() - 0.5) * 3
+      });
     }
 
     for (let i = 0; i < totalMid; i++) {
       const t = i / totalMid;
-      const x = centerX + Math.cos(Math.PI * (0.5 + t * 1)) * R * 0.55;
-      const y = centerY - R * 0.1 + t * R * 0.5;
+      const angle = Math.PI * (0.55 + t * 0.9);
+      const x = cx + Math.cos(angle) * R * 0.6;
+      const y = cy - R * 0.15 + t * R * 0.55;
       points.push({
-        x: x + (Math.random() - 0.5) * 4,
-        y: y + (Math.random() - 0.5) * 4
+        x: x + (Math.random() - 0.5) * 3,
+        y: y + (Math.random() - 0.5) * 3
       });
     }
 
@@ -149,73 +152,126 @@ let caseLastOpen = {
   }
 
   const cx = width / 2;
-  const cy = height / 2;
-  const radius = Math.min(width, height) * 0.22;
+  const cy = height / 2 + 10;
+  const radius = Math.min(width, height) * 0.19;
 
-  const S_POINTS = shuffle(getSPoints(180, cx, cy, radius));
+  const S_POINTS = shuffle(getSPoints(240, cx, cy, radius));
 
   class Particle {
     constructor(x, y, target) {
       this.x = x;
       this.y = y;
-      this.vx = (Math.random() - 0.5) * 0.6;
-      this.vy = (Math.random() - 0.5) * 0.6;
-      this.size = 1.5 + Math.random() * 3;
+      this.startX = x;
+      this.startY = y;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = (Math.random() - 0.5) * 0.4;
+      this.size = 1.2 + Math.random() * 2.5;
       this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
-      this.alpha = 0.35 + Math.random() * 0.55;
+      this.alpha = 0.3 + Math.random() * 0.6;
+      this.targetAlpha = this.alpha;
       this.life = 0;
-      this.maxLife = 100 + Math.random() * 100;
       this.target = target;
       this.attracted = false;
-      this.delay = Math.random() * 60;
+      this.delay = Math.random() * 80;
       this.pulsePhase = Math.random() * Math.PI * 2;
+      this.pulseSpeed = 0.02 + Math.random() * 0.04;
+      this.trail = [];
+      this.trailLen = 3 + Math.floor(Math.random() * 4);
+      this.isStar = Math.random() < 0.15;
+      this.orbitSpeed = 0.5 + Math.random() * 1.5;
+      this.offsetX = (Math.random() - 0.5) * 2;
+      this.offsetY = (Math.random() - 0.5) * 2;
     }
 
-    update() {
+    update(time) {
       this.life++;
-      this.pulsePhase += 0.05;
+      this.pulsePhase += this.pulseSpeed;
 
       if (this.attracted && this.life > this.delay) {
-        const dx = this.target.x - this.x;
-        const dy = this.target.y - this.y;
-        this.vx += dx * 0.008;
-        this.vy += dy * 0.008;
+        const dx = (this.target.x + this.offsetX * 2) - this.x;
+        const dy = (this.target.y + this.offsetY * 2) - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        const force = Math.min(0.02, 0.8 / (dist + 20));
+        this.vx += dx * force;
+        this.vy += dy * force;
+
+        if (dist < 15) {
+          const angle = time * 0.001 * this.orbitSpeed;
+          this.vx += Math.cos(angle) * 0.05;
+          this.vy += Math.sin(angle) * 0.05;
+        }
+
         this.vx *= 0.92;
         this.vy *= 0.92;
       } else {
-        this.vx += (Math.random() - 0.5) * 0.05;
-        this.vy += (Math.random() - 0.5) * 0.05;
-        this.vx *= 0.98;
-        this.vy *= 0.98;
+        this.vx += (Math.random() - 0.5) * 0.03;
+        this.vy += (Math.random() - 0.5) * 0.03;
+        this.vx *= 0.97;
+        this.vy *= 0.97;
       }
 
       this.x += this.vx;
       this.y += this.vy;
 
-      if (this.x < 0) this.x = width;
-      if (this.x > width) this.x = 0;
-      if (this.y < 0) this.y = height;
-      if (this.y > height) this.y = 0;
+      if (this.x < -10) this.x = width + 10;
+      if (this.x > width + 10) this.x = -10;
+      if (this.y < -10) this.y = height + 10;
+      if (this.y > height + 10) this.y = -10;
+
+      this.trail.push({ x: this.x, y: this.y });
+      if (this.trail.length > this.trailLen) this.trail.shift();
     }
 
     draw() {
-      const pulse = 0.85 + Math.sin(this.pulsePhase) * 0.15;
+      for (let i = 0; i < this.trail.length; i++) {
+        const t = this.trail[i];
+        const trailAlpha = (i / this.trail.length) * this.alpha * 0.35;
+        ctx.globalAlpha = trailAlpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, this.size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const pulse = 0.75 + Math.sin(this.pulsePhase) * 0.25;
+      const drawSize = this.size * pulse;
+
       ctx.globalAlpha = this.alpha * pulse;
       ctx.fillStyle = this.color;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, drawSize, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.globalAlpha = this.alpha * 0.3;
+      const glowSize = this.isStar ? this.size * 4 : this.size * 2.5;
+      const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+      glow.addColorStop(0, this.color);
+      glow.addColorStop(1, 'transparent');
+      ctx.globalAlpha = this.alpha * 0.4;
+      ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size * 2.5, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
       ctx.fill();
+
+      if (this.isStar && this.life > 30) {
+        ctx.globalAlpha = this.alpha * 0.6 * pulse;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.x - drawSize * 2, this.y);
+        ctx.lineTo(this.x + drawSize * 2, this.y);
+        ctx.moveTo(this.x, this.y - drawSize * 2);
+        ctx.lineTo(this.x, this.y + drawSize * 2);
+        ctx.stroke();
+      }
+
       ctx.globalAlpha = 1;
     }
   }
 
   const particles = [];
-  const TOTAL = 180;
+  const TOTAL = 240;
+
   for (let i = 0; i < TOTAL; i++) {
     const p = new Particle(
       Math.random() * width,
@@ -227,25 +283,34 @@ let caseLastOpen = {
 
   setTimeout(() => {
     particles.forEach(p => { p.attracted = true; });
-  }, 400);
+  }, 600);
 
   let rafId;
   let running = true;
+  let startTime = performance.now();
 
-  function animate() {
+  function animate(now) {
     if (!running) return;
 
-    ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
+    ctx.fillStyle = 'rgba(10, 14, 23, 0.18)';
     ctx.fillRect(0, 0, width, height);
 
-    particles.forEach(p => {
-      p.update();
-      p.draw();
-    });
+    const centerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 2.5);
+    const time = (now - startTime) / 1000;
+    const glowIntensity = 0.04 + Math.sin(time * 1.5) * 0.02;
+    centerGlow.addColorStop(0, `rgba(59, 130, 246, ${glowIntensity})`);
+    centerGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = centerGlow;
+    ctx.fillRect(0, 0, width, height);
+
+    for (let i = 0; i < particles.length; i++) {
+      particles[i].update(now);
+      particles[i].draw();
+    }
 
     rafId = requestAnimationFrame(animate);
   }
-  animate();
+  rafId = requestAnimationFrame(animate);
 
   window.__stopPreloader = function stopPreloader() {
     const preloader = document.getElementById('preloader');
@@ -253,9 +318,14 @@ let caseLastOpen = {
 
     particles.forEach(p => {
       p.attracted = false;
-      p.vx = (Math.random() - 0.5) * 8;
-      p.vy = (Math.random() - 0.5) * 8;
-      p.alpha = 0.9;
+      const dx = p.x - cx;
+      const dy = p.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const speed = 12 + Math.random() * 8;
+      p.vx = (dx / dist) * speed + (Math.random() - 0.5) * 3;
+      p.vy = (dy / dist) * speed + (Math.random() - 0.5) * 3;
+      p.alpha = 1;
+      p.size *= 1.3;
     });
 
     setTimeout(() => {
@@ -264,8 +334,8 @@ let caseLastOpen = {
         running = false;
         if (rafId) cancelAnimationFrame(rafId);
         preloader.style.display = 'none';
-      }, 900);
-    }, 400);
+      }, 1200);
+    }, 500);
   };
 })();
 
@@ -547,10 +617,9 @@ async function initUser() {
 
   if (isAdmin) setTimeout(() => toast('👑 Вы вошли как администратор', '👑'), 800);
 
-  // 🎬 Скрываем прелоадер
   setTimeout(() => {
     if (window.__stopPreloader) window.__stopPreloader();
-  }, 2200);
+  }, 2400);
 }
 
 function updateBalanceUI() {
