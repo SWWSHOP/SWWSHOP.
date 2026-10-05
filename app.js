@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 3.8 — ПОЛНЫЙ РЕДАКТОР ВКУСОВ
+   SWWSHOP 4.0 — АДМИН РЕДАКТИРУЕТ ПРЯМО В КАТАЛОГЕ
    ========================================================= */
 
 const CONFIG = {
@@ -59,7 +59,6 @@ let currentPage = 'catalog';
 let currentCategory = '';
 let initialized = false;
 let submittingOrder = false;
-let editorMode = false;
 
 let caseOpening = { coupon: false, coin: false };
 let caseLastOpen = {
@@ -91,16 +90,11 @@ let caseLastOpen = {
   resize();
   window.addEventListener('resize', resize);
 
-  const COLORS = [
-    '#3b82f6', '#60a5fa', '#93c5fd',
-    '#bfdbfe', '#2563eb', '#1d4ed8',
-    '#ffffff'
-  ];
+  const COLORS = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#2563eb', '#1d4ed8', '#ffffff'];
 
   function getSPoints(count, cx, cy, radius) {
     const points = [];
     const R = radius;
-
     const totalTop = Math.floor(count * 0.35);
     const totalBottom = Math.floor(count * 0.35);
     const totalMid = count - totalTop - totalBottom;
@@ -113,7 +107,6 @@ let caseLastOpen = {
       const y = cy - R * 0.55 + Math.sin(angle) * R * 0.45;
       points.push({ x: x + (Math.random() - 0.5) * 3, y: y + (Math.random() - 0.5) * 3 });
     }
-
     for (let i = 0; i < totalBottom; i++) {
       const t = i / totalBottom;
       const angle = Math.PI * (-0.15 + t * 1.35);
@@ -122,7 +115,6 @@ let caseLastOpen = {
       const y = cy + R * 0.55 + Math.sin(angle) * R * 0.45;
       points.push({ x: x + (Math.random() - 0.5) * 3, y: y + (Math.random() - 0.5) * 3 });
     }
-
     for (let i = 0; i < totalMid; i++) {
       const t = i / totalMid;
       const angle = Math.PI * (0.55 + t * 0.9);
@@ -130,7 +122,6 @@ let caseLastOpen = {
       const y = cy - R * 0.15 + t * R * 0.55;
       points.push({ x: x + (Math.random() - 0.5) * 3, y: y + (Math.random() - 0.5) * 3 });
     }
-
     return points;
   }
 
@@ -145,13 +136,11 @@ let caseLastOpen = {
   const cx = width / 2;
   const cy = height / 2 + 10;
   const radius = Math.min(width, height) * 0.19;
-
   const S_POINTS = shuffle(getSPoints(240, cx, cy, radius));
 
   class Particle {
     constructor(x, y, target) {
-      this.x = x;
-      this.y = y;
+      this.x = x; this.y = y;
       this.vx = (Math.random() - 0.5) * 0.4;
       this.vy = (Math.random() - 0.5) * 0.4;
       this.size = 1.2 + Math.random() * 2.5;
@@ -170,11 +159,9 @@ let caseLastOpen = {
       this.offsetX = (Math.random() - 0.5) * 2;
       this.offsetY = (Math.random() - 0.5) * 2;
     }
-
     update(time) {
       this.life++;
       this.pulsePhase += this.pulseSpeed;
-
       if (this.attracted && this.life > this.delay) {
         const dx = (this.target.x + this.offsetX * 2) - this.x;
         const dy = (this.target.y + this.offsetY * 2) - this.y;
@@ -182,7 +169,6 @@ let caseLastOpen = {
         const force = Math.min(0.02, 0.8 / (dist + 20));
         this.vx += dx * force;
         this.vy += dy * force;
-
         if (dist < 15) {
           const angle = time * 0.001 * this.orbitSpeed;
           this.vx += Math.cos(angle) * 0.05;
@@ -196,19 +182,15 @@ let caseLastOpen = {
         this.vx *= 0.97;
         this.vy *= 0.97;
       }
-
       this.x += this.vx;
       this.y += this.vy;
-
       if (this.x < -10) this.x = width + 10;
       if (this.x > width + 10) this.x = -10;
       if (this.y < -10) this.y = height + 10;
       if (this.y > height + 10) this.y = -10;
-
       this.trail.push({ x: this.x, y: this.y });
       if (this.trail.length > this.trailLen) this.trail.shift();
     }
-
     draw() {
       for (let i = 0; i < this.trail.length; i++) {
         const t = this.trail[i];
@@ -219,16 +201,13 @@ let caseLastOpen = {
         ctx.arc(t.x, t.y, this.size * 0.6, 0, Math.PI * 2);
         ctx.fill();
       }
-
       const pulse = 0.75 + Math.sin(this.pulsePhase) * 0.25;
       const drawSize = this.size * pulse;
-
       ctx.globalAlpha = this.alpha * pulse;
       ctx.fillStyle = this.color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, drawSize, 0, Math.PI * 2);
       ctx.fill();
-
       const glowSize = this.isStar ? this.size * 4 : this.size * 2.5;
       const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
       glow.addColorStop(0, this.color);
@@ -238,7 +217,6 @@ let caseLastOpen = {
       ctx.beginPath();
       ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
       ctx.fill();
-
       if (this.isStar && this.life > 30) {
         ctx.globalAlpha = this.alpha * 0.6 * pulse;
         ctx.strokeStyle = this.color;
@@ -257,16 +235,9 @@ let caseLastOpen = {
   const particles = [];
   const TOTAL = 240;
   for (let i = 0; i < TOTAL; i++) {
-    particles.push(new Particle(
-      Math.random() * width,
-      Math.random() * height,
-      S_POINTS[i % S_POINTS.length]
-    ));
+    particles.push(new Particle(Math.random() * width, Math.random() * height, S_POINTS[i % S_POINTS.length]));
   }
-
-  setTimeout(() => {
-    particles.forEach(p => { p.attracted = true; });
-  }, 600);
+  setTimeout(() => { particles.forEach(p => { p.attracted = true; }); }, 600);
 
   let rafId;
   let running = true;
@@ -276,7 +247,6 @@ let caseLastOpen = {
     if (!running) return;
     ctx.fillStyle = 'rgba(10, 14, 23, 0.18)';
     ctx.fillRect(0, 0, width, height);
-
     const centerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 2.5);
     const time = (now - startTime) / 1000;
     const glowIntensity = 0.04 + Math.sin(time * 1.5) * 0.02;
@@ -284,7 +254,6 @@ let caseLastOpen = {
     centerGlow.addColorStop(1, 'transparent');
     ctx.fillStyle = centerGlow;
     ctx.fillRect(0, 0, width, height);
-
     for (let i = 0; i < particles.length; i++) {
       particles[i].update(now);
       particles[i].draw();
@@ -298,8 +267,7 @@ let caseLastOpen = {
     if (!preloader || preloader.classList.contains('hide')) return;
     particles.forEach(p => {
       p.attracted = false;
-      const dx = p.x - cx;
-      const dy = p.y - cy;
+      const dx = p.x - cx, dy = p.y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
       const speed = 12 + Math.random() * 8;
       p.vx = (dx / dist) * speed + (Math.random() - 0.5) * 3;
@@ -319,7 +287,7 @@ let caseLastOpen = {
 })();
 
 /* =========================================================
-   ID ПОЛЬЗОВАТЕЛЯ
+   ID / START_PARAM
    ========================================================= */
 function getUserId() {
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -350,9 +318,6 @@ async function getUniqueShortId() {
   return 'SWW-' + base.slice(0, 4) + '-' + base.slice(4, 8);
 }
 
-/* =========================================================
-   START_PARAM
-   ========================================================= */
 async function waitForStartParam(maxWaitMs = 3000) {
   const start = Date.now();
   while (Date.now() - start < maxWaitMs) {
@@ -388,38 +353,29 @@ async function handleReferral(startParam, uid, existingUserData) {
   if (!startParam || !startParam.startsWith('ref_')) return false;
   const refCode = startParam.replace('ref_', '').toUpperCase();
   if (existingUserData?.referredBy) return false;
-
   const snap = await db.ref('users').orderByChild('referralCode').equalTo(refCode).once('value');
   const found = snap.val();
   if (!found) return false;
-
   const referrerUid = Object.keys(found)[0];
   if (referrerUid === uid) return false;
-
   await db.ref('users/' + uid).update({ referredBy: referrerUid, referredAt: Date.now() });
   await db.ref('users/' + referrerUid + '/referrals/' + uid).set({
     joinedAt: Date.now(),
     firstName: user.firstName || 'Пользователь',
     username: user.username || '',
     telegramId: user.telegramId || null,
-    totalOrders: 0,
-    totalSum: 0
+    totalOrders: 0, totalSum: 0
   });
-
   const refTgId = found[referrerUid].telegramId;
   if (refTgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: refTgId,
-        text: `🎉 По вашей ссылке зарегистрировался новый пользователь!\n\n` +
-              `👤 ${user.firstName}${user.username ? ' @' + user.username : ''}\n\n` +
-              `💰 За каждые ${CONFIG.REFERRAL.MIN_REFERRAL_SUM}₽ его покупок (мин. ${CONFIG.REFERRAL.MIN_REFERRAL_ORDERS} заказа) вы получите ${CONFIG.REFERRAL.REFERRER_REWARD}%!`
+        text: `🎉 По вашей ссылке зарегистрировался новый пользователь!\n\n👤 ${user.firstName}${user.username ? ' @' + user.username : ''}`
       })
     }).catch(() => {});
   }
-
   user.referredBy = referrerUid;
   toast('🎉 Вы пришли по реферальной ссылке!', '🎁');
   return true;
@@ -429,23 +385,18 @@ async function checkReferralRewards(uid) {
   const refSnap = await db.ref('users/' + uid + '/referrals').once('value');
   const refs = refSnap.val();
   if (!refs) return;
-
   for (const refUid of Object.keys(refs)) {
     const ordersSnap = await db.ref('orders').orderByChild('userId').equalTo(refUid).once('value');
     const ordersVal = ordersSnap.val() || {};
     const list = Object.values(ordersVal);
     const completed = list.filter(o => o.status === 'completed');
-
     if (completed.length >= CONFIG.REFERRAL.MIN_REFERRAL_ORDERS) {
       const totalSum = completed.reduce((s, o) => s + (o.totalPrice || o.total || 0), 0);
       if (totalSum >= CONFIG.REFERRAL.MIN_REFERRAL_SUM) {
         const rewardSnap = await db.ref('users/' + uid + '/referrals/' + refUid + '/rewardPaid').once('value');
-        if (!rewardSnap.val()) {
-          await giveReferrerReward(uid, refUid, totalSum);
-        }
+        if (!rewardSnap.val()) await giveReferrerReward(uid, refUid, totalSum);
       }
     }
-
     await db.ref('users/' + uid + '/referrals/' + refUid).update({
       totalOrders: list.length,
       totalSum: list.reduce((s, o) => s + (o.totalPrice || o.total || 0), 0),
@@ -458,29 +409,22 @@ async function giveReferrerReward(referrerUid, referralUid, referralSum) {
   const thousands = Math.floor(referralSum / CONFIG.REFERRAL.MIN_REFERRAL_SUM);
   const rewardPercent = thousands * CONFIG.REFERRAL.REFERRER_REWARD;
   if (rewardPercent <= 0) return;
-
   const code = 'REF-' + Math.random().toString(36).slice(2, 6).toUpperCase();
   await db.ref('promos/' + code).set({
     discount: rewardPercent, used: false, created: Date.now(),
     type: 'referral', userId: referrerUid, uses: 0, maxUses: 1
   });
-
   await db.ref('users/' + referrerUid + '/referrals/' + referralUid + '/rewardPaid').set({
     paid: true, code, percent: rewardPercent, sum: referralSum, paidAt: Date.now()
   });
-
   const tgSnap = await db.ref('users/' + referrerUid + '/telegramId').once('value');
   const tgId = tgSnap.val();
   if (tgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: tgId,
-        text: `🎁 <b>Реферальная награда!</b>\n\n` +
-              `Ваш реферал сделал заказов на <b>${referralSum}₽</b>\n` +
-              `Вам начислена скидка <b>${rewardPercent}%</b>\n\n` +
-              `Промокод: <code>${code}</code>`,
+        text: `🎁 <b>Реферальная награда!</b>\n\nВаш реферал сделал заказов на <b>${referralSum}₽</b>\nВам начислена скидка <b>${rewardPercent}%</b>\n\nПромокод: <code>${code}</code>`,
         parse_mode: 'HTML'
       })
     }).catch(() => {});
@@ -540,9 +484,7 @@ async function initUser() {
   user.referredBy = u?.referredBy || null;
   user.balance = u?.balance || 0;
 
-  if (startParam.startsWith('ref_')) {
-    await handleReferral(startParam, uid, u);
-  }
+  if (startParam.startsWith('ref_')) await handleReferral(startParam, uid, u);
 
   if (u) {
     user.savedDiscount = u.savedDiscount || null;
@@ -553,9 +495,7 @@ async function initUser() {
     if (u.referredBy) user.referredBy = u.referredBy;
     if (typeof u.balance === 'number') user.balance = u.balance;
   } else {
-    user.phone = '';
-    user.contactUsername = '';
-    user.balance = 0;
+    user.phone = ''; user.contactUsername = ''; user.balance = 0;
   }
 
   await db.ref('users/' + uid).update({
@@ -595,10 +535,7 @@ async function initUser() {
   loadUserOrders();
 
   if (isAdmin) setTimeout(() => toast('👑 Вы вошли как администратор', '👑'), 800);
-
-  setTimeout(() => {
-    if (window.__stopPreloader) window.__stopPreloader();
-  }, 2400);
+  setTimeout(() => { if (window.__stopPreloader) window.__stopPreloader(); }, 2400);
 }
 
 function updateBalanceUI() {
@@ -653,7 +590,6 @@ function loadUserOrders() {
     if (currentPage === 'profile') renderProfile();
     if (currentPage === 'order') renderOrder();
   });
-
   if (isAdmin) {
     db.ref('orders').on('value', s => {
       const val = s.val();
@@ -792,7 +728,7 @@ function render() {
 }
 
 /* =========================================================
-   КАТАЛОГ
+   КАТАЛОГ — С АДМИН-КНОПКАМИ
    ========================================================= */
 function renderCatalog() {
   const cats = [
@@ -810,6 +746,13 @@ function renderCatalog() {
     <section class="section">
       <div class="section-title">Категории</div>
       ${cats.map(c => renderCatCard(c)).join('')}
+      ${isAdmin ? `
+        <div style="margin-top:16px;padding:16px;background:var(--card);border:2px dashed var(--warning);border-radius:18px;">
+          <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:10px;">👑 Быстрые действия админа</div>
+          <button class="admin-action-btn btn-green" onclick="openAddLineModal()">➕ Добавить линейку (жидкости/шайбы)</button>
+          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal()">➕ Добавить товар (испарители/устройства)</button>
+        </div>
+      ` : ''}
     </section>
   `;
 }
@@ -844,6 +787,8 @@ function renderCatCard(cat) {
 function openCategory(catId) {
   currentCategory = catId;
   const titles = { liquids: 'Жидкости', pouches: 'Шайбы', coils: 'Испарители', devices: 'Устройства' };
+  const isSimple = catId === 'coils' || catId === 'devices';
+
   document.getElementById('app').innerHTML = `
     <button class="back-btn" onclick="navigate('catalog')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -851,6 +796,15 @@ function openCategory(catId) {
     </button>
     <h1 style="font-size:22px;font-weight:800;margin-bottom:16px;">${titles[catId]}</h1>
     <input type="text" class="search-input" placeholder="🔍 Поиск..." oninput="filterProducts(this.value)" />
+
+    ${isAdmin ? `
+      <button class="admin-action-btn ${isSimple ? 'btn-cyan' : 'btn-green'}" 
+              onclick="${isSimple ? `openAddItemModal('${catId}')` : `openAddLineModal('${catId}')`}"
+              style="margin-bottom:14px;">
+        ➕ Добавить ${isSimple ? 'товар' : 'линейку'}
+      </button>
+    ` : ''}
+
     <div id="productsList">${renderProducts(catId)}</div>
   `;
 }
@@ -864,23 +818,35 @@ function renderProducts(catId) {
       const totalQty = line.flavors.reduce((s, f) => s + (f.quantity || 0), 0);
       const cb = getCashback(line);
       return `
-        <div class="cat-card" onclick="openLine('${catId}', ${i})">
-          <div class="cat-left">
-            <div class="cat-info">
-              <div class="cat-name">${line.name}</div>
-              <div class="cat-desc">${line.flavors.length} вкусов${isAdmin ? ` · ${totalQty} шт` : ''}</div>
+        <div style="position:relative;margin-bottom:10px;">
+          <div class="cat-card" onclick="openLine('${catId}', ${i})">
+            <div class="cat-left">
+              <div class="cat-info">
+                <div class="cat-name">${line.name}</div>
+                <div class="cat-desc">${line.flavors.length} вкусов${isAdmin ? ` · ${totalQty} шт` : ''}</div>
+              </div>
+            </div>
+            <div class="cat-right">
+              <span class="product-square-cashback" style="font-size:10px;">🪙 ${cb}%</span>
+              <span class="cat-count">${line.price} ₽</span>
+              <svg class="cat-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </div>
           </div>
-          <div class="cat-right">
-            <span class="product-square-cashback" style="font-size:10px;">🪙 ${cb}%</span>
-            <span class="cat-count">${line.price} ₽</span>
-            <svg class="cat-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-          </div>
+          ${isAdmin ? `
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <button class="admin-action-btn btn-orange" style="margin-top:0;padding:8px;font-size:12px;" 
+                      onclick="event.stopPropagation();openEditLineModal('${catId}', ${i})">✏️ Изменить</button>
+              <button class="admin-action-btn btn-red" style="margin-top:0;padding:8px;font-size:12px;" 
+                      onclick="event.stopPropagation();adminDeleteLine('${catId}', ${i})">🗑️ Удалить</button>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
   } else {
-    return `<div class="product-grid">${items.map((item, i) => renderSquareProduct(item, i, catId)).join('')}</div>`;
+    return `<div class="product-grid">
+      ${items.map((item, i) => renderSquareProduct(item, i, catId)).join('')}
+    </div>`;
   }
 }
 
@@ -894,12 +860,8 @@ function renderSquareProduct(item, i, catId) {
   if (inCart) { statusClass = 'status-in-cart'; statusText = '✓ В корзине'; }
   else if (qty === 0) { statusClass = 'status-out-stock'; statusText = 'Нет'; }
 
-  const editorBadge = (editorMode && isAdmin) ? `<div class="editor-overlay-product">✏️</div>` : '';
-  const clickHandler = (editorMode && isAdmin) ? `onclick="openEditor('${catId}', ${i})"` : '';
-
   return `
-    <div class="product-square ${inCart ? 'in-cart' : ''} ${qty === 0 ? 'out-of-stock' : ''} ${editorMode && isAdmin ? 'editor-active' : ''}" ${clickHandler}>
-      ${editorBadge}
+    <div class="product-square ${inCart ? 'in-cart' : ''} ${qty === 0 ? 'out-of-stock' : ''}">
       <div class="product-square-top">
         <div class="product-square-name">${item.name}</div>
         <div class="product-square-price">${item.price} ₽</div>
@@ -912,6 +874,14 @@ function renderSquareProduct(item, i, catId) {
           ${inCart ? '✓ В корзине' : (qty > 0 ? '🛒 Добавить' : 'Нет')}
         </button>
       </div>
+      ${isAdmin ? `
+        <div style="display:flex;gap:4px;margin-top:6px;position:relative;z-index:1;">
+          <button class="admin-action-btn btn-orange" style="margin-top:0;padding:6px;font-size:11px;flex:1;" 
+                  onclick="event.stopPropagation();openEditItemModal('${catId}', ${i})">✏️</button>
+          <button class="admin-action-btn btn-red" style="margin-top:0;padding:6px;font-size:11px;flex:1;" 
+                  onclick="event.stopPropagation();adminDeleteItem('${catId}', ${i})">🗑️</button>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -932,6 +902,9 @@ function filterProducts(query) {
   data[currentCategory] = orig;
 }
 
+/* =========================================================
+   ЛИНЕЙКА (СПИСОК ВКУСОВ) — С АДМИН-КНОПКАМИ
+   ========================================================= */
 function openLine(catId, index) {
   currentCategory = catId;
   const line = data[catId][index];
@@ -946,7 +919,24 @@ function openLine(catId, index) {
     <h1 style="font-size:22px;font-weight:800;margin-bottom:6px;">${line.name}</h1>
     <p style="color:var(--accent);font-weight:700;font-size:18px;margin-bottom:6px;">${line.price} ₽</p>
     <span class="product-square-cashback" style="margin-bottom:20px;display:inline-block;">🪙 Кешбек ${cb}%</span>
-    <div class="section-title">Выберите вкус (${line.flavors.length})</div>
+
+    ${isAdmin ? `
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <button class="admin-action-btn btn-orange" style="margin-top:0;flex:1;" 
+                onclick="openEditLineModal('${catId}', ${index})">✏️ Изменить линейку</button>
+        <button class="admin-action-btn btn-red" style="margin-top:0;flex:1;" 
+                onclick="adminDeleteLine('${catId}', ${index})">🗑️ Удалить</button>
+      </div>
+    ` : ''}
+
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Выберите вкус (${line.flavors.length})</span>
+      ${isAdmin ? `
+        <button class="admin-action-btn btn-green" style="margin-top:0;width:auto;padding:6px 12px;font-size:12px;" 
+                onclick="openAddFlavorModal('${catId}', ${index})">➕ Вкус</button>
+      ` : ''}
+    </div>
+
     ${line.flavors.map((f, fi) => {
       const qty = f.quantity || 0;
       const inCart = cart.some(c => c.id === f.id);
@@ -954,10 +944,12 @@ function openLine(catId, index) {
       let sc = 'status-in-stock', st = 'В наличии';
       if (inCart) { sc = 'status-in-cart'; st = '✓ В корзине'; }
       else if (qty === 0) { sc = 'status-out-stock'; st = 'Нет'; }
+
       return `
-        <div class="flavor-row">
+        <div class="flavor-row" style="flex-wrap:wrap;">
           <span class="flavor-name">${f.name}</span>
           <div class="flavor-actions">
+            ${isAdmin ? `<span style="font-size:11px;color:var(--warning);font-weight:700;">${qty} шт</span>` : ''}
             <span class="product-square-status ${sc}">${st}</span>
             <button class="btn-add-cart ${inCart ? 'in-cart' : ''}" style="width:auto;padding:6px 12px;"
                     ${canAdd ? '' : 'disabled'}
@@ -965,10 +957,349 @@ function openLine(catId, index) {
               ${inCart ? '✓' : (qty > 0 ? '🛒' : '—')}
             </button>
           </div>
+          ${isAdmin ? `
+            <div style="display:flex;gap:6px;width:100%;margin-top:8px;">
+              <button class="admin-action-btn btn-orange" style="margin-top:0;flex:1;padding:6px;font-size:11px;" 
+                      onclick="openEditFlavorModal('${catId}', ${index}, ${fi})">✏️ Изменить</button>
+              <button class="admin-action-btn btn-red" style="margin-top:0;flex:1;padding:6px;font-size:11px;" 
+                      onclick="adminDeleteFlavor('${catId}', ${index}, ${fi})">🗑️ Удалить</button>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('')}
   `;
+}
+
+/* =========================================================
+   МОДАЛКИ АДМИНА
+   ========================================================= */
+function openAddLineModal(catId) {
+  catId = catId || 'liquids';
+  document.getElementById('editProductContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новая линейка</h3>
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="addLineName" placeholder="HQD Sweet" />
+    </div>
+    <div class="field">
+      <label>Цена (₽)</label>
+      <input type="number" id="addLinePrice" placeholder="500" />
+    </div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="addLineCategory">
+        <option value="liquids" ${catId === 'liquids' ? 'selected' : ''}>Жидкости</option>
+        <option value="pouches" ${catId === 'pouches' ? 'selected' : ''}>Шайбы</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Кешбек (%)</label>
+      <input type="number" id="addLineCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Вкусы (название,кол-во — по одному на строку)</label>
+      <textarea id="addLineFlavors" placeholder="Манго,3&#10;Клубника,5&#10;Арбуз,2" style="min-height:100px;"></textarea>
+    </div>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">
+      💡 Формат: <b>Манго,3</b> — название и количество.<br>
+      Можно без количества: <b>Манго</b> → будет 1.
+    </p>
+    <button class="btn btn-primary btn-block" onclick="adminAddLineSubmit()">💾 Создать</button>
+  `;
+  openOverlay('editProductOverlay');
+}
+
+function openAddItemModal(catId) {
+  catId = catId || 'coils';
+  document.getElementById('editProductContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новый товар</h3>
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="addItemName" placeholder="Voopoo PnP VM1" />
+    </div>
+    <div class="field">
+      <label>Цена (₽)</label>
+      <input type="number" id="addItemPrice" placeholder="300" />
+    </div>
+    <div class="field">
+      <label>Категория</label>
+      <select id="addItemCategory">
+        <option value="coils" ${catId === 'coils' ? 'selected' : ''}>Испарители</option>
+        <option value="devices" ${catId === 'devices' ? 'selected' : ''}>Устройства</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Количество</label>
+      <input type="number" id="addItemQty" value="1" min="0" />
+    </div>
+    <div class="field">
+      <label>Кешбек (%)</label>
+      <input type="number" id="addItemCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="adminAddItemSubmit()">💾 Создать</button>
+  `;
+  openOverlay('editProductOverlay');
+}
+
+function openEditLineModal(catId, index) {
+  const line = data[catId][index];
+  if (!line) return;
+  document.getElementById('editProductContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить линейку</h3>
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="edLineName" value="${line.name.replace(/"/g, '&quot;')}" />
+    </div>
+    <div class="field">
+      <label>Цена (₽)</label>
+      <input type="number" id="edLinePrice" value="${line.price}" />
+    </div>
+    <div class="field">
+      <label>Кешбек (%)</label>
+      <input type="number" id="edLineCashback" value="${getCashback(line)}" min="0" max="100" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="adminSaveLine('${catId}', ${index})">💾 Сохранить</button>
+  `;
+  openOverlay('editProductOverlay');
+}
+
+function openEditItemModal(catId, index) {
+  const item = data[catId][index];
+  if (!item) return;
+  document.getElementById('editProductContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить товар</h3>
+    <div class="field">
+      <label>Название</label>
+      <input type="text" id="edItemName" value="${item.name.replace(/"/g, '&quot;')}" />
+    </div>
+    <div class="field">
+      <label>Цена (₽)</label>
+      <input type="number" id="edItemPrice" value="${item.price}" />
+    </div>
+    <div class="field">
+      <label>Количество</label>
+      <input type="number" id="edItemQty" value="${item.quantity || 0}" min="0" />
+    </div>
+    <div class="field">
+      <label>Кешбек (%)</label>
+      <input type="number" id="edItemCashback" value="${getCashback(item)}" min="0" max="100" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="adminSaveItem('${catId}', ${index})">💾 Сохранить</button>
+  `;
+  openOverlay('editProductOverlay');
+}
+
+function openAddFlavorModal(catId, lineIndex) {
+  document.getElementById('editProductContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новый вкус</h3>
+    <div class="field">
+      <label>Название вкуса</label>
+      <input type="text" id="newFlavorName" placeholder="Манго" />
+    </div>
+    <div class="field">
+      <label>Количество</label>
+      <input type="number" id="newFlavorQty" value="1" min="0" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="adminAddFlavorSubmit('${catId}', ${lineIndex})">💾 Добавить</button>
+  `;
+  openOverlay('editProductOverlay');
+}
+
+function openEditFlavorModal(catId, lineIndex, flavorIndex) {
+  const line = data[catId][lineIndex];
+  const f = line.flavors[flavorIndex];
+  if (!f) return;
+  document.getElementById('editProductContent').innerHTML = `
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить вкус</h3>
+    <div class="field">
+      <label>Название вкуса</label>
+      <input type="text" id="edFlavorName" value="${f.name.replace(/"/g, '&quot;')}" />
+    </div>
+    <div class="field">
+      <label>Количество</label>
+      <input type="number" id="edFlavorQty" value="${f.quantity || 0}" min="0" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="adminSaveFlavor('${catId}', ${lineIndex}, ${flavorIndex})">💾 Сохранить</button>
+  `;
+  openOverlay('editProductOverlay');
+}
+
+/* =========================================================
+   ДЕЙСТВИЯ АДМИНА
+   ========================================================= */
+async function adminAddLineSubmit() {
+  const name = document.getElementById('addLineName').value.trim();
+  const price = parseInt(document.getElementById('addLinePrice').value);
+  const category = document.getElementById('addLineCategory').value;
+  const cashback = parseInt(document.getElementById('addLineCashback').value);
+  const flavorsText = document.getElementById('addLineFlavors').value.trim();
+
+  if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
+  if (!flavorsText) { toast('❌ Добавь хотя бы один вкус', '❌'); return; }
+  if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+
+  const flavors = flavorsText.split('\n').filter(l => l.trim()).map(l => {
+    const parts = l.split(',');
+    const fName = parts[0].trim();
+    let fQty = 1;
+    if (parts.length >= 2) {
+      const raw = parts[1].trim();
+      if (raw.toUpperCase() === 'YES') fQty = 1;
+      else {
+        const p = parseInt(raw);
+        if (!isNaN(p) && p >= 0) fQty = p;
+      }
+    }
+    return {
+      id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      name: fName,
+      quantity: fQty,
+      inStock: fQty > 0
+    };
+  });
+
+  if (!data[category]) data[category] = [];
+  data[category].push({ name, price, cashback, flavors });
+  await db.ref('assortment').set(data);
+  toast(`✅ Линейка добавлена (${flavors.length} вкусов)`, '✅');
+  closeOverlay('editProductOverlay');
+}
+
+async function adminAddItemSubmit() {
+  const name = document.getElementById('addItemName').value.trim();
+  const price = parseInt(document.getElementById('addItemPrice').value);
+  const category = document.getElementById('addItemCategory').value;
+  const qty = parseInt(document.getElementById('addItemQty').value) || 0;
+  const cashback = parseInt(document.getElementById('addItemCashback').value);
+
+  if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
+  if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+
+  if (!data[category]) data[category] = [];
+  data[category].push({
+    id: 'i_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name, price, cashback,
+    quantity: qty,
+    inStock: qty > 0
+  });
+  await db.ref('assortment').set(data);
+  toast('✅ Товар добавлен', '✅');
+  closeOverlay('editProductOverlay');
+}
+
+async function adminSaveLine(catId, index) {
+  const line = data[catId][index];
+  if (!line) return;
+  const name = document.getElementById('edLineName').value.trim();
+  const price = parseInt(document.getElementById('edLinePrice').value);
+  const cb = parseInt(document.getElementById('edLineCashback').value);
+  if (!name || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
+  if (isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+
+  line.name = name;
+  line.price = price;
+  line.cashback = cb;
+  await db.ref('assortment').set(data);
+  toast('✅ Сохранено', '✅');
+  closeOverlay('editProductOverlay');
+  openLine(catId, index);
+}
+
+async function adminSaveItem(catId, index) {
+  const item = data[catId][index];
+  if (!item) return;
+  const name = document.getElementById('edItemName').value.trim();
+  const price = parseInt(document.getElementById('edItemPrice').value);
+  const qty = parseInt(document.getElementById('edItemQty').value);
+  const cb = parseInt(document.getElementById('edItemCashback').value);
+  if (!name || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
+  if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
+  if (isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+
+  item.name = name;
+  item.price = price;
+  item.quantity = qty;
+  item.inStock = qty > 0;
+  item.cashback = cb;
+  await db.ref('assortment').set(data);
+  toast('✅ Сохранено', '✅');
+  closeOverlay('editProductOverlay');
+  renderProductsInPlace();
+}
+
+async function adminAddFlavorSubmit(catId, lineIndex) {
+  const line = data[catId][lineIndex];
+  if (!line) return;
+  const name = document.getElementById('newFlavorName').value.trim();
+  const qty = parseInt(document.getElementById('newFlavorQty').value) || 0;
+  if (!name) { toast('❌ Введи название', '❌'); return; }
+  if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
+
+  if (!line.flavors) line.flavors = [];
+  line.flavors.push({
+    id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name: name,
+    quantity: qty,
+    inStock: qty > 0
+  });
+  await db.ref('assortment').set(data);
+  toast('✅ Вкус добавлен', '✅');
+  closeOverlay('editProductOverlay');
+  openLine(catId, lineIndex);
+}
+
+async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
+  const line = data[catId][lineIndex];
+  if (!line || !line.flavors[flavorIndex]) return;
+  const name = document.getElementById('edFlavorName').value.trim();
+  const qty = parseInt(document.getElementById('edFlavorQty').value);
+  if (!name) { toast('❌ Введи название', '❌'); return; }
+  if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
+
+  line.flavors[flavorIndex].name = name;
+  line.flavors[flavorIndex].quantity = qty;
+  line.flavors[flavorIndex].inStock = qty > 0;
+  await db.ref('assortment').set(data);
+  toast('✅ Сохранено', '✅');
+  closeOverlay('editProductOverlay');
+  openLine(catId, lineIndex);
+}
+
+async function adminDeleteFlavor(catId, lineIndex, flavorIndex) {
+  const line = data[catId][lineIndex];
+  if (!line || !line.flavors[flavorIndex]) return;
+  const fname = line.flavors[flavorIndex].name;
+  if (!confirm(`Удалить вкус "${fname}"?`)) return;
+
+  line.flavors.splice(flavorIndex, 1);
+  await db.ref('assortment').set(data);
+  toast('🗑️ Вкус удалён', '🗑️');
+  openLine(catId, lineIndex);
+}
+
+async function adminDeleteLine(catId, index) {
+  const line = data[catId][index];
+  if (!line) return;
+  if (!confirm(`Удалить линейку "${line.name}"?`)) return;
+
+  data[catId].splice(index, 1);
+  await db.ref('assortment').set(data);
+  toast('🗑️ Линейка удалена', '🗑️');
+
+  if (currentPage === 'catalog') openCategory(catId);
+  else navigate('catalog');
+}
+
+async function adminDeleteItem(catId, index) {
+  const item = data[catId][index];
+  if (!item) return;
+  if (!confirm(`Удалить "${item.name}"?`)) return;
+
+  data[catId].splice(index, 1);
+  await db.ref('assortment').set(data);
+  toast('🗑️ Товар удалён', '🗑️');
+  renderProductsInPlace();
 }
 
 /* =========================================================
@@ -1113,7 +1444,6 @@ function renderOrder() {
   }
   const finalTotal = afterCoin - discountSum;
   const totalCashback = Math.round(finalTotal * totalCashbackRate / 100);
-
   const canUseCoins = (user.balance || 0) > 0 && maxCoinByLimit > 0;
 
   document.getElementById('app').innerHTML = `
@@ -1144,10 +1474,7 @@ function renderOrder() {
           </div>
         `;
       }).join('') : '<div class="empty-state"><div class="icon">📦</div><h3>Корзина пуста</h3></div>'}
-
-      ${cart.length ? `
-        <div class="cart-total"><span>Подытог:</span><span class="val">${subtotal} ₽</span></div>
-      ` : ''}
+      ${cart.length ? `<div class="cart-total"><span>Подытог:</span><span class="val">${subtotal} ₽</span></div>` : ''}
     </section>
 
     ${cart.length && canUseCoins ? `
@@ -1158,10 +1485,7 @@ function renderOrder() {
             <span class="coin-icon" style="width:24px;height:24px;font-size:13px;">₴</span>
             <div>
               <div class="label">Списать ${maxCoinSpend} SWWCOIN = ${maxCoinSpend} ₽</div>
-              <div class="sub">
-                Доступно: ${user.balance} · Лимит: ${maxCoinByLimit} (${MAX_COIN_PERCENT}%)
-                ${user.balance > maxCoinByLimit ? '<br><span style="color:var(--warning);">⚠️ Больше лимита списать нельзя</span>' : ''}
-              </div>
+              <div class="sub">Доступно: ${user.balance} · Лимит: ${maxCoinByLimit} (${MAX_COIN_PERCENT}%)</div>
             </div>
           </div>
           <div class="toggle-switch ${useBalanceInOrder ? 'on gold' : ''}"></div>
@@ -1171,14 +1495,14 @@ function renderOrder() {
 
     ${cart.length && appliedDiscount ? `
       <section class="section">
-        <div class="section-title">🎫 Купон (2-й шаг скидки)</div>
+        <div class="section-title">🎫 Купон</div>
         <div class="promo-toggle ${useDiscountInOrder ? 'active' : ''} ${appliedDiscount.locked ? 'locked' : ''}"
              onclick="${appliedDiscount.locked ? '' : 'toggleDiscount()'}">
           <div class="left">
             <span class="icon">${appliedDiscount.locked ? '🎉' : '💎'}</span>
             <div>
               <div class="label">Скидка ${appliedDiscount.discount}%</div>
-              <div class="sub">${appliedDiscount.code}${appliedDiscount.locked ? ' · обязательно' : ''}</div>
+              <div class="sub">${appliedDiscount.code}</div>
             </div>
           </div>
           <div class="toggle-switch ${useDiscountInOrder ? 'on warning' : ''}"></div>
@@ -1189,18 +1513,9 @@ function renderOrder() {
     ${cart.length ? `
       <section class="section">
         <div class="section-title">📋 Данные заказа</div>
-        <div class="field">
-          <label>Ваше имя *</label>
-          <input type="text" id="orderName" placeholder="Иван Иванов" value="${user.firstName || ''}" />
-        </div>
-        <div class="field">
-          <label>Телефон *</label>
-          <input type="tel" id="orderPhone" placeholder="+7 999 123-45-67" value="${user.phone || ''}" />
-        </div>
-        <div class="field">
-          <label>Username Telegram *</label>
-          <input type="text" id="orderUsername" placeholder="@username" value="${user.contactUsername || (user.username ? '@' + user.username : '')}" />
-        </div>
+        <div class="field"><label>Ваше имя *</label><input type="text" id="orderName" value="${user.firstName || ''}" /></div>
+        <div class="field"><label>Телефон *</label><input type="tel" id="orderPhone" value="${user.phone || ''}" /></div>
+        <div class="field"><label>Username *</label><input type="text" id="orderUsername" value="${user.contactUsername || (user.username ? '@' + user.username : '')}" /></div>
         <div class="field">
           <label>Способ оплаты *</label>
           <select id="orderPayment">
@@ -1210,20 +1525,17 @@ function renderOrder() {
             <option value="Смешанная">Смешанная</option>
           </select>
         </div>
-        <div class="field">
-          <label>Комментарий (необязательно)</label>
-          <textarea id="orderComment" placeholder="Например: позвонить за час"></textarea>
-        </div>
+        <div class="field"><label>Комментарий</label><textarea id="orderComment"></textarea></div>
       </section>
 
       <section class="section">
         <div class="section-title">💰 Итог</div>
         <div style="background:var(--bg-2);border-radius:16px;padding:14px;border:1px solid var(--border);">
           <div class="order-detail-row"><span class="lbl">Подытог:</span><span class="val">${subtotal} ₽</span></div>
-          ${coinSpend > 0 ? `<div class="order-detail-row"><span class="lbl">🪙 SWWCOIN (${Math.round(coinSpend/subtotal*100)}%):</span><span class="val" style="color:var(--gold);">−${coinSpend} ₽</span></div>` : ''}
-          ${discountSum > 0 ? `<div class="order-detail-row"><span class="lbl">Купон ${appliedDiscount.discount}% от ${afterCoin}₽:</span><span class="val" style="color:var(--warning);">−${discountSum} ₽</span></div>` : ''}
+          ${coinSpend > 0 ? `<div class="order-detail-row"><span class="lbl">🪙 SWWCOIN:</span><span class="val" style="color:var(--gold);">−${coinSpend} ₽</span></div>` : ''}
+          ${discountSum > 0 ? `<div class="order-detail-row"><span class="lbl">Купон ${appliedDiscount.discount}%:</span><span class="val" style="color:var(--warning);">−${discountSum} ₽</span></div>` : ''}
           <div class="order-detail-row" style="border-top:2px solid var(--border);padding-top:12px;margin-top:8px;">
-            <span class="lbl" style="font-size:15px;font-weight:800;">К оплате:</span>
+            <span class="lbl" style="font-weight:800;">К оплате:</span>
             <span class="val" style="font-size:18px;color:var(--accent);">${finalTotal} ₽</span>
           </div>
           <div class="order-detail-row" style="border:none;padding-top:8px;">
@@ -1231,10 +1543,7 @@ function renderOrder() {
             <span class="val" style="color:var(--gold);">+${totalCashback} SWWCOIN</span>
           </div>
         </div>
-
-        <button class="btn btn-primary btn-block" style="margin-top:14px;" id="submitOrderBtn" onclick="submitOrder()">
-          ✅ Оформить заказ
-        </button>
+        <button class="btn btn-primary btn-block" style="margin-top:14px;" id="submitOrderBtn" onclick="submitOrder()">✅ Оформить заказ</button>
       </section>
     ` : ''}
   `;
@@ -1275,7 +1584,6 @@ async function submitOrder() {
   user.contactUsername = contactUsername;
 
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
-
   const MAX_COIN_PERCENT = CONFIG.MAX_COIN_PERCENT;
   const maxCoinByLimit = Math.floor(subtotal * MAX_COIN_PERCENT / 100);
   const maxCoinSpend = Math.min(user.balance || 0, maxCoinByLimit);
@@ -1296,26 +1604,13 @@ async function submitOrder() {
   const orderId = 'SWW-' + Date.now().toString(36).toUpperCase().slice(-6);
 
   const orderData = {
-    id: orderId,
-    userId: user.id,
-    userShortId: user.shortId,
-    userName: name,
-    userPhone: phone,
-    userUsername: contactUsername,
-    userContact: contact,
-    username: user.username,
-    telegramId: user.telegramId,
-    items: [...cart],
-    subtotal: subtotal,
-    discount: discount,
+    id: orderId, userId: user.id, userShortId: user.shortId,
+    userName: name, userPhone: phone, userUsername: contactUsername,
+    userContact: contact, username: user.username, telegramId: user.telegramId,
+    items: [...cart], subtotal, discount,
     discountCode: useDiscountInOrder ? (appliedDiscount?.code || null) : null,
-    coinSpent: coinSpend,
-    totalPrice: finalTotal,
-    cashbackEarned: cashbackEarned,
-    payment: payment,
-    comment: comment,
-    status: 'pending',
-    date: Date.now()
+    coinSpent: coinSpend, totalPrice: finalTotal, cashbackEarned,
+    payment, comment, status: 'pending', date: Date.now()
   };
 
   try {
@@ -1350,10 +1645,10 @@ async function submitOrder() {
 
     let adminMsg = `🛒 НОВЫЙ ЗАКАЗ #${orderId}\n\n👤 ${name}\n📱 ${contact}\n💳 ${payment}\n🆔 ${user.shortId}\n\n📋 Товары:\n`;
     cart.forEach((it, i) => { adminMsg += `${i + 1}. ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽\n`; });
-    if (coinSpend > 0) adminMsg += `\n🪙 SWWCOIN (${Math.round(coinSpend/subtotal*100)}%): −${coinSpend}₽`;
-    if (discount > 0) adminMsg += `\n💎 Купон ${appliedDiscount.discount}%: −${discount}₽`;
+    if (coinSpend > 0) adminMsg += `\n🪙 SWWCOIN: −${coinSpend}₽`;
+    if (discount > 0) adminMsg += `\n💎 Купон: −${discount}₽`;
     adminMsg += `\n💰 К оплате: ${finalTotal}₽`;
-    adminMsg += `\n🪙 Начислим кешбек: +${cashbackEarned}`;
+    adminMsg += `\n🪙 Кешбек: +${cashbackEarned}`;
     if (comment) adminMsg += `\n\n💬 ${comment}`;
 
     if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
@@ -1439,7 +1734,6 @@ const CASE_COUPON_ITEMS = [
   { label: '15%', discount: 15, rarity: 'epic',      weight: 0.5 },
   { label: '30%', discount: 30, rarity: 'legendary', weight: 0.1 }
 ];
-
 const CASE_COIN_ITEMS = [
   { label: '0',   amount: 0,   rarity: 'common',    weight: 88 },
   { label: '10',  amount: 10,  rarity: 'uncommon',  weight: 9 },
@@ -1474,7 +1768,6 @@ function renderCases() {
       <h1 style="font-size:24px;">🎁 <span class="grad">Кейсы</span></h1>
       <p>Открывай и получай бонусы</p>
     </section>
-
     <div class="cases-container">
       ${renderCaseCard('coupon')}
       ${renderCaseCard('coin')}
@@ -1488,10 +1781,7 @@ function renderCaseCard(type) {
   const lastOpen = caseLastOpen[type];
   const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
   const canOpen = user.isAdmin || (Date.now() - lastOpen >= cooldown);
-
-  const stripItems = isCoupon
-    ? buildStrip(CASE_COUPON_ITEMS, '%')
-    : buildStrip(CASE_COIN_ITEMS, '');
+  const stripItems = isCoupon ? buildStrip(CASE_COUPON_ITEMS, '%') : buildStrip(CASE_COIN_ITEMS, '');
 
   return `
     <div class="case-card ${isCoupon ? '' : 'premium'}">
@@ -1502,19 +1792,13 @@ function renderCaseCard(type) {
           <div class="case-desc">${isCoupon ? 'Купоны на скидку' : 'Монеты SWWCOIN'}</div>
         </div>
       </div>
-
       <div class="case-strip-wrap">
         <div class="case-strip-pointer"></div>
-        <div class="case-strip" id="strip-${type}">
-          ${stripItems}
-        </div>
+        <div class="case-strip" id="strip-${type}">${stripItems}</div>
       </div>
-
-      <button class="case-open-btn" id="btn-${type}" ${canOpen ? '' : 'disabled'}
-              onclick="openCase('${type}')">
+      <button class="case-open-btn" id="btn-${type}" ${canOpen ? '' : 'disabled'} onclick="openCase('${type}')">
         ${canOpen ? (isCoupon ? '🎁 Открыть кейс' : '🪙 Открыть кейс') : '⏳ Ждите'}
       </button>
-
       <div class="case-timer" id="timer-${type}"></div>
       <div class="case-result" id="result-${type}"></div>
     </div>
@@ -1522,19 +1806,16 @@ function renderCaseCard(type) {
 }
 
 function buildStrip(items, suffix) {
-  const total = 60;
   let html = '';
-  for (let i = 0; i < total; i++) {
+  for (let i = 0; i < 60; i++) {
     const idx = pickWeighted(items);
     const it = items[idx];
     const label = suffix ? `${it.label} ${suffix}` : it.label;
     const icon = suffix === '%' ? (it.discount === 0 ? '❌' : it.discount >= 30 ? '💎' : it.discount >= 15 ? '⭐' : '🎫') : '🪙';
-    html += `
-      <div class="case-item rarity-${it.rarity}">
-        <div class="case-item-icon">${icon}</div>
-        <div class="case-item-label">${label}</div>
-      </div>
-    `;
+    html += `<div class="case-item rarity-${it.rarity}">
+      <div class="case-item-icon">${icon}</div>
+      <div class="case-item-label">${label}</div>
+    </div>`;
   }
   return html;
 }
@@ -1544,17 +1825,14 @@ function updateCaseTimers() {
     const timerEl = document.getElementById(`timer-${type}`);
     const btnEl = document.getElementById(`btn-${type}`);
     if (!timerEl || !btnEl) return;
-
     if (user.isAdmin) {
       timerEl.innerHTML = '<span style="color:#06ffa5;">✅ Безлимит</span>';
       btnEl.disabled = false;
       btnEl.textContent = type === 'coupon' ? '🎁 Открыть кейс' : '🪙 Открыть кейс';
       return;
     }
-
     const cooldown = type === 'coupon' ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
     const left = cooldown - (Date.now() - caseLastOpen[type]);
-
     if (left <= 0) {
       timerEl.innerHTML = '<span style="color:#06ffa5;">✅ Можно открыть!</span>';
       btnEl.disabled = false;
@@ -1567,79 +1845,54 @@ function updateCaseTimers() {
   });
 }
 
-setInterval(() => {
-  if (currentPage === 'cases') updateCaseTimers();
-}, 1000);
+setInterval(() => { if (currentPage === 'cases') updateCaseTimers(); }, 1000);
 
 async function openCase(type) {
   if (caseOpening[type]) return;
-
   const isCoupon = type === 'coupon';
   const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
-
-  if (!user.isAdmin && Date.now() - caseLastOpen[type] < cooldown) {
-    updateCaseTimers();
-    return;
-  }
-
+  if (!user.isAdmin && Date.now() - caseLastOpen[type] < cooldown) { updateCaseTimers(); return; }
   caseOpening[type] = true;
   const btn = document.getElementById(`btn-${type}`);
   if (btn) { btn.disabled = true; btn.textContent = '🎁 Открываем...'; }
-
   const items = isCoupon ? CASE_COUPON_ITEMS : CASE_COIN_ITEMS;
   const winnerIndex = pickWeighted(items);
   const winner = items[winnerIndex];
-
   const strip = document.getElementById(`strip-${type}`);
   if (!strip) { caseOpening[type] = false; return; }
-
   const allItems = strip.querySelectorAll('.case-item');
   const itemWidth = 110;
   const wrapWidth = strip.parentElement.clientWidth;
   const centerOffset = wrapWidth / 2 - itemWidth / 2;
-
   let targetPos = -1;
   for (let i = allItems.length - 1; i >= 20; i--) {
     const el = allItems[i];
     const label = el.querySelector('.case-item-label').textContent.trim();
     const expectedLabel = isCoupon ? `${winner.label} %` : winner.label;
-    if (label === expectedLabel) {
-      targetPos = i;
-      break;
-    }
+    if (label === expectedLabel) { targetPos = i; break; }
   }
   if (targetPos === -1) targetPos = 30;
-
   const targetX = -(targetPos * itemWidth - centerOffset);
-
   strip.style.transition = 'none';
   strip.style.transform = 'translateX(0)';
   void strip.offsetWidth;
-
   strip.style.transition = 'transform 5s cubic-bezier(0.15, 0.85, 0.25, 1)';
   strip.style.transform = `translateX(${targetX}px)`;
-
   if (!user.isAdmin) {
     caseLastOpen[type] = Date.now();
     localStorage.setItem(`sww_case_${type}_last`, String(caseLastOpen[type]));
   }
-
   setTimeout(async () => {
     caseOpening[type] = false;
     const resultEl = document.getElementById(`result-${type}`);
     const btnEl = document.getElementById(`btn-${type}`);
-    if (btnEl) {
-      btnEl.disabled = false;
-      updateCaseTimers();
-    }
-
+    if (btnEl) { btnEl.disabled = false; updateCaseTimers(); }
     if (isCoupon) {
       if (winner.discount > 0) {
         const code = 'CASE-' + Math.random().toString(36).slice(2, 6).toUpperCase();
         await db.ref('promos/' + code).set({
           discount: winner.discount, used: false, created: Date.now(),
-          type: 'case', userId: user.id, userName: user.firstName,
-          uses: 0, maxUses: 1
+          type: 'case', userId: user.id, userName: user.firstName, uses: 0, maxUses: 1
         });
         if (resultEl) resultEl.innerHTML = `
           <div style="color:var(--warning);font-size:14px;">🎉 Ваш купон</div>
@@ -1647,10 +1900,7 @@ async function openCase(type) {
           <div style="font-size:12px;color:var(--text-dim);">Код: <b style="color:var(--accent);font-family:monospace;">${code}</b></div>
         `;
       } else {
-        if (resultEl) resultEl.innerHTML = `
-          <div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Попробуй в следующий раз!</div>
-        `;
+        if (resultEl) resultEl.innerHTML = `<div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>`;
       }
     } else {
       if (winner.amount > 0) {
@@ -1662,26 +1912,10 @@ async function openCase(type) {
         if (resultEl) resultEl.innerHTML = `
           <div style="color:var(--gold);font-size:14px;">🎉 Вы выиграли</div>
           <div style="font-size:26px;font-weight:900;color:var(--gold);margin:8px 0;">+${winner.amount} SWWCOIN</div>
-          <div style="font-size:12px;color:var(--text-dim);">Зачислено на баланс</div>
         `;
       } else {
-        if (resultEl) resultEl.innerHTML = `
-          <div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Попробуй в следующий раз!</div>
-        `;
+        if (resultEl) resultEl.innerHTML = `<div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>`;
       }
-    }
-
-    if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: user.telegramId || CHAT_ID,
-          text: isCoupon
-            ? `🎫 ${user.firstName} открыл кейс со скидками — выпало: ${winner.label}%`
-            : `🪙 ${user.firstName} открыл кейс с монетами — выпало: ${winner.label} SWWCOIN`
-        })
-      }).catch(() => {});
     }
   }, 5200);
 }
@@ -1774,10 +2008,7 @@ function renderProfile() {
     <div class="menu-list">
       <button class="menu-item" onclick="openOverlay('ordersOverlay');renderMyOrders()">
         <div class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div>
-        <div class="menu-text">
-          <div class="title">Мои заказы</div>
-          <div class="sub">${stats.totalOrders}${activeOrders > 0 ? ` · ${activeOrders} в обработке` : ''}</div>
-        </div>
+        <div class="menu-text"><div class="title">Мои заказы</div><div class="sub">${stats.totalOrders}${activeOrders > 0 ? ` · ${activeOrders} в обработке` : ''}</div></div>
         <span class="menu-arrow">›</span>
       </button>
 
@@ -1820,10 +2051,7 @@ function renderProfile() {
         </button>
       ` : '')}
     </div>
-
-    <p style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:24px;">
-      SWWSHOP © ${new Date().getFullYear()}
-    </p>
+    <p style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:24px;">SWWSHOP © ${new Date().getFullYear()}</p>
   `;
 
   getUserReferralStats().then(st => {
@@ -1880,9 +2108,7 @@ function renderMyOrders() {
         </div>
         <div class="order-total">${o.totalPrice || o.total || 0} ₽</div>
         ${o.status === 'pending' ? `
-          <button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%;" onclick="event.stopPropagation();userCancelOrder('${o.id}')">
-            ❌ Отменить заказ
-          </button>
+          <button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%;" onclick="event.stopPropagation();userCancelOrder('${o.id}')">❌ Отменить заказ</button>
         ` : ''}
       </div>
     `;
@@ -1905,12 +2131,10 @@ function showOrderDetail(order, isAdminView) {
   const totalPrice = order.totalPrice || order.total || 0;
 
   document.getElementById('orderDetailTitle').textContent = `📦 Заказ #${order.id}`;
-
   document.getElementById('orderDetailContent').innerHTML = `
     <div style="text-align:center;margin-bottom:16px;">
       <span class="order-status ${st.cls}" style="font-size:13px;padding:6px 16px;">${st.txt}</span>
     </div>
-
     <div class="order-detail-row"><span class="lbl">Дата:</span><span class="val">${new Date(order.date).toLocaleString('ru-RU')}</span></div>
     <div class="order-detail-row"><span class="lbl">Клиент:</span><span class="val">${order.userName || '—'}</span></div>
     <div class="order-detail-row"><span class="lbl">ID:</span><span class="val" style="font-family:monospace;">${order.userShortId || '—'}</span></div>
@@ -1918,28 +2142,19 @@ function showOrderDetail(order, isAdminView) {
     <div class="order-detail-row"><span class="lbl">Username:</span><span class="val">${order.userUsername || '—'}</span></div>
     <div class="order-detail-row"><span class="lbl">Оплата:</span><span class="val">${order.payment || '—'}</span></div>
     ${order.comment ? `<div class="order-detail-row"><span class="lbl">Комментарий:</span><span class="val">${order.comment}</span></div>` : ''}
-
     <div style="margin-top:16px;">
       <div class="section-title" style="font-size:14px;">📋 Товары</div>
-      ${(order.items || []).map(it => `
-        <div class="order-detail-row">
-          <span class="lbl">${it.name}</span>
-          <span class="val">× ${it.qty || 1} = ${it.price * (it.qty || 1)} ₽</span>
-        </div>
-      `).join('')}
+      ${(order.items || []).map(it => `<div class="order-detail-row"><span class="lbl">${it.name}</span><span class="val">× ${it.qty || 1} = ${it.price * (it.qty || 1)} ₽</span></div>`).join('')}
     </div>
-
     <div style="margin-top:16px;background:var(--bg-2);border-radius:14px;padding:14px;border:1px solid var(--border);">
       <div class="order-detail-row"><span class="lbl">Подытог:</span><span class="val">${order.subtotal} ₽</span></div>
       ${order.coinSpent > 0 ? `<div class="order-detail-row"><span class="lbl">🪙 SWWCOIN:</span><span class="val" style="color:var(--gold);">−${order.coinSpent}</span></div>` : ''}
-      ${order.discount > 0 ? `<div class="order-detail-row"><span class="lbl">Купон${order.discountCode ? ` (${order.discountCode})` : ''}:</span><span class="val" style="color:var(--warning);">−${order.discount} ₽</span></div>` : ''}
+      ${order.discount > 0 ? `<div class="order-detail-row"><span class="lbl">Купон:</span><span class="val" style="color:var(--warning);">−${order.discount} ₽</span></div>` : ''}
       <div class="order-detail-row" style="border-top:2px solid var(--border);padding-top:12px;margin-top:8px;">
-        <span class="lbl" style="font-size:15px;font-weight:800;">Итого:</span>
+        <span class="lbl" style="font-weight:800;">Итого:</span>
         <span class="val" style="font-size:17px;color:var(--accent);">${totalPrice} ₽</span>
       </div>
-      ${order.cashbackEarned > 0 ? `<div class="order-detail-row"><span class="lbl">🪙 Кешбек:</span><span class="val" style="color:var(--gold);">+${order.cashbackEarned}</span></div>` : ''}
     </div>
-
     ${isAdminView && order.status === 'pending' ? `
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-success btn-block" onclick="adminCompleteOrder('${order.id}')">✅ Выполнить</button>
@@ -1947,7 +2162,6 @@ function showOrderDetail(order, isAdminView) {
       </div>
     ` : ''}
   `;
-
   openOverlay('orderDetailOverlay');
 }
 
@@ -1955,41 +2169,27 @@ function renderMyPromos() {
   const el = document.getElementById('promosContent');
   const uid = getUserId();
   const mine = Object.entries(promos).filter(([_, p]) => p.userId === uid);
-
   if (!mine.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🎫</div><h3>Скидок пока нет</h3><p>Открывай кейсы</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="icon">🎫</div><h3>Скидок пока нет</h3></div>';
     return;
   }
-
   el.innerHTML = mine.map(([code, p]) => `
     <div class="order-card" style="cursor:default;">
       <div class="order-head">
         <div>
           <div style="font-size:15px;font-weight:800;color:var(--warning);">${p.discount}% скидка</div>
           <div style="font-size:11px;font-family:monospace;color:var(--accent);margin-top:4px;">${code}</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${p.type === 'referral' ? '🤝 реферальная' : p.type === 'case' ? '🎁 кейс' : p.type === 'gift' ? '🎁 подарок' : ''}</div>
         </div>
-        <span class="order-status ${p.used ? 'status-cancelled' : 'status-completed'}">
-          ${p.used ? 'Использована' : 'Активна'}
-        </span>
+        <span class="order-status ${p.used ? 'status-cancelled' : 'status-completed'}">${p.used ? 'Использована' : 'Активна'}</span>
       </div>
     </div>
   `).join('');
 }
 
-/* =========================================================
-   КОНТАКТЫ
-   ========================================================= */
 function openContactEditor() {
   document.getElementById('contactEditorContent').innerHTML = `
-    <div class="field">
-      <label>Номер телефона</label>
-      <input type="tel" id="editPhone" value="${user.phone || ''}" placeholder="+7 999 123-45-67" />
-    </div>
-    <div class="field">
-      <label>Username в Telegram</label>
-      <input type="text" id="editContactUsername" value="${user.contactUsername || ''}" placeholder="@username" />
-    </div>
+    <div class="field"><label>Номер телефона</label><input type="tel" id="editPhone" value="${user.phone || ''}" /></div>
+    <div class="field"><label>Username в Telegram</label><input type="text" id="editContactUsername" value="${user.contactUsername || ''}" /></div>
     <button class="btn btn-primary btn-block" onclick="saveContacts()">💾 Сохранить</button>
   `;
   openOverlay('contactEditorOverlay');
@@ -2022,355 +2222,7 @@ function shareReferral() {
 }
 
 /* =========================================================
-   РЕДАКТОР ТОВАРОВ
-   ========================================================= */
-function toggleEditorMode() {
-  editorMode = !editorMode;
-  const b = document.getElementById('editorBanner');
-  if (b) b.classList.toggle('show', editorMode);
-  toast(editorMode ? '🔧 Редактор включён' : '✅ Редактор выключен', '🔧');
-  if (currentCategory && currentPage === 'catalog') {
-    renderProductsInPlace();
-  }
-}
-
-function openEditor(catId, index) {
-  if (!editorMode || !isAdmin) return;
-  const item = data[catId][index];
-  if (!item) return;
-
-  const isSimple = catId === 'coils' || catId === 'devices';
-  const cb = getCashback(item);
-
-  // ===== ЖИДКОСТИ/ШАЙБЫ — редактор вкусов =====
-  if (!isSimple) {
-    const flavorsHTML = (item.flavors || []).map((f, fi) => `
-      <div class="flavor-editor-row" 
-           id="flavor-row-${fi}"
-           data-original-id="${f.id || ''}"
-           data-original-name="${(f.name || '').replace(/"/g, '&quot;')}"
-           style="display:flex;align-items:center;gap:6px;padding:10px;background:var(--bg-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);">
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
-          <input
-            type="text"
-            id="flavor-name-${fi}"
-            value="${(f.name || '').replace(/"/g, '&quot;')}"
-            placeholder="Название вкуса"
-            style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;outline:none;"
-          />
-          <div style="font-size:10px;color:var(--text-dim);font-family:monospace;">
-            ID: ${f.id ? f.id.slice(-6) : '—'}
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-          <button type="button" class="qty-btn" onclick="changeFlavorQty(${fi}, -1)">−</button>
-          <input
-            type="number"
-            id="flavor-qty-${fi}"
-            value="${f.quantity || 0}"
-            min="0"
-            style="width:56px;padding:6px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;outline:none;"
-          />
-          <button type="button" class="qty-btn" onclick="changeFlavorQty(${fi}, 1)">+</button>
-          <button type="button" class="qty-btn" 
-                  onclick="removeFlavorFromEditor(${fi})" 
-                  style="background:rgba(255,77,109,0.15);border-color:var(--danger);color:var(--danger);"
-                  title="Удалить вкус">🗑️</button>
-        </div>
-      </div>
-    `).join('');
-
-    document.getElementById('editProductContent').innerHTML = `
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">${item.name}</h3>
-
-      <div class="field">
-        <label>Название линейки</label>
-        <input type="text" id="edName" value="${item.name.replace(/"/g, '&quot;')}" />
-      </div>
-      <div class="field">
-        <label>Цена (₽)</label>
-        <input type="number" id="edPrice" value="${item.price}" />
-      </div>
-
-      <div class="field">
-        <label>Кешбек (%)</label>
-        <input type="number" id="edCashback" value="${cb}" min="0" max="100" />
-      </div>
-
-      <div class="field" style="margin-top:14px;">
-        <label style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Вкусы (<span id="flavorCountLabel">${item.flavors.length}</span>)</span>
-          <span style="font-size:10px;color:var(--text-dim);">
-            Всего: <b id="flavorTotalCount" style="color:var(--accent);">${item.flavors.reduce((s, f) => s + (f.quantity || 0), 0)}</b> шт
-          </span>
-        </label>
-      </div>
-
-      <div id="flavorsEditorList" style="max-height:300px;overflow-y:auto;padding-right:4px;margin-bottom:10px;">
-        ${flavorsHTML || '<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:13px;">Нет вкусов. Добавьте первый 👇</div>'}
-      </div>
-
-      <button type="button" class="btn btn-success btn-block" 
-              onclick="addNewFlavorRow()" 
-              style="margin-bottom:12px;">
-        ➕ Добавить вкус
-      </button>
-
-      <button class="btn btn-primary btn-block" onclick="saveEditedProduct('${catId}', ${index})">💾 Сохранить</button>
-      <button class="btn btn-danger btn-block" style="margin-top:8px;" onclick="deleteProductFromEditor('${catId}', ${index})">🗑️ Удалить линейку</button>
-    `;
-
-    setTimeout(() => {
-      const qtyInputs = document.querySelectorAll('[id^="flavor-qty-"]');
-      qtyInputs.forEach(inp => {
-        inp.addEventListener('input', updateFlavorTotal);
-      });
-      updateFlavorTotal();
-    }, 50);
-
-    openOverlay('editProductOverlay');
-    return;
-  }
-
-  // ===== ИСПАРИТЕЛИ/УСТРОЙСТВА =====
-  document.getElementById('editProductContent').innerHTML = `
-    <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">${item.name}</h3>
-
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="edName" value="${item.name.replace(/"/g, '&quot;')}" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="edPrice" value="${item.price}" />
-    </div>
-
-    <div class="field">
-      <label>Количество на складе</label>
-      <input type="number" id="edQty" value="${item.quantity || 0}" />
-    </div>
-
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="edCashback" value="${cb}" min="0" max="100" />
-    </div>
-
-    <button class="btn btn-primary btn-block" onclick="saveEditedProduct('${catId}', ${index})">💾 Сохранить</button>
-    <button class="btn btn-danger btn-block" style="margin-top:8px;" onclick="deleteProductFromEditor('${catId}', ${index})">🗑️ Удалить товар</button>
-  `;
-  openOverlay('editProductOverlay');
-}
-
-/* =========================================================
-   РЕДАКТОР ВКУСОВ
-   ========================================================= */
-function changeFlavorQty(fi, delta) {
-  const input = document.getElementById(`flavor-qty-${fi}`);
-  if (!input) return;
-  const cur = parseInt(input.value) || 0;
-  const next = Math.max(0, cur + delta);
-  input.value = next;
-  updateFlavorTotal();
-}
-
-function updateFlavorTotal() {
-  const inputs = document.querySelectorAll('[id^="flavor-qty-"]');
-  let total = 0;
-  inputs.forEach(inp => {
-    total += parseInt(inp.value) || 0;
-  });
-  const el = document.getElementById('flavorTotalCount');
-  if (el) el.textContent = total;
-}
-
-function removeFlavorFromEditor(fi) {
-  if (!confirm('Удалить этот вкус?')) return;
-  const row = document.getElementById(`flavor-row-${fi}`);
-  if (!row) return;
-  row.style.transition = 'all 0.3s';
-  row.style.opacity = '0';
-  row.style.transform = 'translateX(-20px)';
-  setTimeout(() => {
-    row.remove();
-    reindexFlavorRows();
-    updateFlavorTotal();
-  }, 300);
-}
-
-function reindexFlavorRows() {
-  const list = document.getElementById('flavorsEditorList');
-  if (!list) return;
-  const rows = list.querySelectorAll('.flavor-editor-row');
-  rows.forEach((row, newIdx) => {
-    row.id = `flavor-row-${newIdx}`;
-    const nameInput = row.querySelector('[id^="flavor-name-"]');
-    const qtyInput = row.querySelector('[id^="flavor-qty-"]');
-    if (nameInput) nameInput.id = `flavor-name-${newIdx}`;
-    if (qtyInput) qtyInput.id = `flavor-qty-${newIdx}`;
-    const btns = row.querySelectorAll('button');
-    if (btns[0]) btns[0].setAttribute('onclick', `changeFlavorQty(${newIdx}, -1)`);
-    if (btns[1]) btns[1].setAttribute('onclick', `changeFlavorQty(${newIdx}, 1)`);
-    if (btns[2]) btns[2].setAttribute('onclick', `removeFlavorFromEditor(${newIdx})`);
-  });
-  const label = document.getElementById('flavorCountLabel');
-  if (label) label.textContent = rows.length;
-}
-
-function addNewFlavorRow() {
-  const list = document.getElementById('flavorsEditorList');
-  if (!list) return;
-  
-  const empty = list.querySelector('div[style*="text-align:center"]');
-  if (empty && !list.querySelector('.flavor-editor-row')) {
-    empty.remove();
-  }
-  
-  const currentCount = list.querySelectorAll('.flavor-editor-row').length;
-  const newIdx = currentCount;
-  
-  const row = document.createElement('div');
-  row.className = 'flavor-editor-row';
-  row.id = `flavor-row-${newIdx}`;
-  row.dataset.originalId = '';
-  row.dataset.originalName = '';
-  row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:10px;background:var(--bg-2);border-radius:12px;margin-bottom:8px;border:1px solid var(--success);';
-  row.innerHTML = `
-    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
-      <input
-        type="text"
-        id="flavor-name-${newIdx}"
-        value=""
-        placeholder="Название вкуса"
-        style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;outline:none;"
-      />
-      <div style="font-size:10px;color:var(--success);font-family:monospace;">
-        ✨ Новый
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-      <button type="button" class="qty-btn" onclick="changeFlavorQty(${newIdx}, -1)">−</button>
-      <input
-        type="number"
-        id="flavor-qty-${newIdx}"
-        value="1"
-        min="0"
-        style="width:56px;padding:6px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;outline:none;"
-      />
-      <button type="button" class="qty-btn" onclick="changeFlavorQty(${newIdx}, 1)">+</button>
-      <button type="button" class="qty-btn" 
-              onclick="removeFlavorFromEditor(${newIdx})" 
-              style="background:rgba(255,77,109,0.15);border-color:var(--danger);color:var(--danger);">🗑️</button>
-    </div>
-  `;
-  list.appendChild(row);
-  row.querySelector('[id^="flavor-name-"]').focus();
-  
-  const qtyInput = row.querySelector('[id^="flavor-qty-"]');
-  if (qtyInput) qtyInput.addEventListener('input', updateFlavorTotal);
-  
-  updateFlavorTotal();
-  reindexFlavorRows();
-}
-
-/* =========================================================
-   СОХРАНЕНИЕ ТОВАРА
-   ========================================================= */
-async function saveEditedProduct(catId, index) {
-  const item = data[catId][index];
-  if (!item) return;
-
-  const newPrice = parseInt(document.getElementById('edPrice').value);
-  const newCb = parseInt(document.getElementById('edCashback').value);
-  const newName = document.getElementById('edName').value.trim();
-
-  if (!newName) { toast('❌ Введите название', '❌'); return; }
-  if (isNaN(newPrice) || newPrice < 0) { toast('❌ Цена неверна', '❌'); return; }
-  if (isNaN(newCb) || newCb < 0 || newCb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
-
-  item.name = newName;
-  item.price = newPrice;
-  item.cashback = newCb;
-
-  const isSimple = catId === 'coils' || catId === 'devices';
-
-  if (isSimple) {
-    const newQty = parseInt(document.getElementById('edQty').value);
-    if (isNaN(newQty) || newQty < 0) { toast('❌ Количество неверно', '❌'); return; }
-    item.quantity = newQty;
-    item.inStock = newQty > 0;
-  } else {
-    const list = document.getElementById('flavorsEditorList');
-    if (!list) return;
-    
-    const rows = list.querySelectorAll('.flavor-editor-row');
-    const newFlavors = [];
-    
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const nameInp = row.querySelector('[id^="flavor-name-"]');
-      const qtyInp = row.querySelector('[id^="flavor-qty-"]');
-      
-      const fName = nameInp ? nameInp.value.trim() : '';
-      const fQty = qtyInp ? parseInt(qtyInp.value) : 0;
-      
-      if (!fName) {
-        toast(`❌ Заполните название вкуса #${i + 1}`, '❌');
-        if (nameInp) nameInp.focus();
-        return;
-      }
-      if (isNaN(fQty) || fQty < 0) {
-        toast(`❌ Неверное количество вкуса "${fName}"`, '❌');
-        return;
-      }
-      
-      if (newFlavors.some(x => x.name.toLowerCase() === fName.toLowerCase())) {
-        toast(`❌ Вкус "${fName}" уже есть в списке`, '❌');
-        return;
-      }
-      
-      // Сохраняем ID, если это существующий вкус (не переименован)
-      let flavorId = row.dataset.originalId || '';
-      const originalName = row.dataset.originalName || '';
-      
-      // Если название изменилось — всё равно сохраняем ID (чтобы корзина не сломалась)
-      // Если ID нет — создаём новый
-      if (!flavorId) {
-        flavorId = 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-      }
-      
-      newFlavors.push({
-        id: flavorId,
-        name: fName,
-        quantity: fQty,
-        inStock: fQty > 0
-      });
-    }
-    
-    if (newFlavors.length === 0) {
-      toast('❌ Добавьте хотя бы один вкус', '❌');
-      return;
-    }
-    
-    item.flavors = newFlavors;
-  }
-
-  await db.ref('assortment').set(data);
-  toast('✅ Сохранено', '✅');
-  closeOverlay('editProductOverlay');
-  if (currentCategory) renderProductsInPlace();
-}
-
-async function deleteProductFromEditor(catId, index) {
-  if (!confirm('Удалить товар?')) return;
-  data[catId].splice(index, 1);
-  await db.ref('assortment').set(data);
-  toast('🗑️ Удалён', '🗑️');
-  closeOverlay('editProductOverlay');
-  if (currentCategory) renderProductsInPlace();
-}
-
-/* =========================================================
-   АДМИН
+   АДМИН-ПАНЕЛЬ (только настройки, статистика, юзеры, рассылка)
    ========================================================= */
 function renderAdmin() {
   const el = document.getElementById('adminContent');
@@ -2420,132 +2272,6 @@ function renderAdmin() {
       <input type="number" id="maxCoinPercent" value="${CONFIG.MAX_COIN_PERCENT}" min="0" max="100" />
     </div>
     <button class="admin-action-btn btn-gold" onclick="adminSaveMaxCoinPercent()">💾 Сохранить</button>
-    <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">Сейчас: <b style="color:var(--gold);">${CONFIG.MAX_COIN_PERCENT}%</b></p>
-
-    <div class="section-title" style="margin-top:20px;">➕ Добавить линейку (жидкости/шайбы)</div>
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="addLineName" placeholder="Например: HQD Sweet" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="addLinePrice" placeholder="500" />
-    </div>
-    <div class="field">
-      <label>Категория</label>
-      <select id="addLineCategory">
-        <option value="liquids">Жидкости</option>
-        <option value="pouches">Шайбы</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Количество по умолчанию (если не указывать у вкуса)</label>
-      <input type="number" id="addLineQty" value="1" />
-    </div>
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="addLineCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
-    </div>
-    <div class="field">
-      <label>Вкусы (название,количество — по одному на строку)</label>
-      <textarea id="addLineFlavors" placeholder="Манго,3&#10;Клубника,5&#10;Арбуз,2"></textarea>
-    </div>
-    <p style="font-size:11px;color:var(--text-dim);margin-top:6px;margin-bottom:6px;">
-      💡 Формат: <b>Манго,3</b> — название и количество через запятую.<br>
-      Если количество не указывать — возьмётся из поля выше.
-    </p>
-    <button class="admin-action-btn btn-green" onclick="adminAddLine()">➕ Добавить линейку</button>
-
-    <div class="section-title" style="margin-top:20px;">➕ Добавить товар (испарители/устройства)</div>
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="addItemName" placeholder="Например: Voopoo PnP VM1" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="addItemPrice" placeholder="300" />
-    </div>
-    <div class="field">
-      <label>Категория</label>
-      <select id="addItemCategory">
-        <option value="coils">Испарители</option>
-        <option value="devices">Устройства</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Количество</label>
-      <input type="number" id="addItemQty" value="1" />
-    </div>
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="addItemCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
-    </div>
-    <button class="admin-action-btn btn-green" onclick="adminAddItem()">➕ Добавить товар</button>
-
-    <div class="section-title" style="margin-top:20px;">🗑️ Удалить товар</div>
-    <div class="field">
-      <label>Категория</label>
-      <select id="delCategory" onchange="updateDelSelect()">
-        <option value="liquids">Жидкости</option>
-        <option value="pouches">Шайбы</option>
-        <option value="coils">Испарители</option>
-        <option value="devices">Устройства</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Товар</label>
-      <select id="delItem"><option value="">-- Выберите --</option></select>
-    </div>
-    <button class="admin-action-btn btn-red" onclick="adminDeleteProduct()">🗑️ Удалить</button>
-
-    <div class="section-title" style="margin-top:20px;">💰 Изменить цену</div>
-    <div class="field">
-      <label>Категория</label>
-      <select id="priceCategory" onchange="updatePriceSelectAdmin()">
-        <option value="liquids">Жидкости</option>
-        <option value="pouches">Шайбы</option>
-        <option value="coils">Испарители</option>
-        <option value="devices">Устройства</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Товар</label>
-      <select id="priceItem"><option value="">-- Выберите --</option></select>
-    </div>
-    <div class="field">
-      <label>Новая цена (₽)</label>
-      <input type="number" id="newPrice" placeholder="500" />
-    </div>
-    <button class="admin-action-btn btn-orange" onclick="adminUpdatePrice()">💰 Обновить цену</button>
-
-    <div class="section-title" style="margin-top:20px;">🪙 Изменить кешбек товара</div>
-    <div class="field">
-      <label>Категория</label>
-      <select id="cbCategory" onchange="updateCbSelectAdmin()">
-        <option value="liquids">Жидкости</option>
-        <option value="pouches">Шайбы</option>
-        <option value="coils">Испарители</option>
-        <option value="devices">Устройства</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Товар</label>
-      <select id="cbItem"><option value="">-- Выберите --</option></select>
-    </div>
-    <div class="field">
-      <label>Новый кешбек (%)</label>
-      <input type="number" id="newCb" placeholder="10" min="0" max="100" />
-    </div>
-    <button class="admin-action-btn btn-gold" onclick="adminUpdateCashback()">🪙 Обновить кешбек</button>
-
-    <div class="section-title" style="margin-top:20px;">🔧 Редактор товаров</div>
-    <button class="admin-action-btn btn-orange" onclick="editorToggleFromAdmin()">
-      ${editorMode ? '❌ Выключить редактор' : '✏️ Включить редактор'}
-    </button>
-    <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">
-      После включения перейди в категорию и тыкни на товар.<br>
-      Для жидкостей/шайб: можешь <b>менять / удалять / добавлять вкусы</b>.
-    </p>
 
     <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID</div>
     <div class="field">
@@ -2604,17 +2330,7 @@ function renderAdmin() {
     <div class="section-title" style="margin-top:20px;color:var(--danger);">Опасная зона</div>
     <button class="admin-action-btn btn-red" onclick="adminLogout()">🚪 Выйти из админки</button>
   `;
-
-  updateDelSelect();
-  updatePriceSelectAdmin();
-  updateCbSelectAdmin();
   renderAllPromosAdmin();
-}
-
-function editorToggleFromAdmin() {
-  closeOverlay('adminOverlay');
-  navigate('catalog');
-  setTimeout(() => toggleEditorMode(), 300);
 }
 
 async function adminSaveGlobalCashback() {
@@ -2622,7 +2338,7 @@ async function adminSaveGlobalCashback() {
   if (isNaN(val) || val < 0 || val > 100) { toast('❌ 0-100', '❌'); return; }
   await db.ref('meta/settings/cashback').set(val);
   CONFIG.DEFAULT_CASHBACK = val;
-  toast('✅ Кешбек по умолчанию: ' + val + '%', '🪙');
+  toast('✅ Кешбек: ' + val + '%', '🪙');
   renderAdmin();
 }
 
@@ -2635,160 +2351,14 @@ async function adminSaveMaxCoinPercent() {
   renderAdmin();
 }
 
-function updateCbSelectAdmin() {
-  const cat = document.getElementById('cbCategory')?.value;
-  const sel = document.getElementById('cbItem');
-  if (!sel || !data[cat]) return;
-  sel.innerHTML = '<option value="">-- Выберите --</option>';
-  data[cat].forEach((item, i) => {
-    sel.innerHTML += `<option value="${i}">${item.name} (${getCashback(item)}%)</option>`;
-  });
-}
-
-async function adminUpdateCashback() {
-  const cat = document.getElementById('cbCategory').value;
-  const idx = parseInt(document.getElementById('cbItem').value);
-  const cb = parseInt(document.getElementById('newCb').value);
-  if (isNaN(idx) || isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Заполни поля (0-100)', '❌'); return; }
-  data[cat][idx].cashback = cb;
-  await db.ref('assortment').set(data);
-  toast('🪙 Кешбек обновлён: ' + cb + '%', '🪙');
-  document.getElementById('newCb').value = '';
-  renderAdmin();
-}
-
-async function adminAddLine() {
-  if (!user.isAdmin) return;
-  const name = document.getElementById('addLineName').value.trim();
-  const price = parseInt(document.getElementById('addLinePrice').value);
-  const category = document.getElementById('addLineCategory').value;
-  const defaultQty = parseInt(document.getElementById('addLineQty').value) || 1;
-  const cashback = parseInt(document.getElementById('addLineCashback').value);
-  const flavorsText = document.getElementById('addLineFlavors').value.trim();
-
-  if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
-  if (!flavorsText) { toast('❌ Добавь хотя бы один вкус', '❌'); return; }
-  if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
-
-  // Парсим вкусы: "Манго,3" или "Манго" (тогда defaultQty)
-  const flavors = flavorsText.split('\n').filter(l => l.trim()).map(l => {
-    const parts = l.split(',');
-    const fName = parts[0].trim();
-    let fQty = defaultQty;
-    
-    if (parts.length >= 2) {
-      const rawVal = parts[1].trim();
-      // Поддержка старого формата YES
-      if (rawVal.toUpperCase() === 'YES') {
-        fQty = defaultQty;
-      } else {
-        const parsed = parseInt(rawVal);
-        if (!isNaN(parsed) && parsed >= 0) {
-          fQty = parsed;
-        }
-      }
-    }
-    
-    return {
-      id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-      name: fName,
-      quantity: fQty,
-      inStock: fQty > 0
-    };
-  });
-
-  if (!data[category]) data[category] = [];
-  data[category].push({ name, price, cashback, flavors });
-  await db.ref('assortment').set(data);
-  toast(`✅ Линейка добавлена (${flavors.length} вкусов)`, '✅');
-
-  document.getElementById('addLineName').value = '';
-  document.getElementById('addLinePrice').value = '';
-  document.getElementById('addLineFlavors').value = '';
-  document.getElementById('addLineQty').value = '1';
-}
-
-async function adminAddItem() {
-  if (!user.isAdmin) return;
-  const name = document.getElementById('addItemName').value.trim();
-  const price = parseInt(document.getElementById('addItemPrice').value);
-  const category = document.getElementById('addItemCategory').value;
-  const qty = parseInt(document.getElementById('addItemQty').value) || 1;
-  const cashback = parseInt(document.getElementById('addItemCashback').value);
-
-  if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
-  if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
-
-  if (!data[category]) data[category] = [];
-  data[category].push({
-    id: 'i_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-    name, price, cashback,
-    quantity: qty,
-    inStock: qty > 0
-  });
-  await db.ref('assortment').set(data);
-  toast('✅ Товар добавлен', '✅');
-
-  document.getElementById('addItemName').value = '';
-  document.getElementById('addItemPrice').value = '';
-  document.getElementById('addItemQty').value = '1';
-}
-
-function updateDelSelect() {
-  const cat = document.getElementById('delCategory')?.value;
-  const sel = document.getElementById('delItem');
-  if (!sel || !data[cat]) return;
-  sel.innerHTML = '<option value="">-- Выберите --</option>';
-  data[cat].forEach((item, i) => {
-    sel.innerHTML += `<option value="${i}">${item.name} (${item.price}₽)</option>`;
-  });
-}
-
-function updatePriceSelectAdmin() {
-  const cat = document.getElementById('priceCategory')?.value;
-  const sel = document.getElementById('priceItem');
-  if (!sel || !data[cat]) return;
-  sel.innerHTML = '<option value="">-- Выберите --</option>';
-  data[cat].forEach((item, i) => {
-    sel.innerHTML += `<option value="${i}">${item.name} (${item.price}₽)</option>`;
-  });
-}
-
-async function adminDeleteProduct() {
-  const cat = document.getElementById('delCategory').value;
-  const idx = parseInt(document.getElementById('delItem').value);
-  if (isNaN(idx)) { toast('❌ Выбери товар', '❌'); return; }
-  if (!confirm(`Удалить "${data[cat][idx].name}"?`)) return;
-
-  data[cat].splice(idx, 1);
-  await db.ref('assortment').set(data);
-  toast('🗑️ Удалён', '🗑️');
-  renderAdmin();
-}
-
-async function adminUpdatePrice() {
-  const cat = document.getElementById('priceCategory').value;
-  const idx = parseInt(document.getElementById('priceItem').value);
-  const price = parseInt(document.getElementById('newPrice').value);
-  if (isNaN(idx) || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
-
-  data[cat][idx].price = price;
-  await db.ref('assortment').set(data);
-  toast('💰 Цена обновлена: ' + price + '₽', '💰');
-  document.getElementById('newPrice').value = '';
-  renderAdmin();
-}
-
 async function adminUpdateShortId() {
   const uid = document.getElementById('shortIdUserSelect').value;
   const newId = document.getElementById('newShortIdValue').value.trim().toUpperCase();
   if (!uid || !newId) { toast('❌ Заполни поля', '❌'); return; }
   if (!/^[A-Z0-9\-]+$/.test(newId)) { toast('❌ Только A-Z, 0-9 и дефис', '❌'); return; }
-
   await db.ref('users/' + uid + '/shortId').set(newId);
   toast('🆔 ID обновлён: ' + newId, '🆔');
   document.getElementById('newShortIdValue').value = '';
-  if (uid === user.id) user.shortId = newId;
 }
 
 async function adminGivePromoByShortId() {
@@ -2797,25 +2367,13 @@ async function adminGivePromoByShortId() {
   if (!shortId) { toast('❌ Введите ID', '❌'); return; }
   const found = Object.values(users).find(u => u.shortId === shortId);
   if (!found) { toast('❌ Не найден', '❌'); return; }
-
   const code = 'GIFT-' + Math.random().toString(36).slice(2, 6).toUpperCase();
   await db.ref('promos/' + code).set({
     discount, used: false, created: Date.now(),
-    type: 'gift', userId: found.id, userName: found.firstName,
-    uses: 0, maxUses: 1
+    type: 'gift', userId: found.id, userName: found.firstName, uses: 0, maxUses: 1
   });
   toast(`🎁 ${discount}% → ${found.firstName}`, '🎁');
   document.getElementById('promoShortId').value = '';
-
-  if (found.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: found.telegramId,
-        text: `🎁 Вам выдана скидка ${discount}%!`
-      })
-    }).catch(() => {});
-  }
 }
 
 async function adminGiveCoinsByShortId() {
@@ -2824,48 +2382,33 @@ async function adminGiveCoinsByShortId() {
   if (!shortId || isNaN(amount)) { toast('❌ Заполни поля', '❌'); return; }
   const found = Object.values(users).find(u => u.shortId === shortId);
   if (!found) { toast('❌ Не найден', '❌'); return; }
-
   const ref = db.ref('users/' + found.id + '/balance');
   await ref.transaction(cur => Math.max(0, (cur || 0) + amount));
   await db.ref('users/' + found.id + '/balanceHistory').push({
     type: 'admin_adjust', amount, date: Date.now(), by: user.id
   });
-  toast(`🪙 ${amount > 0 ? '+' : ''}${amount} → ${found.firstName}`, '🪙');
+  toast(`🪙 ${amount > 0 ? '+' : ''}${amount}`, '🪙');
   document.getElementById('coinShortId').value = '';
   document.getElementById('coinAmount').value = '';
-
-  if (found.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: found.telegramId,
-        text: `🪙 Вам ${amount > 0 ? 'начислено' : 'списано'} ${Math.abs(amount)} SWWCOIN`
-      })
-    }).catch(() => {});
-  }
 }
 
 async function adminAdjustBalance() {
   const uid = document.getElementById('balanceUserId').value.trim();
   const amount = parseInt(document.getElementById('balanceAmount').value);
   if (!uid || isNaN(amount)) { toast('❌ Заполни поля', '❌'); return; }
-
   const ref = db.ref('users/' + uid + '/balance');
   await ref.transaction(cur => Math.max(0, (cur || 0) + amount));
   await db.ref('users/' + uid + '/balanceHistory').push({
     type: 'admin_adjust', amount, date: Date.now(), by: user.id
   });
-  toast(`💰 ${amount > 0 ? '+' : ''}${amount} SWWCOIN`, '💰');
+  toast(`💰 ${amount > 0 ? '+' : ''}${amount}`, '💰');
   document.getElementById('balanceUserId').value = '';
   document.getElementById('balanceAmount').value = '';
 }
 
 function renderAllOrders() {
   const el = document.getElementById('allOrdersContent');
-  if (!orders.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><h3>Заказов нет</h3></div>';
-    return;
-  }
+  if (!orders.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><h3>Заказов нет</h3></div>'; return; }
   const sorted = [...orders].sort((a, b) => (b.date || 0) - (a.date || 0));
   el.innerHTML = sorted.map(o => {
     const s = { pending: {c:'status-pending',t:'⏳'}, completed: {c:'status-completed',t:'✅'}, cancelled: {c:'status-cancelled',t:'❌'} }[o.status] || {c:'status-pending',t:'⏳'};
@@ -2876,9 +2419,7 @@ function renderAllOrders() {
           <div>
             <div class="order-id">#${o.id}</div>
             <div class="order-date">${new Date(o.date).toLocaleString('ru-RU')}</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-              👤 ${o.userName} · ${o.userShortId || ''}
-            </div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">👤 ${o.userName} · ${o.userShortId || ''}</div>
           </div>
           <span class="order-status ${s.c}">${s.t}</span>
         </div>
@@ -2886,7 +2427,6 @@ function renderAllOrders() {
       </div>
     `;
   }).join('');
-
   el.querySelectorAll('.order-card').forEach(card => {
     card.onclick = () => {
       const oid = card.dataset.orderId;
@@ -2899,13 +2439,10 @@ function renderAllOrders() {
 async function adminCompleteOrder(orderId) {
   if (!user.isAdmin) return;
   if (!confirm('Подтвердить заказ #' + orderId + '?')) return;
-
   const snap = await db.ref('orders/' + orderId).once('value');
   const order = snap.val();
   if (!order) { toast('❌ Не найден', '❌'); return; }
-
   await db.ref('orders/' + orderId).update({ status: 'completed', completedAt: Date.now() });
-
   const cb = order.cashbackEarned || Math.round((order.totalPrice || 0) * CONFIG.DEFAULT_CASHBACK / 100);
   if (cb > 0 && order.userId) {
     const ref = db.ref('users/' + order.userId + '/balance');
@@ -2914,23 +2451,17 @@ async function adminCompleteOrder(orderId) {
       type: 'cashback', amount: cb, orderId, date: Date.now()
     });
   }
-
   if (order.userId) {
     const us = await db.ref('users/' + order.userId + '/referredBy').once('value');
     if (us.val()) await checkReferralRewards(us.val());
   }
-
   toast(`✅ Выполнен · +${cb} SWWCOIN`, '✅');
   closeOverlay('orderDetailOverlay');
   renderAllOrders();
-
   if (order.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: order.telegramId,
-        text: `✅ Заказ #${orderId} выполнен!\n🪙 +${cb} SWWCOIN кешбека`
-      })
+      body: JSON.stringify({ chat_id: order.telegramId, text: `✅ Заказ #${orderId} выполнен!\n🪙 +${cb} SWWCOIN` })
     }).catch(() => {});
   }
 }
@@ -2938,11 +2469,9 @@ async function adminCompleteOrder(orderId) {
 async function adminCancelOrder(orderId) {
   if (!user.isAdmin) return;
   if (!confirm('Отменить заказ #' + orderId + '?')) return;
-
   const snap = await db.ref('orders/' + orderId).once('value');
   const order = snap.val();
   if (!order) return;
-
   for (const it of (order.items || [])) {
     const q = it.qty || 1;
     if (it.type === 'flavor') {
@@ -2953,7 +2482,6 @@ async function adminCancelOrder(orderId) {
       await ref.transaction(cur => (cur || 0) + q);
     }
   }
-
   if (order.coinSpent > 0 && order.userId) {
     const ref = db.ref('users/' + order.userId + '/balance');
     await ref.transaction(cur => (cur || 0) + order.coinSpent);
@@ -2961,7 +2489,6 @@ async function adminCancelOrder(orderId) {
       type: 'refund', amount: order.coinSpent, orderId, date: Date.now()
     });
   }
-
   await db.ref('orders/' + orderId).update({ status: 'cancelled', cancelledAt: Date.now() });
   toast('❌ Отменён', '❌');
   closeOverlay('orderDetailOverlay');
@@ -2971,10 +2498,7 @@ async function adminCancelOrder(orderId) {
 function renderUsers() {
   const el = document.getElementById('usersContent');
   const list = Object.values(users);
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>Нет пользователей</h3></div>';
-    return;
-  }
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>Нет пользователей</h3></div>'; return; }
   el.innerHTML = list.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0)).map(u => `
     <div class="order-card" style="cursor:pointer;" onclick="openUserEditor('${u.id}')">
       <div style="font-weight:700;font-size:14px;">${u.firstName || 'Юзер'} ${u.isAdmin ? '👑' : ''}</div>
@@ -2992,14 +2516,8 @@ function openUserEditor(uid) {
       <div style="font-size:16px;font-weight:700;">${u.firstName || 'Юзер'} ${u.username ? '@' + u.username : ''}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;font-family:monospace;">${uid}</div>
     </div>
-    <div class="field">
-      <label>Short ID</label>
-      <input type="text" id="euShortId" value="${u.shortId || ''}" />
-    </div>
-    <div class="field">
-      <label>Баланс SWWCOIN</label>
-      <input type="number" id="euBalance" value="${u.balance || 0}" />
-    </div>
+    <div class="field"><label>Short ID</label><input type="text" id="euShortId" value="${u.shortId || ''}" /></div>
+    <div class="field"><label>Баланс SWWCOIN</label><input type="number" id="euBalance" value="${u.balance || 0}" /></div>
     <button class="btn btn-primary btn-block" onclick="saveUserEditor('${uid}')">💾 Сохранить</button>
     <button class="btn btn-gold btn-block" style="margin-top:8px;" onclick="quickGivePromo('${uid}')">🎁 Выдать скидку 10%</button>
     <button class="btn btn-warning btn-block" style="margin-top:8px;" onclick="quickGiveCoins('${uid}', 100)">🪙 Выдать 100 монет</button>
@@ -3033,7 +2551,7 @@ async function quickGiveCoins(uid, amount) {
   await db.ref('users/' + uid + '/balanceHistory').push({
     type: 'admin_adjust', amount, date: Date.now(), by: user.id
   });
-  toast(`🪙 +${amount} SWWCOIN`, '🪙');
+  toast(`🪙 +${amount}`, '🪙');
   closeOverlay('editUserOverlay');
 }
 
@@ -3046,16 +2564,10 @@ function renderConsole() {
         ${Object.values(users).map(u => `<option value="${u.id}">${u.firstName} (${u.shortId || u.id})</option>`).join('')}
       </select>
     </div>
-    <div class="field">
-      <label>Сообщение</label>
-      <textarea id="consoleMsg" placeholder="Текст..."></textarea>
-    </div>
+    <div class="field"><label>Сообщение</label><textarea id="consoleMsg" placeholder="Текст..."></textarea></div>
     <button class="admin-action-btn btn-purple" onclick="adminSendToUser()">📨 Отправить</button>
-
     <div class="section-title" style="margin-top:20px;">📢 Рассылка</div>
-    <div class="field">
-      <textarea id="broadcastMsg" placeholder="Текст для всех..."></textarea>
-    </div>
+    <div class="field"><textarea id="broadcastMsg" placeholder="Текст для всех..."></textarea></div>
     <button class="admin-action-btn btn-orange" onclick="adminBroadcast()">📢 Отправить всем</button>
   `;
 }
@@ -3093,10 +2605,7 @@ function renderAllPromosAdmin() {
   const el = document.getElementById('allPromosList');
   if (!el) return;
   const list = Object.entries(promos);
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="icon">🎫</div><h3>Нет скидок</h3></div>';
-    return;
-  }
+  if (!list.length) { el.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="icon">🎫</div><h3>Нет скидок</h3></div>'; return; }
   el.innerHTML = list.sort((a, b) => (b[1].created || 0) - (a[1].created || 0)).map(([code, p]) => {
     const owner = p.userId ? (users[p.userId]?.firstName || p.userId) : 'Для всех';
     return `
@@ -3139,34 +2648,25 @@ window.addEventListener('load', async () => {
     document.body.classList.add('winter');
     createSnow();
   }
-
   try {
     const cbSnap = await db.ref('meta/settings/cashback').once('value');
     const cbVal = cbSnap.val();
     if (typeof cbVal === 'number') CONFIG.DEFAULT_CASHBACK = cbVal;
   } catch (_) {}
-
   try {
     const mcSnap = await db.ref('meta/settings/maxCoinPercent').once('value');
     const mcVal = mcSnap.val();
     if (typeof mcVal === 'number') CONFIG.MAX_COIN_PERCENT = mcVal;
   } catch (_) {}
-
   loadAssortment();
   loadPromos();
   loadUsers();
-
   await initUser();
-
-  setTimeout(() => {
-    if (window.__stopPreloader) window.__stopPreloader();
-  }, 5000);
-
+  setTimeout(() => { if (window.__stopPreloader) window.__stopPreloader(); }, 5000);
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.page));
   });
   document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-
   if (window.Telegram?.WebApp) {
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
