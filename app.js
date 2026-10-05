@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 3.4 — МОНЕТЫ МАКС. 20% + ВСЕ ИСПРАВЛЕНИЯ
+   SWWSHOP 3.5 — ПРЕЛОАДЕР + ВСЕ ФУНКЦИИ
    ========================================================= */
 
 const CONFIG = {
@@ -10,10 +10,7 @@ const CONFIG = {
   APP_NAME: 'SHOP',
   SUPPORT_USERNAME: '@bmqna',
   BASE_USERS_COUNT: 79,
-
   DEFAULT_CASHBACK: 10,
-
-  // 🔑 Лимит оплаты монетами (% от подытога)
   MAX_COIN_PERCENT: 20,
 
   REFERRAL: {
@@ -69,6 +66,208 @@ let caseLastOpen = {
   coupon: parseInt(localStorage.getItem('sww_case_coupon_last') || '0'),
   coin: parseInt(localStorage.getItem('sww_case_coin_last') || '0')
 };
+
+/* =========================================================
+   ПРЕЛОАДЕР — ЧАСТИЦЫ В БУКВЕ S
+   ========================================================= */
+(function initPreloader() {
+  const canvas = document.getElementById('preloaderCanvas');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  let dpr = window.devicePixelRatio || 1;
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COLORS = [
+    '#3b82f6',
+    '#93c5fd',
+    '#bfdbfe',
+    '#60a5fa',
+    '#2563eb',
+    '#1d4ed8'
+  ];
+
+  function getSPoints(count, cx, cy, radius) {
+    const points = [];
+    const centerX = cx;
+    const centerY = cy;
+    const R = radius;
+
+    const totalTop = Math.floor(count * 0.4);
+    const totalBottom = Math.floor(count * 0.4);
+    const totalMid = count - totalTop - totalBottom;
+
+    for (let i = 0; i < totalTop; i++) {
+      const t = i / totalTop;
+      const angle = Math.PI * (1.15 - t * 1.3);
+      const x = centerX + Math.cos(angle) * R * 0.85;
+      const y = centerY - R * 0.6 + Math.sin(angle) * R * 0.4;
+      points.push({ x, y });
+    }
+
+    for (let i = 0; i < totalBottom; i++) {
+      const t = i / totalBottom;
+      const angle = Math.PI * (-0.15 + t * 1.3);
+      const x = centerX + Math.cos(angle) * R * 0.85;
+      const y = centerY + R * 0.6 + Math.sin(angle) * R * 0.4;
+      points.push({ x, y });
+    }
+
+    for (let i = 0; i < totalMid; i++) {
+      const t = i / totalMid;
+      const x = centerX + Math.cos(Math.PI * (0.5 + t * 1)) * R * 0.55;
+      const y = centerY - R * 0.1 + t * R * 0.5;
+      points.push({
+        x: x + (Math.random() - 0.5) * 4,
+        y: y + (Math.random() - 0.5) * 4
+      });
+    }
+
+    return points;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = Math.min(width, height) * 0.22;
+
+  const S_POINTS = shuffle(getSPoints(180, cx, cy, radius));
+
+  class Particle {
+    constructor(x, y, target) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 0.6;
+      this.vy = (Math.random() - 0.5) * 0.6;
+      this.size = 1.5 + Math.random() * 3;
+      this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      this.alpha = 0.35 + Math.random() * 0.55;
+      this.life = 0;
+      this.maxLife = 100 + Math.random() * 100;
+      this.target = target;
+      this.attracted = false;
+      this.delay = Math.random() * 60;
+      this.pulsePhase = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+      this.life++;
+      this.pulsePhase += 0.05;
+
+      if (this.attracted && this.life > this.delay) {
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        this.vx += dx * 0.008;
+        this.vy += dy * 0.008;
+        this.vx *= 0.92;
+        this.vy *= 0.92;
+      } else {
+        this.vx += (Math.random() - 0.5) * 0.05;
+        this.vy += (Math.random() - 0.5) * 0.05;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+      }
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+      if (this.y < 0) this.y = height;
+      if (this.y > height) this.y = 0;
+    }
+
+    draw() {
+      const pulse = 0.85 + Math.sin(this.pulsePhase) * 0.15;
+      ctx.globalAlpha = this.alpha * pulse;
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = this.alpha * 0.3;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  const particles = [];
+  const TOTAL = 180;
+  for (let i = 0; i < TOTAL; i++) {
+    const p = new Particle(
+      Math.random() * width,
+      Math.random() * height,
+      S_POINTS[i % S_POINTS.length]
+    );
+    particles.push(p);
+  }
+
+  setTimeout(() => {
+    particles.forEach(p => { p.attracted = true; });
+  }, 400);
+
+  let rafId;
+  let running = true;
+
+  function animate() {
+    if (!running) return;
+
+    ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
+    ctx.fillRect(0, 0, width, height);
+
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+
+    rafId = requestAnimationFrame(animate);
+  }
+  animate();
+
+  window.__stopPreloader = function stopPreloader() {
+    const preloader = document.getElementById('preloader');
+    if (!preloader || preloader.classList.contains('hide')) return;
+
+    particles.forEach(p => {
+      p.attracted = false;
+      p.vx = (Math.random() - 0.5) * 8;
+      p.vy = (Math.random() - 0.5) * 8;
+      p.alpha = 0.9;
+    });
+
+    setTimeout(() => {
+      preloader.classList.add('hide');
+      setTimeout(() => {
+        running = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        preloader.style.display = 'none';
+      }, 900);
+    }, 400);
+  };
+})();
 
 /* =========================================================
    ID ПОЛЬЗОВАТЕЛЯ
@@ -347,6 +546,11 @@ async function initUser() {
   loadUserOrders();
 
   if (isAdmin) setTimeout(() => toast('👑 Вы вошли как администратор', '👑'), 800);
+
+  // 🎬 Скрываем прелоадер
+  setTimeout(() => {
+    if (window.__stopPreloader) window.__stopPreloader();
+  }, 2200);
 }
 
 function updateBalanceUI() {
@@ -838,7 +1042,7 @@ function renderCart() {
 }
 
 /* =========================================================
-   ЗАКАЗ — МОНЕТЫ МАКС. 20%
+   ЗАКАЗ
    ========================================================= */
 function renderOrder() {
   if (appliedDiscount?.locked) useDiscountInOrder = true;
@@ -849,7 +1053,6 @@ function renderOrder() {
     ? cart.reduce((s, c) => s + (c.cashback || CONFIG.DEFAULT_CASHBACK) * c.price * (c.qty || 1), 0) / subtotal
     : CONFIG.DEFAULT_CASHBACK;
 
-  // 🔑 ЛИМИТ: максимум 20% от подытога монетами
   const MAX_COIN_PERCENT = CONFIG.MAX_COIN_PERCENT;
   const maxCoinByLimit = Math.floor(subtotal * MAX_COIN_PERCENT / 100);
   const maxCoinSpend = Math.min(user.balance || 0, maxCoinByLimit);
@@ -1025,7 +1228,6 @@ async function submitOrder() {
 
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
 
-  // 🔑 ЛИМИТ: максимум 20% от подытога монетами
   const MAX_COIN_PERCENT = CONFIG.MAX_COIN_PERCENT;
   const maxCoinByLimit = Math.floor(subtotal * MAX_COIN_PERCENT / 100);
   const maxCoinSpend = Math.min(user.balance || 0, maxCoinByLimit);
@@ -1144,7 +1346,7 @@ async function submitOrder() {
 }
 
 /* =========================================================
-   ОТМЕНА ЗАКАЗА ПОЛЬЗОВАТЕЛЕМ
+   ОТМЕНА ЗАКАЗА
    ========================================================= */
 async function userCancelOrder(orderId) {
   const snap = await db.ref('orders/' + orderId).once('value');
@@ -1913,7 +2115,6 @@ function renderAdmin() {
       </button>
     </div>
 
-    <!-- ===== ГЛОБАЛЬНЫЙ КЕШБЕК ===== -->
     <div class="section-title" style="margin-top:20px;">🪙 Кешбек по умолчанию</div>
     <div class="field">
       <label>Кешбек для товаров, где не задан вручную (%)</label>
@@ -1921,7 +2122,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-gold" onclick="adminSaveGlobalCashback()">💾 Сохранить</button>
 
-    <!-- ===== ЛИМИТ МОНЕТ ===== -->
     <div class="section-title" style="margin-top:20px;">🪙 Лимит оплаты монетами</div>
     <div class="field">
       <label>Максимум % от заказа, который можно оплатить монетами</label>
@@ -1930,7 +2130,6 @@ function renderAdmin() {
     <button class="admin-action-btn btn-gold" onclick="adminSaveMaxCoinPercent()">💾 Сохранить</button>
     <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">Сейчас: <b style="color:var(--gold);">${CONFIG.MAX_COIN_PERCENT}%</b></p>
 
-    <!-- ===== ДОБАВЛЕНИЕ ТОВАРОВ ===== -->
     <div class="section-title" style="margin-top:20px;">➕ Добавить линейку (жидкости/шайбы)</div>
     <div class="field">
       <label>Название</label>
@@ -1987,7 +2186,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-green" onclick="adminAddItem()">➕ Добавить товар</button>
 
-    <!-- ===== УДАЛЕНИЕ ===== -->
     <div class="section-title" style="margin-top:20px;">🗑️ Удалить товар</div>
     <div class="field">
       <label>Категория</label>
@@ -2004,7 +2202,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-red" onclick="adminDeleteProduct()">🗑️ Удалить</button>
 
-    <!-- ===== ИЗМЕНИТЬ ЦЕНУ ===== -->
     <div class="section-title" style="margin-top:20px;">💰 Изменить цену</div>
     <div class="field">
       <label>Категория</label>
@@ -2025,7 +2222,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-orange" onclick="adminUpdatePrice()">💰 Обновить цену</button>
 
-    <!-- ===== ИЗМЕНИТЬ КОЛИЧЕСТВО ===== -->
     <div class="section-title" style="margin-top:20px;">📦 Изменить количество</div>
     <div class="field">
       <label>Категория</label>
@@ -2046,7 +2242,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-cyan" onclick="adminUpdateQty()">📦 Обновить количество</button>
 
-    <!-- ===== ИЗМЕНИТЬ КЕШБЕК ===== -->
     <div class="section-title" style="margin-top:20px;">🪙 Изменить кешбек товара</div>
     <div class="field">
       <label>Категория</label>
@@ -2067,13 +2262,11 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-gold" onclick="adminUpdateCashback()">🪙 Обновить кешбек</button>
 
-    <!-- ===== РЕДАКТОР ===== -->
     <div class="section-title" style="margin-top:20px;">🔧 Редактор товаров</div>
     <button class="admin-action-btn btn-orange" onclick="editorToggleFromAdmin()">
       ${editorMode ? '❌ Выключить редактор' : '✏️ Включить редактор'}
     </button>
 
-    <!-- ===== SHORT ID ===== -->
     <div class="section-title" style="margin-top:20px;">🆔 Изменить Short ID</div>
     <div class="field">
       <label>Пользователь</label>
@@ -2088,7 +2281,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-purple" onclick="adminUpdateShortId()">🆔 Обновить</button>
 
-    <!-- ===== ВЫДАТЬ СКИДКУ ===== -->
     <div class="section-title" style="margin-top:20px;">🎁 Выдать скидку по ID</div>
     <div class="field">
       <label>Short ID</label>
@@ -2100,7 +2292,6 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-green" onclick="adminGivePromoByShortId()">🎁 Выдать</button>
 
-    <!-- ===== ВЫДАТЬ МОНЕТЫ ===== -->
     <div class="section-title" style="margin-top:20px;">🪙 Выдать монеты</div>
     <div class="field">
       <label>Short ID</label>
@@ -2147,9 +2338,6 @@ function editorToggleFromAdmin() {
   setTimeout(() => toggleEditorMode(), 300);
 }
 
-/* =========================================================
-   АДМИН: НАСТРОЙКИ
-   ========================================================= */
 async function adminSaveGlobalCashback() {
   const val = parseInt(document.getElementById('globalCashback').value);
   if (isNaN(val) || val < 0 || val > 100) { toast('❌ 0-100', '❌'); return; }
@@ -2168,9 +2356,6 @@ async function adminSaveMaxCoinPercent() {
   renderAdmin();
 }
 
-/* =========================================================
-   АДМИН: ИЗМЕНИТЬ КЕШБЕК ТОВАРА
-   ========================================================= */
 function updateCbSelectAdmin() {
   const cat = document.getElementById('cbCategory')?.value;
   const sel = document.getElementById('cbItem');
@@ -2193,9 +2378,6 @@ async function adminUpdateCashback() {
   renderAdmin();
 }
 
-/* =========================================================
-   АДМИН: ДОБАВЛЕНИЕ ТОВАРОВ
-   ========================================================= */
 async function adminAddLine() {
   if (!user.isAdmin) return;
   const name = document.getElementById('addLineName').value.trim();
@@ -2256,9 +2438,6 @@ async function adminAddItem() {
   document.getElementById('addItemQty').value = '1';
 }
 
-/* =========================================================
-   АДМИН: УДАЛЕНИЕ / ИЗМЕНЕНИЕ ТОВАРОВ
-   ========================================================= */
 function updateDelSelect() {
   const cat = document.getElementById('delCategory')?.value;
   const sel = document.getElementById('delItem');
@@ -2341,9 +2520,6 @@ async function adminUpdateQty() {
   renderAdmin();
 }
 
-/* =========================================================
-   АДМИН: SHORT ID / СКИДКИ / МОНЕТЫ / БАЛАНС
-   ========================================================= */
 async function adminUpdateShortId() {
   const uid = document.getElementById('shortIdUserSelect').value;
   const newId = document.getElementById('newShortIdValue').value.trim().toUpperCase();
@@ -2425,9 +2601,6 @@ async function adminAdjustBalance() {
   document.getElementById('balanceAmount').value = '';
 }
 
-/* =========================================================
-   АДМИН: ЗАКАЗЫ
-   ========================================================= */
 function renderAllOrders() {
   const el = document.getElementById('allOrdersContent');
   if (!orders.length) {
@@ -2536,9 +2709,6 @@ async function adminCancelOrder(orderId) {
   renderAllOrders();
 }
 
-/* =========================================================
-   АДМИН: ПОЛЬЗОВАТЕЛИ
-   ========================================================= */
 function renderUsers() {
   const el = document.getElementById('usersContent');
   const list = Object.values(users);
@@ -2608,9 +2778,6 @@ async function quickGiveCoins(uid, amount) {
   closeOverlay('editUserOverlay');
 }
 
-/* =========================================================
-   АДМИН: КОНСОЛЬ
-   ========================================================= */
 function renderConsole() {
   document.getElementById('consoleContent').innerHTML = `
     <div class="field">
@@ -2663,9 +2830,6 @@ function adminBroadcast() {
   document.getElementById('broadcastMsg').value = '';
 }
 
-/* =========================================================
-   АДМИН: ВСЕ СКИДКИ
-   ========================================================= */
 function renderAllPromosAdmin() {
   const el = document.getElementById('allPromosList');
   if (!el) return;
@@ -2732,7 +2896,12 @@ window.addEventListener('load', async () => {
   loadAssortment();
   loadPromos();
   loadUsers();
+
   await initUser();
+
+  setTimeout(() => {
+    if (window.__stopPreloader) window.__stopPreloader();
+  }, 5000);
 
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.page));
