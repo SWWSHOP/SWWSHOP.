@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 4.0 — АДМИН РЕДАКТИРУЕТ ПРЯМО В КАТАЛОГЕ
+   SWWSHOP 4.1 — PDF ВЫПИСКИ (только скачивание)
    ========================================================= */
 
 const CONFIG = {
@@ -67,12 +67,11 @@ let caseLastOpen = {
 };
 
 /* =========================================================
-   ПРЕЛОАДЕР V2
+   ПРЕЛОАДЕР
    ========================================================= */
 (function initPreloader() {
   const canvas = document.getElementById('preloaderCanvas');
   if (!canvas) return;
-
   const ctx = canvas.getContext('2d');
   let width = window.innerWidth;
   let height = window.innerHeight;
@@ -98,7 +97,6 @@ let caseLastOpen = {
     const totalTop = Math.floor(count * 0.35);
     const totalBottom = Math.floor(count * 0.35);
     const totalMid = count - totalTop - totalBottom;
-
     for (let i = 0; i < totalTop; i++) {
       const t = i / totalTop;
       const angle = Math.PI * (1.15 - t * 1.35);
@@ -167,23 +165,19 @@ let caseLastOpen = {
         const dy = (this.target.y + this.offsetY * 2) - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const force = Math.min(0.02, 0.8 / (dist + 20));
-        this.vx += dx * force;
-        this.vy += dy * force;
+        this.vx += dx * force; this.vy += dy * force;
         if (dist < 15) {
           const angle = time * 0.001 * this.orbitSpeed;
           this.vx += Math.cos(angle) * 0.05;
           this.vy += Math.sin(angle) * 0.05;
         }
-        this.vx *= 0.92;
-        this.vy *= 0.92;
+        this.vx *= 0.92; this.vy *= 0.92;
       } else {
         this.vx += (Math.random() - 0.5) * 0.03;
         this.vy += (Math.random() - 0.5) * 0.03;
-        this.vx *= 0.97;
-        this.vy *= 0.97;
+        this.vx *= 0.97; this.vy *= 0.97;
       }
-      this.x += this.vx;
-      this.y += this.vy;
+      this.x += this.vx; this.y += this.vy;
       if (this.x < -10) this.x = width + 10;
       if (this.x > width + 10) this.x = -10;
       if (this.y < -10) this.y = height + 10;
@@ -449,7 +443,6 @@ async function getUserReferralStats() {
 async function initUser() {
   const uid = getUserId();
   const tgU = window.Telegram?.WebApp?.initDataUnsafe?.user;
-
   const adminLoggedOut = localStorage.getItem('sww_admin_logged_out') === 'true';
   const isOwnerByTg = tgU && tgU.id === ADMIN_TELEGRAM_ID;
   const isOwnerByWeb = localStorage.getItem('sww_admin') === 'true';
@@ -548,32 +541,26 @@ async function applySavedPromo() {
   const ordersSnap = await db.ref('orders').orderByChild('userId').equalTo(uid).once('value');
   const ordersVal = ordersSnap.val() || {};
   const hasOrders = Object.values(ordersVal).some(o => o.status === 'completed' || o.status === 'pending');
-
   if (!hasOrders && !isAdmin) {
     appliedDiscount = {
       code: 'FIRST-' + CONFIG.REFERRAL.NEW_USER_DISCOUNT,
       discount: CONFIG.REFERRAL.NEW_USER_DISCOUNT,
-      type: 'first_order',
-      locked: true
+      type: 'first_order', locked: true
     };
     useDiscountInOrder = true;
     return;
   }
-
   const myPromos = Object.entries(promos || {}).filter(([code, p]) => {
     if (p.used) return false;
     if (p.userId === uid) return true;
     if (!p.userId && !p.usedBy) return true;
     return false;
   });
-
   if (myPromos.length > 0) {
     const best = myPromos.reduce((a, b) => (a[1].discount > b[1].discount ? a : b));
     appliedDiscount = {
-      code: best[0],
-      discount: best[1].discount,
-      type: best[1].type || 'promo',
-      locked: false
+      code: best[0], discount: best[1].discount,
+      type: best[1].type || 'promo', locked: false
     };
     db.ref('users/' + uid + '/savedDiscount').set(appliedDiscount);
   } else {
@@ -728,7 +715,7 @@ function render() {
 }
 
 /* =========================================================
-   КАТАЛОГ — С АДМИН-КНОПКАМИ
+   КАТАЛОГ
    ========================================================= */
 function renderCatalog() {
   const cats = [
@@ -788,7 +775,6 @@ function openCategory(catId) {
   currentCategory = catId;
   const titles = { liquids: 'Жидкости', pouches: 'Шайбы', coils: 'Испарители', devices: 'Устройства' };
   const isSimple = catId === 'coils' || catId === 'devices';
-
   document.getElementById('app').innerHTML = `
     <button class="back-btn" onclick="navigate('catalog')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -796,7 +782,6 @@ function openCategory(catId) {
     </button>
     <h1 style="font-size:22px;font-weight:800;margin-bottom:16px;">${titles[catId]}</h1>
     <input type="text" class="search-input" placeholder="🔍 Поиск..." oninput="filterProducts(this.value)" />
-
     ${isAdmin ? `
       <button class="admin-action-btn ${isSimple ? 'btn-cyan' : 'btn-green'}" 
               onclick="${isSimple ? `openAddItemModal('${catId}')` : `openAddLineModal('${catId}')`}"
@@ -804,7 +789,6 @@ function openCategory(catId) {
         ➕ Добавить ${isSimple ? 'товар' : 'линейку'}
       </button>
     ` : ''}
-
     <div id="productsList">${renderProducts(catId)}</div>
   `;
 }
@@ -844,9 +828,7 @@ function renderProducts(catId) {
       `;
     }).join('');
   } else {
-    return `<div class="product-grid">
-      ${items.map((item, i) => renderSquareProduct(item, i, catId)).join('')}
-    </div>`;
+    return `<div class="product-grid">${items.map((item, i) => renderSquareProduct(item, i, catId)).join('')}</div>`;
   }
 }
 
@@ -855,7 +837,6 @@ function renderSquareProduct(item, i, catId) {
   const inCart = cart.some(c => c.id === item.id);
   const canAdd = qty > 0 && !inCart;
   const cb = getCashback(item);
-
   let statusClass = 'status-in-stock', statusText = 'В наличии';
   if (inCart) { statusClass = 'status-in-cart'; statusText = '✓ В корзине'; }
   else if (qty === 0) { statusClass = 'status-out-stock'; statusText = 'Нет'; }
@@ -902,9 +883,6 @@ function filterProducts(query) {
   data[currentCategory] = orig;
 }
 
-/* =========================================================
-   ЛИНЕЙКА (СПИСОК ВКУСОВ) — С АДМИН-КНОПКАМИ
-   ========================================================= */
 function openLine(catId, index) {
   currentCategory = catId;
   const line = data[catId][index];
@@ -978,14 +956,8 @@ function openAddLineModal(catId) {
   catId = catId || 'liquids';
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новая линейка</h3>
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="addLineName" placeholder="HQD Sweet" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="addLinePrice" placeholder="500" />
-    </div>
+    <div class="field"><label>Название</label><input type="text" id="addLineName" placeholder="HQD Sweet" /></div>
+    <div class="field"><label>Цена (₽)</label><input type="number" id="addLinePrice" placeholder="500" /></div>
     <div class="field">
       <label>Категория</label>
       <select id="addLineCategory">
@@ -993,18 +965,12 @@ function openAddLineModal(catId) {
         <option value="pouches" ${catId === 'pouches' ? 'selected' : ''}>Шайбы</option>
       </select>
     </div>
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="addLineCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
-    </div>
+    <div class="field"><label>Кешбек (%)</label><input type="number" id="addLineCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" /></div>
     <div class="field">
       <label>Вкусы (название,кол-во — по одному на строку)</label>
       <textarea id="addLineFlavors" placeholder="Манго,3&#10;Клубника,5&#10;Арбуз,2" style="min-height:100px;"></textarea>
     </div>
-    <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">
-      💡 Формат: <b>Манго,3</b> — название и количество.<br>
-      Можно без количества: <b>Манго</b> → будет 1.
-    </p>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">💡 Формат: <b>Манго,3</b>. Можно без количества: <b>Манго</b> → будет 1.</p>
     <button class="btn btn-primary btn-block" onclick="adminAddLineSubmit()">💾 Создать</button>
   `;
   openOverlay('editProductOverlay');
@@ -1014,14 +980,8 @@ function openAddItemModal(catId) {
   catId = catId || 'coils';
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новый товар</h3>
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="addItemName" placeholder="Voopoo PnP VM1" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="addItemPrice" placeholder="300" />
-    </div>
+    <div class="field"><label>Название</label><input type="text" id="addItemName" placeholder="Voopoo PnP VM1" /></div>
+    <div class="field"><label>Цена (₽)</label><input type="number" id="addItemPrice" placeholder="300" /></div>
     <div class="field">
       <label>Категория</label>
       <select id="addItemCategory">
@@ -1029,14 +989,8 @@ function openAddItemModal(catId) {
         <option value="devices" ${catId === 'devices' ? 'selected' : ''}>Устройства</option>
       </select>
     </div>
-    <div class="field">
-      <label>Количество</label>
-      <input type="number" id="addItemQty" value="1" min="0" />
-    </div>
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="addItemCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" />
-    </div>
+    <div class="field"><label>Количество</label><input type="number" id="addItemQty" value="1" min="0" /></div>
+    <div class="field"><label>Кешбек (%)</label><input type="number" id="addItemCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" /></div>
     <button class="btn btn-primary btn-block" onclick="adminAddItemSubmit()">💾 Создать</button>
   `;
   openOverlay('editProductOverlay');
@@ -1047,18 +1001,9 @@ function openEditLineModal(catId, index) {
   if (!line) return;
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить линейку</h3>
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="edLineName" value="${line.name.replace(/"/g, '&quot;')}" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="edLinePrice" value="${line.price}" />
-    </div>
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="edLineCashback" value="${getCashback(line)}" min="0" max="100" />
-    </div>
+    <div class="field"><label>Название</label><input type="text" id="edLineName" value="${line.name.replace(/"/g, '&quot;')}" /></div>
+    <div class="field"><label>Цена (₽)</label><input type="number" id="edLinePrice" value="${line.price}" /></div>
+    <div class="field"><label>Кешбек (%)</label><input type="number" id="edLineCashback" value="${getCashback(line)}" min="0" max="100" /></div>
     <button class="btn btn-primary btn-block" onclick="adminSaveLine('${catId}', ${index})">💾 Сохранить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1069,22 +1014,10 @@ function openEditItemModal(catId, index) {
   if (!item) return;
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить товар</h3>
-    <div class="field">
-      <label>Название</label>
-      <input type="text" id="edItemName" value="${item.name.replace(/"/g, '&quot;')}" />
-    </div>
-    <div class="field">
-      <label>Цена (₽)</label>
-      <input type="number" id="edItemPrice" value="${item.price}" />
-    </div>
-    <div class="field">
-      <label>Количество</label>
-      <input type="number" id="edItemQty" value="${item.quantity || 0}" min="0" />
-    </div>
-    <div class="field">
-      <label>Кешбек (%)</label>
-      <input type="number" id="edItemCashback" value="${getCashback(item)}" min="0" max="100" />
-    </div>
+    <div class="field"><label>Название</label><input type="text" id="edItemName" value="${item.name.replace(/"/g, '&quot;')}" /></div>
+    <div class="field"><label>Цена (₽)</label><input type="number" id="edItemPrice" value="${item.price}" /></div>
+    <div class="field"><label>Количество</label><input type="number" id="edItemQty" value="${item.quantity || 0}" min="0" /></div>
+    <div class="field"><label>Кешбек (%)</label><input type="number" id="edItemCashback" value="${getCashback(item)}" min="0" max="100" /></div>
     <button class="btn btn-primary btn-block" onclick="adminSaveItem('${catId}', ${index})">💾 Сохранить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1093,14 +1026,8 @@ function openEditItemModal(catId, index) {
 function openAddFlavorModal(catId, lineIndex) {
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новый вкус</h3>
-    <div class="field">
-      <label>Название вкуса</label>
-      <input type="text" id="newFlavorName" placeholder="Манго" />
-    </div>
-    <div class="field">
-      <label>Количество</label>
-      <input type="number" id="newFlavorQty" value="1" min="0" />
-    </div>
+    <div class="field"><label>Название вкуса</label><input type="text" id="newFlavorName" placeholder="Манго" /></div>
+    <div class="field"><label>Количество</label><input type="number" id="newFlavorQty" value="1" min="0" /></div>
     <button class="btn btn-primary btn-block" onclick="adminAddFlavorSubmit('${catId}', ${lineIndex})">💾 Добавить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1112,14 +1039,8 @@ function openEditFlavorModal(catId, lineIndex, flavorIndex) {
   if (!f) return;
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить вкус</h3>
-    <div class="field">
-      <label>Название вкуса</label>
-      <input type="text" id="edFlavorName" value="${f.name.replace(/"/g, '&quot;')}" />
-    </div>
-    <div class="field">
-      <label>Количество</label>
-      <input type="number" id="edFlavorQty" value="${f.quantity || 0}" min="0" />
-    </div>
+    <div class="field"><label>Название вкуса</label><input type="text" id="edFlavorName" value="${f.name.replace(/"/g, '&quot;')}" /></div>
+    <div class="field"><label>Количество</label><input type="number" id="edFlavorQty" value="${f.quantity || 0}" min="0" /></div>
     <button class="btn btn-primary btn-block" onclick="adminSaveFlavor('${catId}', ${lineIndex}, ${flavorIndex})">💾 Сохранить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1153,9 +1074,7 @@ async function adminAddLineSubmit() {
     }
     return {
       id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-      name: fName,
-      quantity: fQty,
-      inStock: fQty > 0
+      name: fName, quantity: fQty, inStock: fQty > 0
     };
   });
 
@@ -1179,9 +1098,7 @@ async function adminAddItemSubmit() {
   if (!data[category]) data[category] = [];
   data[category].push({
     id: 'i_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-    name, price, cashback,
-    quantity: qty,
-    inStock: qty > 0
+    name, price, cashback, quantity: qty, inStock: qty > 0
   });
   await db.ref('assortment').set(data);
   toast('✅ Товар добавлен', '✅');
@@ -1196,10 +1113,7 @@ async function adminSaveLine(catId, index) {
   const cb = parseInt(document.getElementById('edLineCashback').value);
   if (!name || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
   if (isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
-
-  line.name = name;
-  line.price = price;
-  line.cashback = cb;
+  line.name = name; line.price = price; line.cashback = cb;
   await db.ref('assortment').set(data);
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
@@ -1216,12 +1130,8 @@ async function adminSaveItem(catId, index) {
   if (!name || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
   if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
   if (isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
-
-  item.name = name;
-  item.price = price;
-  item.quantity = qty;
-  item.inStock = qty > 0;
-  item.cashback = cb;
+  item.name = name; item.price = price; item.quantity = qty;
+  item.inStock = qty > 0; item.cashback = cb;
   await db.ref('assortment').set(data);
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
@@ -1235,13 +1145,10 @@ async function adminAddFlavorSubmit(catId, lineIndex) {
   const qty = parseInt(document.getElementById('newFlavorQty').value) || 0;
   if (!name) { toast('❌ Введи название', '❌'); return; }
   if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
-
   if (!line.flavors) line.flavors = [];
   line.flavors.push({
     id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-    name: name,
-    quantity: qty,
-    inStock: qty > 0
+    name: name, quantity: qty, inStock: qty > 0
   });
   await db.ref('assortment').set(data);
   toast('✅ Вкус добавлен', '✅');
@@ -1256,7 +1163,6 @@ async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
   const qty = parseInt(document.getElementById('edFlavorQty').value);
   if (!name) { toast('❌ Введи название', '❌'); return; }
   if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
-
   line.flavors[flavorIndex].name = name;
   line.flavors[flavorIndex].quantity = qty;
   line.flavors[flavorIndex].inStock = qty > 0;
@@ -1271,7 +1177,6 @@ async function adminDeleteFlavor(catId, lineIndex, flavorIndex) {
   if (!line || !line.flavors[flavorIndex]) return;
   const fname = line.flavors[flavorIndex].name;
   if (!confirm(`Удалить вкус "${fname}"?`)) return;
-
   line.flavors.splice(flavorIndex, 1);
   await db.ref('assortment').set(data);
   toast('🗑️ Вкус удалён', '🗑️');
@@ -1282,11 +1187,9 @@ async function adminDeleteLine(catId, index) {
   const line = data[catId][index];
   if (!line) return;
   if (!confirm(`Удалить линейку "${line.name}"?`)) return;
-
   data[catId].splice(index, 1);
   await db.ref('assortment').set(data);
   toast('🗑️ Линейка удалена', '🗑️');
-
   if (currentPage === 'catalog') openCategory(catId);
   else navigate('catalog');
 }
@@ -1295,7 +1198,6 @@ async function adminDeleteItem(catId, index) {
   const item = data[catId][index];
   if (!item) return;
   if (!confirm(`Удалить "${item.name}"?`)) return;
-
   data[catId].splice(index, 1);
   await db.ref('assortment').set(data);
   toast('🗑️ Товар удалён', '🗑️');
@@ -1427,17 +1329,14 @@ function renderOrder() {
   if (appliedDiscount?.locked) useDiscountInOrder = true;
   const subtotal = cart.reduce((s, c) => s + c.price * (c.qty || 1), 0);
   const totalQty = cart.reduce((s, c) => s + (c.qty || 1), 0);
-
   const totalCashbackRate = cart.length
     ? cart.reduce((s, c) => s + (c.cashback || CONFIG.DEFAULT_CASHBACK) * c.price * (c.qty || 1), 0) / subtotal
     : CONFIG.DEFAULT_CASHBACK;
-
   const MAX_COIN_PERCENT = CONFIG.MAX_COIN_PERCENT;
   const maxCoinByLimit = Math.floor(subtotal * MAX_COIN_PERCENT / 100);
   const maxCoinSpend = Math.min(user.balance || 0, maxCoinByLimit);
   const coinSpend = useBalanceInOrder ? maxCoinSpend : 0;
   const afterCoin = subtotal - coinSpend;
-
   let discountSum = 0;
   if (useDiscountInOrder && appliedDiscount) {
     discountSum = Math.round(afterCoin * appliedDiscount.discount / 100);
@@ -1615,7 +1514,6 @@ async function submitOrder() {
 
   try {
     await db.ref('orders/' + orderId).set(orderData);
-
     for (const item of cart) {
       const q = item.qty || 1;
       if (item.type === 'flavor') {
@@ -1626,7 +1524,6 @@ async function submitOrder() {
         await ref.transaction(cur => Math.max(0, (cur || 0) - q));
       }
     }
-
     if (coinSpend > 0) {
       const balRef = db.ref('users/' + user.id + '/balance');
       await balRef.transaction(cur => Math.max(0, (cur || 0) - coinSpend));
@@ -1634,13 +1531,11 @@ async function submitOrder() {
         type: 'spend', amount: -coinSpend, orderId, date: Date.now()
       });
     }
-
     if (useDiscountInOrder && appliedDiscount?.code && !appliedDiscount.locked && promos[appliedDiscount.code]) {
       await db.ref('promos/' + appliedDiscount.code).update({
         used: true, usedBy: user.id, usedAt: Date.now(), orderId
       });
     }
-
     db.ref('users/' + user.id).update({ phone, contactUsername }).catch(() => {});
 
     let adminMsg = `🛒 НОВЫЙ ЗАКАЗ #${orderId}\n\n👤 ${name}\n📱 ${contact}\n💳 ${payment}\n🆔 ${user.shortId}\n\n📋 Товары:\n`;
@@ -1657,7 +1552,6 @@ async function submitOrder() {
         body: JSON.stringify({ chat_id: CHAT_ID, text: adminMsg })
       }).catch(() => {});
     }
-
     if (user.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
       let userMsg = `✅ Заказ #${orderId} принят!\n\n📋 Товары:\n`;
       cart.forEach((it, i) => { userMsg += `${i + 1}. ${it.name} × ${it.qty || 1} — ${it.price * (it.qty || 1)}₽\n`; });
@@ -1665,7 +1559,6 @@ async function submitOrder() {
       if (discount > 0) userMsg += `\n💎 Купон: −${discount}₽`;
       userMsg += `\n💰 К оплате: ${finalTotal}₽`;
       userMsg += `\n🪙 Кешбек: +${cashbackEarned}\n\n⏳ Ожидает подтверждения`;
-
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: user.telegramId, text: userMsg })
@@ -1677,7 +1570,6 @@ async function submitOrder() {
     useBalanceInOrder = false;
     toast('✅ Заказ оформлен!', '🎉');
     setTimeout(() => navigate('profile'), 600);
-
   } catch (e) {
     console.error('ORDER ERROR:', e);
     toast('❌ Ошибка: ' + (e.message || 'попробуйте снова'), '❌');
@@ -1698,7 +1590,6 @@ async function userCancelOrder(orderId) {
   if (order.userId !== user.id) { toast('❌ Это не ваш заказ', '❌'); return; }
   if (order.status !== 'pending') { toast('❌ Нельзя отменить', '❌'); return; }
   if (!confirm('Отменить заказ #' + orderId + '?')) return;
-
   try {
     for (const it of (order.items || [])) {
       const q = it.qty || 1;
@@ -1782,7 +1673,6 @@ function renderCaseCard(type) {
   const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
   const canOpen = user.isAdmin || (Date.now() - lastOpen >= cooldown);
   const stripItems = isCoupon ? buildStrip(CASE_COUPON_ITEMS, '%') : buildStrip(CASE_COIN_ITEMS, '');
-
   return `
     <div class="case-card ${isCoupon ? '' : 'premium'}">
       <div class="case-head">
@@ -2222,7 +2112,148 @@ function shareReferral() {
 }
 
 /* =========================================================
-   АДМИН-ПАНЕЛЬ (только настройки, статистика, юзеры, рассылка)
+   PDF ВЫПИСКИ — ТОЛЬКО СКАЧИВАНИЕ
+   ========================================================= */
+function filterOrdersByPeriod(period) {
+  const now = new Date();
+  if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    return orders.filter(o => {
+      const isCompleted = o.status === 'completed';
+      const date = o.completedAt || o.date || 0;
+      return isCompleted && date >= monthStart;
+    });
+  }
+  return orders.filter(o => o.status === 'completed');
+}
+
+async function downloadPDFStatement(period) {
+  try {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      toast('❌ PDF-библиотека не загружена', '❌');
+      return;
+    }
+    
+    toast('⏳ Формирую PDF...', '📄');
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const filtered = filterOrdersByPeriod(period);
+    const now = new Date();
+    
+    const title = period === 'month'
+      ? `Отчёт за ${now.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}`
+      : 'Отчёт за всё время';
+    
+    doc.setFontSize(18);
+    doc.setTextColor(30, 30, 30);
+    doc.text('SWWSHOP — ' + title, 14, 15);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Сформировано: ' + new Date().toLocaleString('ru-RU'), 14, 22);
+    
+    const totalRevenue = filtered.reduce((s, o) => s + (o.totalPrice || o.total || 0), 0);
+    const totalItems = filtered.reduce((s, o) => s + (o.items || []).reduce((a, it) => a + (it.qty || 1), 0), 0);
+    const totalDiscount = filtered.reduce((s, o) => s + (o.discount || 0), 0);
+    const totalCoins = filtered.reduce((s, o) => s + (o.coinSpent || 0), 0);
+    const totalCashback = filtered.reduce((s, o) => s + (o.cashbackEarned || 0), 0);
+    
+    const rows = filtered.map((o, i) => {
+      const itemsText = (o.items || []).map(it => `${it.name} × ${it.qty || 1}`).join('; ');
+      return [
+        (i + 1).toString(),
+        '#' + (o.id || ''),
+        new Date(o.completedAt || o.date).toLocaleString('ru-RU', { 
+          day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
+        }),
+        o.userName || '—',
+        o.userShortId || '—',
+        (o.userPhone || o.userContact || '—').substring(0, 30),
+        itemsText.substring(0, 80) + (itemsText.length > 80 ? '...' : ''),
+        (o.subtotal || 0) + ' ₽',
+        (o.discount || 0) > 0 ? '-' + o.discount + ' ₽' : '—',
+        (o.coinSpent || 0) > 0 ? '-' + o.coinSpent + ' ₽' : '—',
+        (o.totalPrice || o.total || 0) + ' ₽',
+        (o.cashbackEarned || 0) > 0 ? '+' + o.cashbackEarned : '—'
+      ];
+    });
+    
+    doc.autoTable({
+      head: [[
+        '№', 'Заказ', 'Дата', 'Клиент', 'Short ID', 'Контакт',
+        'Товары', 'Подытог', 'Скидка', '🪙 Монеты', 'Итого', 'Кешбэк'
+      ]],
+      body: rows.length ? rows : [['—', '—', '—', '—', '—', '—', 'Нет заказов за период', '—', '—', '—', '—', '—']],
+      startY: 28,
+      styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+      headStyles: {
+        fillColor: [0, 212, 255], textColor: [255, 255, 255],
+        fontStyle: 'bold', fontSize: 7
+      },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 45 },
+        7: { cellWidth: 18, halign: 'right' },
+        8: { cellWidth: 16, halign: 'right' },
+        9: { cellWidth: 18, halign: 'right' },
+        10: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
+        11: { cellWidth: 16, halign: 'right' }
+      }
+    });
+    
+    const finalY = (doc.lastAutoTable?.finalY || 28) + 8;
+    
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+    doc.text('ИТОГО:', 14, finalY);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Заказов: ${filtered.length}`, 14, finalY + 6);
+    doc.text(`Товаров продано: ${totalItems} шт`, 14, finalY + 11);
+    doc.text(`Общая сумма скидок: ${totalDiscount} ₽`, 14, finalY + 16);
+    doc.text(`Списано монетами: ${totalCoins} 🪙`, 14, finalY + 21);
+    doc.text(`Начислено кешбэка: ${totalCashback} 🪙`, 14, finalY + 26);
+    
+    doc.setFontSize(13);
+    doc.setTextColor(6, 165, 90);
+    doc.text(`ВЫРУЧКА: ${totalRevenue.toLocaleString('ru-RU')} ₽`, 14, finalY + 34);
+    
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('SWWSHOP © ' + new Date().getFullYear(), 14, pageHeight - 5);
+    
+    const blob = doc.output('blob');
+    const filename = period === 'month'
+      ? `SWWSHOP_отчёт_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`
+      : `SWWSHOP_отчёт_всё_время_${now.getFullYear()}.pdf`;
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    
+    toast('✅ PDF сохранён: ' + filename, '📄');
+  } catch (e) {
+    console.error('PDF error:', e);
+    toast('❌ Ошибка: ' + e.message, '❌');
+  }
+}
+
+/* =========================================================
+   АДМИН-ПАНЕЛЬ
    ========================================================= */
 function renderAdmin() {
   const el = document.getElementById('adminContent');
@@ -2237,6 +2268,40 @@ function renderAdmin() {
       <div class="admin-stat"><div class="val">${pending}</div><div class="lbl">Ожидают</div></div>
       <div class="admin-stat"><div class="val">${revenue.toLocaleString('ru-RU')} ₽</div><div class="lbl">Выручка</div></div>
       <div class="admin-stat"><div class="val">${usersCount}</div><div class="lbl">Юзеров</div></div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px;">📊 Выписки в PDF</div>
+    <div class="menu-list" style="margin-bottom:12px;">
+      <button class="menu-item admin-only" onclick="downloadPDFStatement('month')">
+        <div class="menu-icon" style="color:var(--accent);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+            <line x1="9" y1="19" x2="15" y2="19"/>
+          </svg>
+        </div>
+        <div class="menu-text">
+          <div class="title">📥 Скачать за месяц</div>
+          <div class="sub">PDF-выписка за текущий месяц</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </button>
+
+      <button class="menu-item admin-only" onclick="downloadPDFStatement('all')">
+        <div class="menu-icon" style="color:var(--success);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <div class="menu-text">
+          <div class="title">📥 Скачать за всё время</div>
+          <div class="sub">PDF-выписка за весь период</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </button>
     </div>
 
     <div class="menu-list">
