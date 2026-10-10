@@ -1,5 +1,5 @@
 /* =========================================================
-   SWWSHOP 4.1 — PDF ВЫПИСКИ (только скачивание)
+   SWWSHOP 4.1 — PDF ВЫПИСКИ (с поддержкой кириллицы)
    ========================================================= */
 
 const CONFIG = {
@@ -2113,7 +2113,69 @@ function shareReferral() {
 
 /* =========================================================
    PDF ВЫПИСКИ — ТОЛЬКО СКАЧИВАНИЕ
+   (с поддержкой кириллицы через встроенный шрифт Roboto)
    ========================================================= */
+
+let pdfFontsLoaded = false;
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function loadPdfFonts() {
+  if (pdfFontsLoaded) return;
+  try {
+    const regularUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/fonts/Roboto/Roboto-Regular.ttf';
+    const boldUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/fonts/Roboto/Roboto-Medium.ttf';
+
+    const [regResp, boldResp] = await Promise.all([
+      fetch(regularUrl),
+      fetch(boldUrl)
+    ]);
+    const regBuf = await regResp.arrayBuffer();
+    const boldBuf = await boldResp.arrayBuffer();
+
+    const regBase64 = arrayBufferToBase64(regBuf);
+    const boldBase64 = arrayBufferToBase64(boldBuf);
+
+    const tempDoc = new window.jspdf.jsPDF();
+    tempDoc.addFileToVFS('Roboto-Regular.ttf', regBase64);
+    tempDoc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    tempDoc.addFileToVFS('Roboto-Bold.ttf', boldBase64);
+    tempDoc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+
+    window.__pdfFonts = {
+      regular: regBase64,
+      bold: boldBase64
+    };
+    pdfFontsLoaded = true;
+  } catch (e) {
+    console.warn('Не удалось загрузить шрифты для PDF, используется fallback:', e);
+    pdfFontsLoaded = true;
+  }
+}
+
+function registerPdfFonts(doc) {
+  if (!window.__pdfFonts) return false;
+  try {
+    doc.addFileToVFS('Roboto-Regular.ttf', window.__pdfFonts.regular);
+    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    doc.addFileToVFS('Roboto-Bold.ttf', window.__pdfFonts.bold);
+    doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+    doc.setFont('Roboto', 'normal');
+    return true;
+  } catch (e) {
+    console.warn('Ошибка регистрации шрифта:', e);
+    return false;
+  }
+}
+
 function filterOrdersByPeriod(period) {
   const now = new Date();
   if (period === 'month') {
@@ -2133,63 +2195,81 @@ async function downloadPDFStatement(period) {
       toast('❌ PDF-библиотека не загружена', '❌');
       return;
     }
-    
+
     toast('⏳ Формирую PDF...', '📄');
-    
+
+    await loadPdfFonts();
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const hasCustomFont = registerPdfFonts(doc);
+    const FONT = hasCustomFont ? 'Roboto' : 'helvetica';
+
     const filtered = filterOrdersByPeriod(period);
     const now = new Date();
-    
+
     const title = period === 'month'
       ? `Отчёт за ${now.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}`
       : 'Отчёт за всё время';
-    
+
+    doc.setFont(FONT, 'bold');
     doc.setFontSize(18);
     doc.setTextColor(30, 30, 30);
     doc.text('SWWSHOP — ' + title, 14, 15);
-    
+
+    doc.setFont(FONT, 'normal');
     doc.setFontSize(10);
     doc.setTextColor(120, 120, 120);
     doc.text('Сформировано: ' + new Date().toLocaleString('ru-RU'), 14, 22);
-    
+
     const totalRevenue = filtered.reduce((s, o) => s + (o.totalPrice || o.total || 0), 0);
     const totalItems = filtered.reduce((s, o) => s + (o.items || []).reduce((a, it) => a + (it.qty || 1), 0), 0);
     const totalDiscount = filtered.reduce((s, o) => s + (o.discount || 0), 0);
     const totalCoins = filtered.reduce((s, o) => s + (o.coinSpent || 0), 0);
     const totalCashback = filtered.reduce((s, o) => s + (o.cashbackEarned || 0), 0);
-    
+
     const rows = filtered.map((o, i) => {
-      const itemsText = (o.items || []).map(it => `${it.name} × ${it.qty || 1}`).join('; ');
+      const itemsText = (o.items || []).map(it => `${it.name} x${it.qty || 1}`).join('; ');
       return [
         (i + 1).toString(),
         '#' + (o.id || ''),
-        new Date(o.completedAt || o.date).toLocaleString('ru-RU', { 
+        new Date(o.completedAt || o.date).toLocaleString('ru-RU', {
           day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
         }),
         o.userName || '—',
         o.userShortId || '—',
         (o.userPhone || o.userContact || '—').substring(0, 30),
         itemsText.substring(0, 80) + (itemsText.length > 80 ? '...' : ''),
-        (o.subtotal || 0) + ' ₽',
-        (o.discount || 0) > 0 ? '-' + o.discount + ' ₽' : '—',
-        (o.coinSpent || 0) > 0 ? '-' + o.coinSpent + ' ₽' : '—',
-        (o.totalPrice || o.total || 0) + ' ₽',
+        (o.subtotal || 0) + ' RUB',
+        (o.discount || 0) > 0 ? '-' + o.discount + ' RUB' : '—',
+        (o.coinSpent || 0) > 0 ? '-' + o.coinSpent + ' RUB' : '—',
+        (o.totalPrice || o.total || 0) + ' RUB',
         (o.cashbackEarned || 0) > 0 ? '+' + o.cashbackEarned : '—'
       ];
     });
-    
+
+    const head = [[
+      '№', 'Заказ', 'Дата', 'Клиент', 'Short ID', 'Контакт',
+      'Товары', 'Подытог', 'Скидка', 'Монеты', 'Итого', 'Кешбэк'
+    ]];
+
     doc.autoTable({
-      head: [[
-        '№', 'Заказ', 'Дата', 'Клиент', 'Short ID', 'Контакт',
-        'Товары', 'Подытог', 'Скидка', '🪙 Монеты', 'Итого', 'Кешбэк'
-      ]],
+      head,
       body: rows.length ? rows : [['—', '—', '—', '—', '—', '—', 'Нет заказов за период', '—', '—', '—', '—', '—']],
       startY: 28,
-      styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+      styles: {
+        font: FONT,
+        fontSize: 7,
+        cellPadding: 1.5,
+        overflow: 'linebreak',
+        textColor: [30, 30, 30]
+      },
       headStyles: {
-        fillColor: [0, 212, 255], textColor: [255, 255, 255],
-        fontStyle: 'bold', fontSize: 7
+        font: FONT,
+        fontStyle: 'bold',
+        fillColor: [0, 212, 255],
+        textColor: [255, 255, 255],
+        fontSize: 7
       },
       alternateRowStyles: { fillColor: [245, 247, 250] },
       columnStyles: {
@@ -2205,37 +2285,46 @@ async function downloadPDFStatement(period) {
         9: { cellWidth: 18, halign: 'right' },
         10: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
         11: { cellWidth: 16, halign: 'right' }
+      },
+      didParseCell: function(data) {
+        if (hasCustomFont) {
+          data.cell.styles.font = FONT;
+        }
       }
     });
-    
+
     const finalY = (doc.lastAutoTable?.finalY || 28) + 8;
-    
+
+    doc.setFont(FONT, 'bold');
     doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
     doc.text('ИТОГО:', 14, finalY);
-    
+
+    doc.setFont(FONT, 'normal');
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
     doc.text(`Заказов: ${filtered.length}`, 14, finalY + 6);
     doc.text(`Товаров продано: ${totalItems} шт`, 14, finalY + 11);
-    doc.text(`Общая сумма скидок: ${totalDiscount} ₽`, 14, finalY + 16);
-    doc.text(`Списано монетами: ${totalCoins} 🪙`, 14, finalY + 21);
-    doc.text(`Начислено кешбэка: ${totalCashback} 🪙`, 14, finalY + 26);
-    
+    doc.text(`Общая сумма скидок: ${totalDiscount} RUB`, 14, finalY + 16);
+    doc.text(`Списано монетами: ${totalCoins}`, 14, finalY + 21);
+    doc.text(`Начислено кешбэка: ${totalCashback}`, 14, finalY + 26);
+
+    doc.setFont(FONT, 'bold');
     doc.setFontSize(13);
     doc.setTextColor(6, 165, 90);
-    doc.text(`ВЫРУЧКА: ${totalRevenue.toLocaleString('ru-RU')} ₽`, 14, finalY + 34);
-    
+    doc.text(`ВЫРУЧКА: ${totalRevenue.toLocaleString('ru-RU')} RUB`, 14, finalY + 34);
+
     const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFont(FONT, 'normal');
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text('SWWSHOP © ' + new Date().getFullYear(), 14, pageHeight - 5);
-    
+    doc.text('SWWSHOP (c) ' + new Date().getFullYear(), 14, pageHeight - 5);
+
     const blob = doc.output('blob');
     const filename = period === 'month'
       ? `SWWSHOP_отчёт_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`
       : `SWWSHOP_отчёт_всё_время_${now.getFullYear()}.pdf`;
-    
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2244,7 +2333,7 @@ async function downloadPDFStatement(period) {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    
+
     toast('✅ PDF сохранён: ' + filename, '📄');
   } catch (e) {
     console.error('PDF error:', e);
