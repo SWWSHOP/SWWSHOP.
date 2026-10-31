@@ -363,7 +363,10 @@ body.light .header { background: rgba(244,247,251,0.9); }
 .product-square:hover { border-color: var(--accent); transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 32px rgba(0,212,255,0.2); }
 .product-square:active { transform: scale(0.97); }
 .product-square.in-cart { border-color: var(--success); }
-.product-square.out-of-stock { opacity: 0.5; }
+.product-square.out-of-stock { opacity: 0.45; filter: grayscale(0.85) brightness(0.8); }
+.product-square.out-of-stock:hover { transform: none; box-shadow: none; border-color: var(--border); }
+.product-square.has-admin { aspect-ratio: auto; min-height: 190px; gap: 8px; }
+.line-meta { font-size: 11px; color: var(--text-dim); position: relative; z-index: 1; }
 .product-square.editor-active { border-color: var(--warning); animation: pulseEditor 2s infinite; }
 @keyframes pulseEditor {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255,176,32,0.4); }
