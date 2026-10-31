@@ -593,11 +593,65 @@ function getUserStats() {
   };
 }
 
+const LINE_CATS = ['liquids', 'pouches', 'devices'];
+
+function normalizeAssortment() {
+  ['liquids', 'pouches', 'coils', 'devices'].forEach(c => {
+    if (!data[c]) data[c] = [];
+    else if (!Array.isArray(data[c])) data[c] = Object.values(data[c]);
+  });
+  LINE_CATS.forEach(c => {
+    data[c] = data[c].map(line => {
+      if (!line) return line;
+      // Старый формат (устройство без вкусов) -> линейка с одним вкусом
+      if (c === 'devices' && !line.flavors && line.quantity != null) {
+        const q = Number(line.quantity) || 0;
+        return {
+          name: line.name, price: line.price, cashback: line.cashback,
+          flavors: [{ id: line.id || ('f_' + Math.random().toString(36).slice(2, 8)), name: 'Стандарт', quantity: q, inStock: q > 0 }]
+        };
+      }
+      if (!line.flavors) line.flavors = [];
+      else if (!Array.isArray(line.flavors)) line.flavors = Object.values(line.flavors);
+      return line;
+    });
+  });
+}
+
+function syncCartWithData() {
+  let changed = false;
+  cart = cart.filter(c => {
+    if (!LINE_CATS.includes(c.category)) return true;
+    const lines = data[c.category] || [];
+    for (let li = 0; li < lines.length; li++) {
+      const fi = (lines[li]?.flavors || []).findIndex(f => f.id === c.id);
+      if (fi >= 0) {
+        if (c.type !== 'flavor' || c.lineIndex !== li || c.flavorIndex !== fi) {
+          c.type = 'flavor'; c.lineIndex = li; c.flavorIndex = fi; delete c.index;
+          changed = true;
+        }
+        return true;
+      }
+    }
+    changed = true;
+    return false;
+  });
+  if (changed) saveCart();
+}
+
+function pluralFlavors(n) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'вкус';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'вкуса';
+  return 'вкусов';
+}
+
 function loadAssortment() {
   db.ref('assortment').on('value', s => {
     const v = s.val();
     data = v || { liquids: [], pouches: [], coils: [], devices: [] };
-    ['liquids', 'pouches', 'coils', 'devices'].forEach(c => { if (!data[c]) data[c] = []; });
+    normalizeAssortment();
+    syncCartWithData();
     if (!initialized) {
       initialized = true;
       render();
@@ -722,13 +776,13 @@ function renderCatalog() {
     { id: 'liquids', name: 'Жидкости', desc: 'Для pod-систем и вейпов', icon: 'drop' },
     { id: 'pouches', name: 'Шайбы', desc: 'Никотиновые паучи', icon: 'cube' },
     { id: 'coils', name: 'Испарители', desc: 'Сменные койлы', icon: 'flame' },
-    { id: 'devices', name: 'Устройства', desc: 'Под-системы и боксы', icon: 'device' }
+    { id: 'devices', name: 'Одноразки', desc: 'Одноразовые электронные сигареты', icon: 'device' }
   ];
   document.getElementById('app').innerHTML = `
     <section class="hero">
       <div class="hero-badge"><span class="dot"></span> Каталог</div>
       <h1>Добро пожаловать в<br><span class="grad">SWWSHOP</span></h1>
-      <p>Премиальные жидкости, шайбы и устройства</p>
+      <p>Премиальные жидкости, шайбы и одноразки</p>
     </section>
     <section class="section">
       <div class="section-title">Категории</div>
@@ -736,8 +790,8 @@ function renderCatalog() {
       ${isAdmin ? `
         <div style="margin-top:16px;padding:16px;background:var(--card);border:2px dashed var(--warning);border-radius:18px;">
           <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:10px;">👑 Быстрые действия админа</div>
-          <button class="admin-action-btn btn-green" onclick="openAddLineModal()">➕ Добавить линейку (жидкости/шайбы)</button>
-          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal()">➕ Добавить товар (испарители/устройства)</button>
+          <button class="admin-action-btn btn-green" onclick="openAddLineModal()">➕ Добавить линейку (жидкости/шайбы/одноразки)</button>
+          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal()">➕ Добавить товар (испарители)</button>
         </div>
       ` : ''}
     </section>
@@ -773,8 +827,8 @@ function renderCatCard(cat) {
 
 function openCategory(catId) {
   currentCategory = catId;
-  const titles = { liquids: 'Жидкости', pouches: 'Шайбы', coils: 'Испарители', devices: 'Устройства' };
-  const isSimple = catId === 'coils' || catId === 'devices';
+  const titles = { liquids: 'Жидкости', pouches: 'Шайбы', coils: 'Испарители', devices: 'Одноразки' };
+  const isSimple = catId === 'coils';
   document.getElementById('app').innerHTML = `
     <button class="back-btn" onclick="navigate('catalog')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -793,43 +847,54 @@ function openCategory(catId) {
   `;
 }
 
-function renderProducts(catId) {
+function renderProducts(catId, query) {
   const items = data[catId] || [];
   if (!items.length) return '<div class="empty-state"><div class="icon">📦</div><h3>Товаров пока нет</h3></div>';
 
-  if (catId === 'liquids' || catId === 'pouches') {
-    return items.map((line, i) => {
-      const totalQty = line.flavors.reduce((s, f) => s + (f.quantity || 0), 0);
-      const cb = getCashback(line);
-      return `
-        <div style="position:relative;margin-bottom:10px;">
-          <div class="cat-card" onclick="openLine('${catId}', ${i})">
-            <div class="cat-left">
-              <div class="cat-info">
-                <div class="cat-name">${line.name}</div>
-                <div class="cat-desc">${line.flavors.length} вкусов${isAdmin ? ` · ${totalQty} шт` : ''}</div>
-              </div>
-            </div>
-            <div class="cat-right">
-              <span class="product-square-cashback" style="font-size:10px;">🪙 ${cb}%</span>
-              <span class="cat-count">${line.price} ₽</span>
-              <svg class="cat-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-            </div>
-          </div>
-          ${isAdmin ? `
-            <div style="display:flex;gap:6px;margin-top:6px;">
-              <button class="admin-action-btn btn-orange" style="margin-top:0;padding:8px;font-size:12px;" 
-                      onclick="event.stopPropagation();openEditLineModal('${catId}', ${i})">✏️ Изменить</button>
-              <button class="admin-action-btn btn-red" style="margin-top:0;padding:8px;font-size:12px;" 
-                      onclick="event.stopPropagation();adminDeleteLine('${catId}', ${i})">🗑️ Удалить</button>
-            </div>
-          ` : ''}
+  const q = (query || '').toLowerCase().trim();
+  const list = items
+    .map((item, i) => ({ item, i }))
+    .filter(({ item }) => item && (!q || (item.name || '').toLowerCase().includes(q)));
+
+  if (!list.length) return '<div class="empty-state"><div class="icon">🔍</div><h3>Ничего не найдено</h3></div>';
+
+  const isLine = LINE_CATS.includes(catId);
+  return `<div class="product-grid">${list.map(({ item, i }) =>
+    isLine ? renderSquareLine(item, i, catId) : renderSquareProduct(item, i, catId)
+  ).join('')}</div>`;
+}
+
+function renderSquareLine(line, i, catId) {
+  const flavors = line.flavors || [];
+  const inStockCount = flavors.filter(f => (f.quantity || 0) > 0).length;
+  const totalQty = flavors.reduce((s, f) => s + (f.quantity || 0), 0);
+  const hasStock = inStockCount > 0;
+  const cb = getCashback(line);
+  const statusClass = hasStock ? 'status-in-stock' : 'status-out-stock';
+  const statusText = hasStock ? `В наличии: ${inStockCount} ${pluralFlavors(inStockCount)}` : 'Нет в наличии';
+
+  return `
+    <div class="product-square line-square ${hasStock ? '' : 'out-of-stock'} ${isAdmin ? 'has-admin' : ''}"
+         onclick="openLine('${catId}', ${i})">
+      <div class="product-square-top">
+        <div class="product-square-name">${line.name}</div>
+        <div class="product-square-price">${line.price} ₽</div>
+      </div>
+      <div class="product-square-bottom">
+        <span class="product-square-cashback">🪙 Кешбек ${cb}%</span>
+        <span class="product-square-status ${statusClass}">${statusText}</span>
+        <div class="line-meta">${flavors.length} ${pluralFlavors(flavors.length)} всего${isAdmin ? ` · ${totalQty} шт` : ''}</div>
+      </div>
+      ${isAdmin ? `
+        <div style="display:flex;gap:4px;margin-top:6px;position:relative;z-index:1;">
+          <button class="admin-action-btn btn-orange" style="margin-top:0;padding:6px;font-size:11px;flex:1;"
+                  onclick="event.stopPropagation();openEditLineModal('${catId}', ${i})">✏️</button>
+          <button class="admin-action-btn btn-red" style="margin-top:0;padding:6px;font-size:11px;flex:1;"
+                  onclick="event.stopPropagation();adminDeleteLine('${catId}', ${i})">🗑️</button>
         </div>
-      `;
-    }).join('');
-  } else {
-    return `<div class="product-grid">${items.map((item, i) => renderSquareProduct(item, i, catId)).join('')}</div>`;
-  }
+      ` : ''}
+    </div>
+  `;
 }
 
 function renderSquareProduct(item, i, catId) {
@@ -868,25 +933,15 @@ function renderSquareProduct(item, i, catId) {
 }
 
 function filterProducts(query) {
-  const items = data[currentCategory] || [];
-  const q = query.toLowerCase().trim();
   const container = document.getElementById('productsList');
-  if (!q) { container.innerHTML = renderProducts(currentCategory); return; }
-  const filtered = items.filter(it => it.name.toLowerCase().includes(q));
-  if (!filtered.length) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><h3>Ничего не найдено</h3></div>';
-    return;
-  }
-  const orig = data[currentCategory];
-  data[currentCategory] = filtered;
-  container.innerHTML = renderProducts(currentCategory);
-  data[currentCategory] = orig;
+  if (container) container.innerHTML = renderProducts(currentCategory, query);
 }
 
 function openLine(catId, index) {
   currentCategory = catId;
   const line = data[catId][index];
   if (!line) { navigate('catalog'); return; }
+  if (!line.flavors) line.flavors = [];
   const cb = getCashback(line);
 
   document.getElementById('app').innerHTML = `
@@ -963,6 +1018,7 @@ function openAddLineModal(catId) {
       <select id="addLineCategory">
         <option value="liquids" ${catId === 'liquids' ? 'selected' : ''}>Жидкости</option>
         <option value="pouches" ${catId === 'pouches' ? 'selected' : ''}>Шайбы</option>
+        <option value="devices" ${catId === 'devices' ? 'selected' : ''}>Одноразки</option>
       </select>
     </div>
     <div class="field"><label>Кешбек (%)</label><input type="number" id="addLineCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" /></div>
@@ -986,7 +1042,6 @@ function openAddItemModal(catId) {
       <label>Категория</label>
       <select id="addItemCategory">
         <option value="coils" ${catId === 'coils' ? 'selected' : ''}>Испарители</option>
-        <option value="devices" ${catId === 'devices' ? 'selected' : ''}>Устройства</option>
       </select>
     </div>
     <div class="field"><label>Количество</label><input type="number" id="addItemQty" value="1" min="0" /></div>
