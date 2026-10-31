@@ -970,7 +970,10 @@ function openLine(catId, index) {
       ` : ''}
     </div>
 
-    ${line.flavors.map((f, fi) => {
+    ${line.flavors
+      .map((f, fi) => ({ f, fi }))
+      .sort((a, b) => ((b.f.quantity || 0) > 0) - ((a.f.quantity || 0) > 0))
+      .map(({ f, fi }) => {
       const qty = f.quantity || 0;
       const inCart = cart.some(c => c.id === f.id);
       const canAdd = qty > 0 && !inCart;
@@ -1674,18 +1677,18 @@ async function userCancelOrder(orderId) {
    КЕЙСЫ
    ========================================================= */
 const CASE_COUPON_ITEMS = [
-  { label: '0%',  discount: 0,  rarity: 'common',    weight: 88 },
-  { label: '5%',  discount: 5,  rarity: 'uncommon',  weight: 9 },
-  { label: '10%', discount: 10, rarity: 'rare',      weight: 2.4 },
-  { label: '15%', discount: 15, rarity: 'epic',      weight: 0.5 },
-  { label: '30%', discount: 30, rarity: 'legendary', weight: 0.1 }
+  { label: '0%',  discount: 0,  rarity: 'common',    weight: 80 },
+  { label: '5%',  discount: 5,  rarity: 'uncommon',  weight: 12 },
+  { label: '10%', discount: 10, rarity: 'rare',      weight: 5 },
+  { label: '15%', discount: 15, rarity: 'epic',      weight: 2 },
+  { label: '30%', discount: 30, rarity: 'legendary', weight: 1 }
 ];
 const CASE_COIN_ITEMS = [
-  { label: '0',   amount: 0,   rarity: 'common',    weight: 88 },
-  { label: '10',  amount: 10,  rarity: 'uncommon',  weight: 9 },
-  { label: '30',  amount: 30,  rarity: 'rare',      weight: 2.4 },
-  { label: '50',  amount: 50,  rarity: 'epic',      weight: 0.5 },
-  { label: '100', amount: 100, rarity: 'legendary', weight: 0.1 }
+  { label: '0',   amount: 0,   rarity: 'common',    weight: 80 },
+  { label: '10',  amount: 10,  rarity: 'uncommon',  weight: 12 },
+  { label: '30',  amount: 30,  rarity: 'rare',      weight: 5 },
+  { label: '50',  amount: 50,  rarity: 'epic',      weight: 2 },
+  { label: '100', amount: 100, rarity: 'legendary', weight: 1 }
 ];
 
 function pickWeighted(items) {
