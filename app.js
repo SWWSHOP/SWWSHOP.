@@ -136,68 +136,87 @@ let caseLastOpen = {
   const radius = Math.min(width, height) * 0.19;
   const S_POINTS = shuffle(getSPoints(240, cx, cy, radius));
 
+  // Частицы не летят через экран: они плавно проявляются рядом с буквой S,
+  // держатся на месте, затем растворяются и снова проявляются. Следов и линий нет.
   class Particle {
-    constructor(x, y, target) {
-      this.x = x; this.y = y;
-      this.vx = (Math.random() - 0.5) * 0.4;
-      this.vy = (Math.random() - 0.5) * 0.4;
+    constructor(target) {
+      this.target = target;
       this.size = 1.2 + Math.random() * 2.5;
       this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
       this.alpha = 0.3 + Math.random() * 0.6;
-      this.life = 0;
-      this.target = target;
-      this.attracted = false;
-      this.delay = Math.random() * 80;
       this.pulsePhase = Math.random() * Math.PI * 2;
       this.pulseSpeed = 0.02 + Math.random() * 0.04;
-      this.trail = [];
-      this.trailLen = 3 + Math.floor(Math.random() * 4);
       this.isStar = Math.random() < 0.15;
       this.orbitSpeed = 0.5 + Math.random() * 1.5;
+      this.orbitPhase = Math.random() * Math.PI * 2;
       this.offsetX = (Math.random() - 0.5) * 2;
       this.offsetY = (Math.random() - 0.5) * 2;
+      this.stopped = false;
+      this.fade = 0;
+      this.x = target.x; this.y = target.y;
+      this.state = 'wait';
+      this.t = 0;
+      this.delay = Math.random() * 120;
+    }
+    tx() { return this.target.x + this.offsetX * 2; }
+    ty() { return this.target.y + this.offsetY * 2; }
+    spawn() {
+      const a = Math.random() * Math.PI * 2;
+      const d = 30 + Math.random() * 80;
+      this.sx = this.tx() + Math.cos(a) * d;
+      this.sy = this.ty() + Math.sin(a) * d;
+      this.x = this.sx; this.y = this.sy;
+      this.inDur = 70 + Math.random() * 50;
+      this.holdDur = 240 + Math.random() * 420;
+      this.state = 'in';
+      this.t = 0;
+      this.fade = 0;
+    }
+    startOut(dx, dy, dur) {
+      this.ox = this.x; this.oy = this.y;
+      this.dx = dx; this.dy = dy;
+      this.outDur = dur;
+      this.state = 'out';
+      this.t = 0;
     }
     update(time) {
-      this.life++;
       this.pulsePhase += this.pulseSpeed;
-      if (this.attracted && this.life > this.delay) {
-        const dx = (this.target.x + this.offsetX * 2) - this.x;
-        const dy = (this.target.y + this.offsetY * 2) - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const force = Math.min(0.02, 0.8 / (dist + 20));
-        this.vx += dx * force; this.vy += dy * force;
-        if (dist < 15) {
-          const angle = time * 0.001 * this.orbitSpeed;
-          this.vx += Math.cos(angle) * 0.05;
-          this.vy += Math.sin(angle) * 0.05;
+      this.t++;
+      if (this.state === 'wait') {
+        this.fade = 0;
+        if (this.t > this.delay) this.spawn();
+      } else if (this.state === 'in') {
+        const p = Math.min(1, this.t / this.inDur);
+        const e = 1 - Math.pow(1 - p, 3);
+        this.x = this.sx + (this.tx() - this.sx) * e;
+        this.y = this.sy + (this.ty() - this.sy) * e;
+        this.fade = e;
+        if (p >= 1) { this.state = 'hold'; this.t = 0; }
+      } else if (this.state === 'hold') {
+        const ang = time * 0.001 * this.orbitSpeed + this.orbitPhase;
+        this.x = this.tx() + Math.cos(ang) * 1.5;
+        this.y = this.ty() + Math.sin(ang) * 1.5;
+        this.fade = 1;
+        if (this.t > this.holdDur && !this.stopped) {
+          this.startOut((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, 60 + Math.random() * 40);
         }
-        this.vx *= 0.92; this.vy *= 0.92;
-      } else {
-        this.vx += (Math.random() - 0.5) * 0.03;
-        this.vy += (Math.random() - 0.5) * 0.03;
-        this.vx *= 0.97; this.vy *= 0.97;
+      } else if (this.state === 'out') {
+        const p = Math.min(1, this.t / this.outDur);
+        this.x = this.ox + this.dx * p;
+        this.y = this.oy + this.dy * p;
+        this.fade = 1 - p;
+        if (p >= 1) {
+          if (this.stopped) { this.state = 'dead'; this.fade = 0; }
+          else this.spawn();
+        }
       }
-      this.x += this.vx; this.y += this.vy;
-      if (this.x < -10) this.x = width + 10;
-      if (this.x > width + 10) this.x = -10;
-      if (this.y < -10) this.y = height + 10;
-      if (this.y > height + 10) this.y = -10;
-      this.trail.push({ x: this.x, y: this.y });
-      if (this.trail.length > this.trailLen) this.trail.shift();
     }
     draw() {
-      for (let i = 0; i < this.trail.length; i++) {
-        const t = this.trail[i];
-        const trailAlpha = (i / this.trail.length) * this.alpha * 0.35;
-        ctx.globalAlpha = trailAlpha;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, this.size * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      if (this.fade <= 0.01) return;
       const pulse = 0.75 + Math.sin(this.pulsePhase) * 0.25;
       const drawSize = this.size * pulse;
-      ctx.globalAlpha = this.alpha * pulse;
+      const a = this.alpha * this.fade;
+      ctx.globalAlpha = a * pulse;
       ctx.fillStyle = this.color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, drawSize, 0, Math.PI * 2);
@@ -206,22 +225,11 @@ let caseLastOpen = {
       const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
       glow.addColorStop(0, this.color);
       glow.addColorStop(1, 'transparent');
-      ctx.globalAlpha = this.alpha * 0.4;
+      ctx.globalAlpha = a * 0.4;
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
       ctx.fill();
-      if (this.isStar && this.life > 30) {
-        ctx.globalAlpha = this.alpha * 0.6 * pulse;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(this.x - drawSize * 2, this.y);
-        ctx.lineTo(this.x + drawSize * 2, this.y);
-        ctx.moveTo(this.x, this.y - drawSize * 2);
-        ctx.lineTo(this.x, this.y + drawSize * 2);
-        ctx.stroke();
-      }
       ctx.globalAlpha = 1;
     }
   }
@@ -229,9 +237,8 @@ let caseLastOpen = {
   const particles = [];
   const TOTAL = 240;
   for (let i = 0; i < TOTAL; i++) {
-    particles.push(new Particle(Math.random() * width, Math.random() * height, S_POINTS[i % S_POINTS.length]));
+    particles.push(new Particle(S_POINTS[i % S_POINTS.length]));
   }
-  setTimeout(() => { particles.forEach(p => { p.attracted = true; }); }, 600);
 
   let rafId;
   let running = true;
@@ -239,8 +246,8 @@ let caseLastOpen = {
 
   function animate(now) {
     if (!running) return;
-    ctx.fillStyle = 'rgba(10, 14, 23, 0.18)';
-    ctx.fillRect(0, 0, width, height);
+    // Полная очистка кадра: никаких шлейфов от предыдущих кадров
+    ctx.clearRect(0, 0, width, height);
     const centerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 2.5);
     const time = (now - startTime) / 1000;
     const glowIntensity = 0.04 + Math.sin(time * 1.5) * 0.02;
@@ -259,15 +266,14 @@ let caseLastOpen = {
   window.__stopPreloader = function stopPreloader() {
     const preloader = document.getElementById('preloader');
     if (!preloader || preloader.classList.contains('hide')) return;
+    // Частицы мягко расходятся от центра и растворяются, без разлёта полосами
     particles.forEach(p => {
-      p.attracted = false;
+      p.stopped = true;
+      if (p.state === 'dead') return;
       const dx = p.x - cx, dy = p.y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const speed = 12 + Math.random() * 8;
-      p.vx = (dx / dist) * speed + (Math.random() - 0.5) * 3;
-      p.vy = (dy / dist) * speed + (Math.random() - 0.5) * 3;
-      p.alpha = 1;
-      p.size *= 1.3;
+      const push = 40 + Math.random() * 50;
+      p.startOut((dx / dist) * push, (dy / dist) * push, 30 + Math.random() * 20);
     });
     setTimeout(() => {
       preloader.classList.add('hide');
