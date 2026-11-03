@@ -46,7 +46,7 @@ const BASE_USERS_COUNT = CONFIG.BASE_USERS_COUNT;
 
 let user = null;
 let isAdmin = false;
-let data = { liquids: [], pouches: [], coils: [], devices: [] };
+let data = { liquids: [], pouches: [], coils: [], devices: [], other: [] };
 let orders = [];
 let promos = {};
 let users = {};
@@ -600,9 +600,45 @@ function getUserStats() {
 }
 
 const LINE_CATS = ['liquids', 'pouches', 'devices'];
+const SIMPLE_CATS = ['coils', 'other'];
+
+function formatMg(mg) {
+  const t = String(mg || '').trim();
+  if (!t) return '';
+  return /мг|mg/i.test(t) ? t : t + ' мг';
+}
+
+const NEW_NOUN = { liquids: 'Новая жидкость', pouches: 'Новые шайбы', devices: 'Новая одноразка', coils: 'Новый испаритель', other: 'Новый товар' };
+
+function notifyCheckbox() {
+  return `<label style="display:flex;align-items:center;gap:8px;margin:4px 0 14px;font-size:13px;cursor:pointer;"><input type="checkbox" id="notifyBot" checked style="width:18px;height:18px;" /> 📢 Уведомить покупателей в боте</label>`;
+}
+
+function wantNotify() {
+  const el = document.getElementById('notifyBot');
+  return !el || el.checked;
+}
+
+// Рассылка о пополнении. Количество в тексте НЕ указывается.
+async function notifyRestock(text) {
+  if (!BOT_TOKEN || BOT_TOKEN.startsWith('__')) return;
+  const targets = Object.values(users || {}).filter(u => u && u.telegramId);
+  let sent = 0;
+  for (let i = 0; i < targets.length; i++) {
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: targets[i].telegramId, text })
+      });
+      sent++;
+    } catch (e) {}
+    if (i % 25 === 24) await new Promise(r => setTimeout(r, 1100));
+  }
+  toast(`📢 Уведомление отправлено: ${sent}`, '📢');
+}
 
 function normalizeAssortment() {
-  ['liquids', 'pouches', 'coils', 'devices'].forEach(c => {
+  ['liquids', 'pouches', 'coils', 'devices', 'other'].forEach(c => {
     if (!data[c]) data[c] = [];
     else if (!Array.isArray(data[c])) data[c] = Object.values(data[c]);
   });
@@ -655,7 +691,7 @@ function pluralFlavors(n) {
 function loadAssortment() {
   db.ref('assortment').on('value', s => {
     const v = s.val();
-    data = v || { liquids: [], pouches: [], coils: [], devices: [] };
+    data = v || { liquids: [], pouches: [], coils: [], devices: [], other: [] };
     normalizeAssortment();
     syncCartWithData();
     if (!initialized) {
@@ -782,7 +818,8 @@ function renderCatalog() {
     { id: 'liquids', name: 'Жидкости', desc: 'Для pod-систем и вейпов', icon: 'drop' },
     { id: 'pouches', name: 'Шайбы', desc: 'Никотиновые паучи', icon: 'cube' },
     { id: 'coils', name: 'Испарители', desc: 'Сменные койлы', icon: 'flame' },
-    { id: 'devices', name: 'Одноразки', desc: 'Одноразовые электронные сигареты', icon: 'device' }
+    { id: 'devices', name: 'Одноразки', desc: 'Одноразовые электронные сигареты', icon: 'device' },
+    { id: 'other', name: 'Прочее', desc: 'Никобустеры и другое', icon: 'dots' }
   ];
   document.getElementById('app').innerHTML = `
     <section class="hero">
@@ -797,7 +834,7 @@ function renderCatalog() {
         <div style="margin-top:16px;padding:16px;background:var(--card);border:2px dashed var(--warning);border-radius:18px;">
           <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:10px;">👑 Быстрые действия админа</div>
           <button class="admin-action-btn btn-green" onclick="openAddLineModal()">➕ Добавить линейку (жидкости/шайбы/одноразки)</button>
-          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal()">➕ Добавить товар (испарители)</button>
+          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal()">➕ Добавить товар (испарители/прочее)</button>
         </div>
       ` : ''}
     </section>
@@ -810,7 +847,8 @@ function renderCatCard(cat) {
     drop: '<path d="M12 2L4 14a8 8 0 1 0 16 0z" stroke-linejoin="round"/>',
     cube: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>',
     flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
-    device: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>'
+    device: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+    dots: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
   };
   return `
     <div class="cat-card" onclick="openCategory('${cat.id}')">
@@ -833,8 +871,8 @@ function renderCatCard(cat) {
 
 function openCategory(catId) {
   currentCategory = catId;
-  const titles = { liquids: 'Жидкости', pouches: 'Шайбы', coils: 'Испарители', devices: 'Одноразки' };
-  const isSimple = catId === 'coils';
+  const titles = { liquids: 'Жидкости', pouches: 'Шайбы', coils: 'Испарители', devices: 'Одноразки', other: 'Прочее' };
+  const isSimple = SIMPLE_CATS.includes(catId);
   document.getElementById('app').innerHTML = `
     <button class="back-btn" onclick="navigate('catalog')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -877,7 +915,7 @@ function renderSquareLine(line, i, catId) {
   const hasStock = inStockCount > 0;
   const cb = getCashback(line);
   const statusClass = hasStock ? 'status-in-stock' : 'status-out-stock';
-  const statusText = hasStock ? `В наличии: ${inStockCount} ${pluralFlavors(inStockCount)}` : 'Нет в наличии';
+  const statusText = hasStock ? 'В наличии' : 'Нет в наличии';
 
   return `
     <div class="product-square line-square ${hasStock ? '' : 'out-of-stock'} ${isAdmin ? 'has-admin' : ''}"
@@ -889,7 +927,7 @@ function renderSquareLine(line, i, catId) {
       <div class="product-square-bottom">
         <span class="product-square-cashback">🪙 Кешбек ${cb}%</span>
         <span class="product-square-status ${statusClass}">${statusText}</span>
-        <div class="line-meta">${flavors.length} ${pluralFlavors(flavors.length)} всего${isAdmin ? ` · ${totalQty} шт` : ''}</div>
+        <div class="line-meta">${[line.mg ? '💧 ' + formatMg(line.mg) : '', isAdmin ? `${flavors.length} ${pluralFlavors(flavors.length)} · ${totalQty} шт` : ''].filter(Boolean).join(' · ')}</div>
       </div>
       ${isAdmin ? `
         <div style="display:flex;gap:4px;margin-top:6px;position:relative;z-index:1;">
@@ -957,7 +995,10 @@ function openLine(catId, index) {
     </button>
     <h1 style="font-size:22px;font-weight:800;margin-bottom:6px;">${line.name}</h1>
     <p style="color:var(--accent);font-weight:700;font-size:18px;margin-bottom:6px;">${line.price} ₽</p>
-    <span class="product-square-cashback" style="margin-bottom:20px;display:inline-block;">🪙 Кешбек ${cb}%</span>
+    <div style="margin-bottom:20px;display:flex;gap:6px;flex-wrap:wrap;">
+      <span class="product-square-cashback">🪙 Кешбек ${cb}%</span>
+      ${line.mg ? `<span class="product-square-cashback">💧 ${formatMg(line.mg)}</span>` : ''}
+    </div>
 
     ${isAdmin ? `
       <div style="display:flex;gap:6px;margin-bottom:14px;">
@@ -981,23 +1022,30 @@ function openLine(catId, index) {
       .sort((a, b) => ((b.f.quantity || 0) > 0) - ((a.f.quantity || 0) > 0))
       .map(({ f, fi }) => {
       const qty = f.quantity || 0;
-      const inCart = cart.some(c => c.id === f.id);
+      const ci = cart.findIndex(c => c.id === f.id);
+      const inCart = ci >= 0;
+      const cq = inCart ? (cart[ci].qty || 1) : 0;
       const canAdd = qty > 0 && !inCart;
       let sc = 'status-in-stock', st = 'В наличии';
-      if (inCart) { sc = 'status-in-cart'; st = '✓ В корзине'; }
-      else if (qty === 0) { sc = 'status-out-stock'; st = 'Нет'; }
+      if (qty === 0) { sc = 'status-out-stock'; st = 'Нет'; }
 
       return `
         <div class="flavor-row" style="flex-wrap:wrap;">
           <span class="flavor-name">${f.name}</span>
           <div class="flavor-actions">
             ${isAdmin ? `<span style="font-size:11px;color:var(--warning);font-weight:700;">${qty} шт</span>` : ''}
-            <span class="product-square-status ${sc}">${st}</span>
-            <button class="btn-add-cart ${inCart ? 'in-cart' : ''}" style="width:auto;padding:6px 12px;"
-                    ${canAdd ? '' : 'disabled'}
-                    onclick="${canAdd ? `addToCartFlavor('${catId}', ${index}, ${fi})` : ''}">
-              ${inCart ? '✓' : (qty > 0 ? '🛒' : '—')}
-            </button>
+            ${inCart ? `
+              <button class="qty-btn" onclick="lineCartChange('${catId}', ${index}, '${f.id}', -1)">−</button>
+              <span style="min-width:22px;text-align:center;font-weight:700;">${cq}</span>
+              <button class="qty-btn" ${cq >= qty ? 'disabled' : ''} onclick="lineCartChange('${catId}', ${index}, '${f.id}', 1)">+</button>
+            ` : `
+              <span class="product-square-status ${sc}">${st}</span>
+              <button class="btn-add-cart" style="width:auto;padding:6px 12px;"
+                      ${canAdd ? '' : 'disabled'}
+                      onclick="${canAdd ? `addToCartFlavor('${catId}', ${index}, ${fi})` : ''}">
+                ${qty > 0 ? '🛒' : '—'}
+              </button>
+            `}
           </div>
           ${isAdmin ? `
             <div style="display:flex;gap:6px;width:100%;margin-top:8px;">
@@ -1022,6 +1070,7 @@ function openAddLineModal(catId) {
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новая линейка</h3>
     <div class="field"><label>Название</label><input type="text" id="addLineName" placeholder="HQD Sweet" /></div>
     <div class="field"><label>Цена (₽)</label><input type="number" id="addLinePrice" placeholder="500" /></div>
+    <div class="field"><label>Крепость, мг (необязательно)</label><input type="text" id="addLineMg" placeholder="20" /></div>
     <div class="field">
       <label>Категория</label>
       <select id="addLineCategory">
@@ -1036,6 +1085,7 @@ function openAddLineModal(catId) {
       <textarea id="addLineFlavors" placeholder="Манго,3&#10;Клубника,5&#10;Арбуз,2" style="min-height:100px;"></textarea>
     </div>
     <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">💡 Формат: <b>Манго,3</b>. Можно без количества: <b>Манго</b> → будет 1.</p>
+    ${notifyCheckbox()}
     <button class="btn btn-primary btn-block" onclick="adminAddLineSubmit()">💾 Создать</button>
   `;
   openOverlay('editProductOverlay');
@@ -1045,16 +1095,18 @@ function openAddItemModal(catId) {
   catId = catId || 'coils';
   document.getElementById('editProductContent').innerHTML = `
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новый товар</h3>
-    <div class="field"><label>Название</label><input type="text" id="addItemName" placeholder="Voopoo PnP VM1" /></div>
+    <div class="field"><label>Название</label><input type="text" id="addItemName" placeholder="Никобустер 20мг / Voopoo PnP VM1" /></div>
     <div class="field"><label>Цена (₽)</label><input type="number" id="addItemPrice" placeholder="300" /></div>
     <div class="field">
       <label>Категория</label>
       <select id="addItemCategory">
         <option value="coils" ${catId === 'coils' ? 'selected' : ''}>Испарители</option>
+        <option value="other" ${catId === 'other' ? 'selected' : ''}>Прочее</option>
       </select>
     </div>
     <div class="field"><label>Количество</label><input type="number" id="addItemQty" value="1" min="0" /></div>
     <div class="field"><label>Кешбек (%)</label><input type="number" id="addItemCashback" value="${CONFIG.DEFAULT_CASHBACK}" min="0" max="100" /></div>
+    ${notifyCheckbox()}
     <button class="btn btn-primary btn-block" onclick="adminAddItemSubmit()">💾 Создать</button>
   `;
   openOverlay('editProductOverlay');
@@ -1067,6 +1119,7 @@ function openEditLineModal(catId, index) {
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить линейку</h3>
     <div class="field"><label>Название</label><input type="text" id="edLineName" value="${line.name.replace(/"/g, '&quot;')}" /></div>
     <div class="field"><label>Цена (₽)</label><input type="number" id="edLinePrice" value="${line.price}" /></div>
+    <div class="field"><label>Крепость, мг (необязательно)</label><input type="text" id="edLineMg" value="${String(line.mg || '').replace(/"/g, '&quot;')}" placeholder="20" /></div>
     <div class="field"><label>Кешбек (%)</label><input type="number" id="edLineCashback" value="${getCashback(line)}" min="0" max="100" /></div>
     <button class="btn btn-primary btn-block" onclick="adminSaveLine('${catId}', ${index})">💾 Сохранить</button>
   `;
@@ -1082,6 +1135,7 @@ function openEditItemModal(catId, index) {
     <div class="field"><label>Цена (₽)</label><input type="number" id="edItemPrice" value="${item.price}" /></div>
     <div class="field"><label>Количество</label><input type="number" id="edItemQty" value="${item.quantity || 0}" min="0" /></div>
     <div class="field"><label>Кешбек (%)</label><input type="number" id="edItemCashback" value="${getCashback(item)}" min="0" max="100" /></div>
+    ${notifyCheckbox()}
     <button class="btn btn-primary btn-block" onclick="adminSaveItem('${catId}', ${index})">💾 Сохранить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1092,6 +1146,7 @@ function openAddFlavorModal(catId, lineIndex) {
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">➕ Новый вкус</h3>
     <div class="field"><label>Название вкуса</label><input type="text" id="newFlavorName" placeholder="Манго" /></div>
     <div class="field"><label>Количество</label><input type="number" id="newFlavorQty" value="1" min="0" /></div>
+    ${notifyCheckbox()}
     <button class="btn btn-primary btn-block" onclick="adminAddFlavorSubmit('${catId}', ${lineIndex})">💾 Добавить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1105,6 +1160,8 @@ function openEditFlavorModal(catId, lineIndex, flavorIndex) {
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">✏️ Изменить вкус</h3>
     <div class="field"><label>Название вкуса</label><input type="text" id="edFlavorName" value="${f.name.replace(/"/g, '&quot;')}" /></div>
     <div class="field"><label>Количество</label><input type="number" id="edFlavorQty" value="${f.quantity || 0}" min="0" /></div>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Если вкус был закончился и вы вернули его в наличие, покупателям уйдёт «Снова в наличии».</p>
+    ${notifyCheckbox()}
     <button class="btn btn-primary btn-block" onclick="adminSaveFlavor('${catId}', ${lineIndex}, ${flavorIndex})">💾 Сохранить</button>
   `;
   openOverlay('editProductOverlay');
@@ -1119,6 +1176,8 @@ async function adminAddLineSubmit() {
   const category = document.getElementById('addLineCategory').value;
   const cashback = parseInt(document.getElementById('addLineCashback').value);
   const flavorsText = document.getElementById('addLineFlavors').value.trim();
+  const mg = (document.getElementById('addLineMg')?.value || '').trim();
+  const notify = wantNotify();
 
   if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
   if (!flavorsText) { toast('❌ Добавь хотя бы один вкус', '❌'); return; }
@@ -1143,10 +1202,14 @@ async function adminAddLineSubmit() {
   });
 
   if (!data[category]) data[category] = [];
-  data[category].push({ name, price, cashback, flavors });
+  data[category].push({ name, price, cashback, mg, flavors });
   await db.ref('assortment').set(data);
   toast(`✅ Линейка добавлена (${flavors.length} вкусов)`, '✅');
   closeOverlay('editProductOverlay');
+  if (notify) {
+    const names = flavors.filter(f => f.quantity > 0).map(f => f.name).join(', ');
+    notifyRestock(`🆕 Пополнение!\n\n${NEW_NOUN[category] || 'Новинка'}: ${name}${mg ? ' — ' + formatMg(mg) : ''}${names ? '\nВкусы: ' + names : ''}`);
+  }
 }
 
 async function adminAddItemSubmit() {
@@ -1155,6 +1218,7 @@ async function adminAddItemSubmit() {
   const category = document.getElementById('addItemCategory').value;
   const qty = parseInt(document.getElementById('addItemQty').value) || 0;
   const cashback = parseInt(document.getElementById('addItemCashback').value);
+  const notify = wantNotify();
 
   if (!name || !price) { toast('❌ Заполни название и цену', '❌'); return; }
   if (isNaN(cashback) || cashback < 0 || cashback > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
@@ -1167,6 +1231,7 @@ async function adminAddItemSubmit() {
   await db.ref('assortment').set(data);
   toast('✅ Товар добавлен', '✅');
   closeOverlay('editProductOverlay');
+  if (notify && qty > 0) notifyRestock(`🆕 Пополнение!\n\n${NEW_NOUN[category] || 'Новинка'}: ${name}`);
 }
 
 async function adminSaveLine(catId, index) {
@@ -1178,6 +1243,7 @@ async function adminSaveLine(catId, index) {
   if (!name || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
   if (isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
   line.name = name; line.price = price; line.cashback = cb;
+  line.mg = (document.getElementById('edLineMg')?.value || '').trim();
   await db.ref('assortment').set(data);
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
@@ -1194,12 +1260,15 @@ async function adminSaveItem(catId, index) {
   if (!name || isNaN(price) || price < 0) { toast('❌ Заполни поля', '❌'); return; }
   if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
   if (isNaN(cb) || cb < 0 || cb > 100) { toast('❌ Кешбек 0-100', '❌'); return; }
+  const oldQty = item.quantity || 0;
+  const notify = wantNotify();
   item.name = name; item.price = price; item.quantity = qty;
   item.inStock = qty > 0; item.cashback = cb;
   await db.ref('assortment').set(data);
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
   renderProductsInPlace();
+  if (notify && oldQty === 0 && qty > 0) notifyRestock(`🔄 Снова в наличии!\n\n${name}`);
 }
 
 async function adminAddFlavorSubmit(catId, lineIndex) {
@@ -1207,6 +1276,7 @@ async function adminAddFlavorSubmit(catId, lineIndex) {
   if (!line) return;
   const name = document.getElementById('newFlavorName').value.trim();
   const qty = parseInt(document.getElementById('newFlavorQty').value) || 0;
+  const notify = wantNotify();
   if (!name) { toast('❌ Введи название', '❌'); return; }
   if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
   if (!line.flavors) line.flavors = [];
@@ -1218,6 +1288,7 @@ async function adminAddFlavorSubmit(catId, lineIndex) {
   toast('✅ Вкус добавлен', '✅');
   closeOverlay('editProductOverlay');
   openLine(catId, lineIndex);
+  if (notify && qty > 0) notifyRestock(`🆕 Пополнение!\n\n${line.name}${line.mg ? ' ' + formatMg(line.mg) : ''}: новый вкус — ${name}`);
 }
 
 async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
@@ -1227,6 +1298,8 @@ async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
   const qty = parseInt(document.getElementById('edFlavorQty').value);
   if (!name) { toast('❌ Введи название', '❌'); return; }
   if (isNaN(qty) || qty < 0) { toast('❌ Кол-во неверное', '❌'); return; }
+  const oldQty = line.flavors[flavorIndex].quantity || 0;
+  const notify = wantNotify();
   line.flavors[flavorIndex].name = name;
   line.flavors[flavorIndex].quantity = qty;
   line.flavors[flavorIndex].inStock = qty > 0;
@@ -1234,6 +1307,7 @@ async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
   openLine(catId, lineIndex);
+  if (notify && oldQty === 0 && qty > 0) notifyRestock(`🔄 Снова в наличии!\n\n${line.name}${line.mg ? ' ' + formatMg(line.mg) : ''}: ${name}`);
 }
 
 async function adminDeleteFlavor(catId, lineIndex, flavorIndex) {
@@ -1300,6 +1374,22 @@ function addToCartFlavor(catId, lineIndex, flavorIndex) {
   openLine(catId, lineIndex);
 }
 
+function lineCartChange(catId, lineIndex, id, delta) {
+  const ci = cart.findIndex(c => c.id === id);
+  if (ci < 0) return;
+  const nq = (cart[ci].qty || 1) + delta;
+  const y = window.scrollY;
+  if (nq < 1) {
+    cart.splice(ci, 1);
+  } else {
+    if (nq > getStockForCartItem(cart[ci])) { toast('❌ Больше нет в наличии', '❌'); return; }
+    cart[ci].qty = nq;
+  }
+  saveCart();
+  openLine(catId, lineIndex);
+  window.scrollTo(0, y);
+}
+
 function renderProductsInPlace() {
   const el = document.getElementById('productsList');
   if (el) el.innerHTML = renderProducts(currentCategory);
@@ -1345,7 +1435,7 @@ function changeCartQty(index, delta) {
   const maxStock = getStockForCartItem(item);
   const newQty = (item.qty || 1) + delta;
   if (newQty < 1) { toast('❌ Минимум 1', '❌'); return; }
-  if (newQty > maxStock) { toast(`❌ Только ${maxStock} шт`, '❌'); return; }
+  if (newQty > maxStock) { toast('❌ Больше нет в наличии', '❌'); return; }
   cart[index].qty = newQty;
   saveCart();
   renderCart();
