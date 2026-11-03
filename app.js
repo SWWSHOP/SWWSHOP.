@@ -834,7 +834,8 @@ function renderCatalog() {
         <div style="margin-top:16px;padding:16px;background:var(--card);border:2px dashed var(--warning);border-radius:18px;">
           <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:10px;">👑 Быстрые действия админа</div>
           <button class="admin-action-btn btn-green" onclick="openAddLineModal()">➕ Добавить линейку (жидкости/шайбы/одноразки)</button>
-          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal()">➕ Добавить товар (испарители/прочее)</button>
+          <button class="admin-action-btn btn-cyan" onclick="openAddItemModal('coils')">➕ Добавить испаритель</button>
+          <button class="admin-action-btn btn-orange" onclick="openAddItemModal('other')">➕ Добавить в «Прочее»</button>
         </div>
       ` : ''}
     </section>
