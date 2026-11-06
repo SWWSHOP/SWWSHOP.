@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css?v=20261101" />
 </head>
 <body>
 
@@ -126,12 +126,14 @@
 
 <div class="overlay" id="usersOverlay"><div class="modal"><div class="modal-head"><h2>👥 Пользователи</h2><button class="modal-close" onclick="closeOverlay('usersOverlay')">✕</button></div><div id="usersContent"></div></div></div>
 
+<div class="overlay" id="subOverlay"><div class="modal"><div class="modal-head"><h2>📢 Подписка</h2><button class="modal-close" onclick="closeSubOverlay()">✕</button></div><div id="subContent"></div></div></div>
+
 <div class="overlay" id="editProductOverlay"><div class="modal"><div class="modal-head"><h2>✏️ Редактор</h2><button class="modal-close" onclick="closeOverlay('editProductOverlay')">✕</button></div><div id="editProductContent"></div></div></div>
 
 <div class="overlay" id="editUserOverlay"><div class="modal"><div class="modal-head"><h2>👤 Редактор пользователя</h2><button class="modal-close" onclick="closeOverlay('editUserOverlay')">✕</button></div><div id="editUserContent"></div></div></div>
 
 <div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastText">Готово</span></div>
 
-<script src="app.js"></script>
+<script src="app-v6.js"></script>
 </body>
 </html>
