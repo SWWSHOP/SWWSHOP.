@@ -25,6 +25,13 @@ const CONFIG = {
     COIN_COOLDOWN_MS:   7 * 24 * 60 * 60 * 1000
   },
 
+  // Канал для обязательной подписки перед открытием кейса.
+  // ID: числовой id канала вида '-1001234567890' (бот должен быть АДМИНОМ канала).
+  CHANNEL: {
+    LINK: 'https://t.me/+jatUvfYBJPBjZjIy',
+    ID: '-1003832457060'
+  },
+
   FIREBASE: {
     apiKey: "AIzaSyDEMDoBe8qtBcKUzmPlOLStCwn21_x5SBQ",
     authDomain: "swwshop.firebaseapp.com",
@@ -1774,18 +1781,18 @@ async function userCancelOrder(orderId) {
    КЕЙСЫ
    ========================================================= */
 const CASE_COUPON_ITEMS = [
-  { label: '0%',  discount: 0,  rarity: 'common',    weight: 80 },
-  { label: '5%',  discount: 5,  rarity: 'uncommon',  weight: 12 },
-  { label: '10%', discount: 10, rarity: 'rare',      weight: 5 },
-  { label: '15%', discount: 15, rarity: 'epic',      weight: 2 },
-  { label: '30%', discount: 30, rarity: 'legendary', weight: 1 }
+  { label: '0%',  discount: 0,  rarity: 'common',    weight: 70 },
+  { label: '5%',  discount: 5,  rarity: 'uncommon',  weight: 18 },
+  { label: '10%', discount: 10, rarity: 'rare',      weight: 7 },
+  { label: '15%', discount: 15, rarity: 'epic',      weight: 3.5 },
+  { label: '30%', discount: 30, rarity: 'legendary', weight: 1.5 }
 ];
 const CASE_COIN_ITEMS = [
-  { label: '0',   amount: 0,   rarity: 'common',    weight: 80 },
-  { label: '10',  amount: 10,  rarity: 'uncommon',  weight: 12 },
-  { label: '30',  amount: 30,  rarity: 'rare',      weight: 5 },
-  { label: '50',  amount: 50,  rarity: 'epic',      weight: 2 },
-  { label: '100', amount: 100, rarity: 'legendary', weight: 1 }
+  { label: '0',   amount: 0,   rarity: 'common',    weight: 70 },
+  { label: '10',  amount: 10,  rarity: 'uncommon',  weight: 18 },
+  { label: '30',  amount: 30,  rarity: 'rare',      weight: 7 },
+  { label: '50',  amount: 50,  rarity: 'epic',      weight: 3.5 },
+  { label: '100', amount: 100, rarity: 'legendary', weight: 1.5 }
 ];
 
 function pickWeighted(items) {
@@ -1850,19 +1857,113 @@ function renderCaseCard(type) {
   `;
 }
 
-function buildStrip(items, suffix) {
-  let html = '';
-  for (let i = 0; i < 60; i++) {
-    const idx = pickWeighted(items);
+function caseIcon(it, suffix) {
+  if (suffix === '%') return it.discount === 0 ? '❌' : it.discount >= 30 ? '💎' : it.discount >= 15 ? '⭐' : '🎫';
+  return it.amount === 0 ? '❌' : it.amount >= 100 ? '💎' : it.amount >= 50 ? '⭐' : '🪙';
+}
+
+// Лента визуально показывает ВСЕ призы вперемешку (не по реальным шансам).
+// Реальный результат выбирается отдельно и ставится на позицию winnerPos.
+function buildStrip(items, suffix, winnerIdx, winnerPos) {
+  const N = 60;
+  const seq = [];
+  while (seq.length < N) {
+    const cyc = items.map((_, i) => i);
+    for (let i = cyc.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cyc[i], cyc[j]] = [cyc[j], cyc[i]];
+    }
+    if (seq.length && cyc[0] === seq[seq.length - 1]) cyc.push(cyc.shift());
+    seq.push(...cyc);
+  }
+  seq.length = N;
+  if (winnerIdx != null) seq[winnerPos] = winnerIdx;
+  return seq.map(idx => {
     const it = items[idx];
     const label = suffix ? `${it.label} ${suffix}` : it.label;
-    const icon = suffix === '%' ? (it.discount === 0 ? '❌' : it.discount >= 30 ? '💎' : it.discount >= 15 ? '⭐' : '🎫') : '🪙';
-    html += `<div class="case-item rarity-${it.rarity}">
-      <div class="case-item-icon">${icon}</div>
+    return `<div class="case-item rarity-${it.rarity}">
+      <div class="case-item-icon">${caseIcon(it, suffix)}</div>
       <div class="case-item-label">${label}</div>
     </div>`;
-  }
-  return html;
+  }).join('');
+}
+
+/* ---------- Подписка на канал ---------- */
+let subWatchTimer = null;
+let subPendingType = null;
+
+async function checkChannelSub() {
+  const chId = CONFIG.CHANNEL.ID;
+  if (!chId) return 'unconfigured';
+  if (!user.telegramId || !BOT_TOKEN || BOT_TOKEN.startsWith('__')) return 'error';
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chId, user_id: user.telegramId })
+    });
+    const j = await r.json();
+    if (!j.ok) return 'error';
+    const st = j.result.status;
+    if (st === 'creator' || st === 'administrator' || st === 'member') return true;
+    if (st === 'restricted' && j.result.is_member) return true;
+    return false;
+  } catch (e) { return 'error'; }
+}
+
+function openChannelLink() {
+  const url = CONFIG.CHANNEL.LINK;
+  const tg = window.Telegram?.WebApp;
+  if (tg?.openTelegramLink) tg.openTelegramLink(url);
+  else window.open(url, '_blank');
+}
+
+function showSubOverlay(type, state) {
+  subPendingType = type;
+  const box = document.getElementById('subContent');
+  if (!box) return;
+  box.innerHTML = `
+    <div style="text-align:center;padding:10px 4px 4px;">
+      <div style="font-size:44px;margin-bottom:8px;">📢</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Подпишитесь на канал</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">
+        Чтобы открыть кейс, нужно быть подписанным на наш канал.
+      </div>
+      ${state === 'error' ? '<div style="font-size:12px;color:var(--warning);margin-bottom:12px;">Не удалось проверить подписку. Попробуйте ещё раз чуть позже.</div>' : ''}
+      <button class="btn btn-primary btn-block" onclick="openChannelLink()">📢 Подписаться на канал</button>
+      <button class="btn btn-block" id="subCheckBtn" style="margin-top:8px;" onclick="subCheckNow()">✅ Я подписался, проверить</button>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:10px;">Подписка проверяется автоматически</div>
+    </div>
+  `;
+  openOverlay('subOverlay');
+  clearInterval(subWatchTimer);
+  subWatchTimer = setInterval(async () => {
+    const ov = document.getElementById('subOverlay');
+    if (!ov || !ov.classList.contains('open')) { clearInterval(subWatchTimer); return; }
+    if ((await checkChannelSub()) === true) onSubConfirmed();
+  }, 4000);
+}
+
+function closeSubOverlay() {
+  clearInterval(subWatchTimer);
+  subPendingType = null;
+  closeOverlay('subOverlay');
+}
+
+async function subCheckNow() {
+  const btn = document.getElementById('subCheckBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Проверяем...'; }
+  const r = await checkChannelSub();
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Я подписался, проверить'; }
+  if (r === true) onSubConfirmed();
+  else if (r === 'error') toast('❌ Не удалось проверить, попробуйте ещё раз', '❌');
+  else toast('❌ Подписка не найдена', '❌');
+}
+
+function onSubConfirmed() {
+  const t = subPendingType;
+  closeSubOverlay();
+  toast('✅ Подписка подтверждена', '✅');
+  if (t) openCase(t);
 }
 
 function updateCaseTimers() {
@@ -1898,6 +1999,17 @@ async function openCase(type) {
   const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
   if (!user.isAdmin && Date.now() - caseLastOpen[type] < cooldown) { updateCaseTimers(); return; }
   caseOpening[type] = true;
+
+  // Проверка подписки на канал перед каждым открытием
+  const sub = await checkChannelSub();
+  if (sub === 'unconfigured') {
+    if (user.isAdmin) toast('⚠️ Укажи CONFIG.CHANNEL.ID — подписка не проверяется', '⚠️');
+  } else if (sub !== true) {
+    caseOpening[type] = false;
+    showSubOverlay(type, sub);
+    return;
+  }
+
   const btn = document.getElementById(`btn-${type}`);
   if (btn) { btn.disabled = true; btn.textContent = '🎁 Открываем...'; }
   const items = isCoupon ? CASE_COUPON_ITEMS : CASE_COIN_ITEMS;
@@ -1905,22 +2017,19 @@ async function openCase(type) {
   const winner = items[winnerIndex];
   const strip = document.getElementById(`strip-${type}`);
   if (!strip) { caseOpening[type] = false; return; }
-  const allItems = strip.querySelectorAll('.case-item');
+  const WIN_POS = 45;
   const itemWidth = 110;
   const wrapWidth = strip.parentElement.clientWidth;
   const centerOffset = wrapWidth / 2 - itemWidth / 2;
-  let targetPos = -1;
-  for (let i = allItems.length - 1; i >= 20; i--) {
-    const el = allItems[i];
-    const label = el.querySelector('.case-item-label').textContent.trim();
-    const expectedLabel = isCoupon ? `${winner.label} %` : winner.label;
-    if (label === expectedLabel) { targetPos = i; break; }
-  }
-  if (targetPos === -1) targetPos = 30;
-  const targetX = -(targetPos * itemWidth - centerOffset);
+  const resultPrev = document.getElementById(`result-${type}`);
+  if (resultPrev) resultPrev.innerHTML = '';
+  // Новая случайная лента при каждом открытии: все призы вперемешку
   strip.style.transition = 'none';
   strip.style.transform = 'translateX(0)';
+  strip.innerHTML = buildStrip(items, isCoupon ? '%' : '', winnerIndex, WIN_POS);
   void strip.offsetWidth;
+  const jitter = (Math.random() - 0.5) * 60;
+  const targetX = -(WIN_POS * itemWidth - centerOffset) + jitter;
   strip.style.transition = 'transform 5s cubic-bezier(0.15, 0.85, 0.25, 1)';
   strip.style.transform = `translateX(${targetX}px)`;
   if (!user.isAdmin) {
