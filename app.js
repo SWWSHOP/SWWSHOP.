@@ -1825,6 +1825,7 @@ function renderCases() {
       ${renderCaseCard('coupon')}
       ${renderCaseCard('coin')}
     </div>
+    ${user.isAdmin ? `<button class="admin-action-btn btn-cyan" style="margin-top:14px;" onclick="showSubOverlay(null, 'test')">👁 Показать окно подписки (тест)</button>` : ''}
   `;
   updateCaseTimers();
 }
@@ -1892,7 +1893,22 @@ function buildStrip(items, suffix, winnerIdx, winnerPos) {
 let subWatchTimer = null;
 let subPendingType = null;
 
+let lastSubError = '';
+
+function ensureSubOverlay() {
+  let ov = document.getElementById('subOverlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.id = 'subOverlay';
+  ov.innerHTML = '<div class="modal"><div class="modal-head"><h2>📢 Подписка</h2><button class="modal-close" onclick="closeSubOverlay()">✕</button></div><div id="subContent"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if (e.target === ov) closeSubOverlay(); });
+  return ov;
+}
+
 async function checkChannelSub() {
+  lastSubError = '';
   const chId = CONFIG.CHANNEL.ID;
   if (!chId) return 'unconfigured';
   if (!user.telegramId || !BOT_TOKEN || BOT_TOKEN.startsWith('__')) return 'error';
@@ -1902,12 +1918,22 @@ async function checkChannelSub() {
       body: JSON.stringify({ chat_id: chId, user_id: user.telegramId })
     });
     const j = await r.json();
-    if (!j.ok) return 'error';
+    if (!j.ok) { lastSubError = j.description || 'ошибка Telegram'; return 'error'; }
     const st = j.result.status;
     if (st === 'creator' || st === 'administrator' || st === 'member') return true;
     if (st === 'restricted' && j.result.is_member) return true;
     return false;
-  } catch (e) { return 'error'; }
+  } catch (e) { lastSubError = 'нет связи с Telegram API'; return 'error'; }
+}
+
+// Проверка с одной повторной попыткой при ошибке сети
+async function checkChannelSubRetry() {
+  let r = await checkChannelSub();
+  if (r === 'error') {
+    await new Promise(res => setTimeout(res, 700));
+    r = await checkChannelSub();
+  }
+  return r;
 }
 
 function openChannelLink() {
@@ -1919,6 +1945,7 @@ function openChannelLink() {
 
 function showSubOverlay(type, state) {
   subPendingType = type;
+  ensureSubOverlay();
   const box = document.getElementById('subContent');
   if (!box) return;
   box.innerHTML = `
@@ -1928,7 +1955,6 @@ function showSubOverlay(type, state) {
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">
         Чтобы открыть кейс, нужно быть подписанным на наш канал.
       </div>
-      ${state === 'error' ? '<div style="font-size:12px;color:var(--warning);margin-bottom:12px;">Не удалось проверить подписку. Попробуйте ещё раз чуть позже.</div>' : ''}
       <button class="btn btn-primary btn-block" onclick="openChannelLink()">📢 Подписаться на канал</button>
       <button class="btn btn-block" id="subCheckBtn" style="margin-top:8px;" onclick="subCheckNow()">✅ Я подписался, проверить</button>
       <div style="font-size:11px;color:var(--text-dim);margin-top:10px;">Подписка проверяется автоматически</div>
@@ -1936,6 +1962,7 @@ function showSubOverlay(type, state) {
   `;
   openOverlay('subOverlay');
   clearInterval(subWatchTimer);
+  if (!type) return; // тестовый показ окна без автопроверки
   subWatchTimer = setInterval(async () => {
     const ov = document.getElementById('subOverlay');
     if (!ov || !ov.classList.contains('open')) { clearInterval(subWatchTimer); return; }
@@ -1952,11 +1979,13 @@ function closeSubOverlay() {
 async function subCheckNow() {
   const btn = document.getElementById('subCheckBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Проверяем...'; }
-  const r = await checkChannelSub();
+  const r = await checkChannelSubRetry();
   if (btn) { btn.disabled = false; btn.textContent = '✅ Я подписался, проверить'; }
   if (r === true) onSubConfirmed();
-  else if (r === 'error') toast('❌ Не удалось проверить, попробуйте ещё раз', '❌');
-  else toast('❌ Подписка не найдена', '❌');
+  else if (r === 'error' || r === 'unconfigured') {
+    if (user.isAdmin) toast('⚠️ Проверка не удалась: ' + (lastSubError || 'нет ответа'), '⚠️');
+    onSubConfirmed();
+  } else toast('❌ Подписка не найдена', '❌');
 }
 
 function onSubConfirmed() {
@@ -2001,9 +2030,13 @@ async function openCase(type) {
   caseOpening[type] = true;
 
   // Проверка подписки на канал перед каждым открытием
-  const sub = await checkChannelSub();
+  const sub = await checkChannelSubRetry();
   if (sub === 'unconfigured') {
     if (user.isAdmin) toast('⚠️ Укажи CONFIG.CHANNEL.ID — подписка не проверяется', '⚠️');
+  } else if (sub === 'error') {
+    // Не удалось проверить (нет связи с API / бот не админ канала): кейс не блокируем
+    console.warn('Проверка подписки не удалась:', lastSubError);
+    if (user.isAdmin) toast('⚠️ Подписка не проверена: ' + (lastSubError || 'ошибка'), '⚠️');
   } else if (sub !== true) {
     caseOpening[type] = false;
     showSubOverlay(type, sub);
