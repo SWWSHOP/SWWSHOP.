@@ -68,6 +68,7 @@ let initialized = false;
 let submittingOrder = false;
 
 let caseOpening = { coupon: false, coin: false };
+let caseBonus = { coupon: 0, coin: 0 };
 let caseLastOpen = {
   coupon: parseInt(localStorage.getItem('sww_case_coupon_last') || '0'),
   coin: parseInt(localStorage.getItem('sww_case_coin_last') || '0')
@@ -511,6 +512,12 @@ async function initUser() {
     balance: user.balance, isAdmin,
     lastSeen: Date.now(),
     firstSeen: u?.firstSeen || Date.now()
+  });
+
+  db.ref('users/' + uid + '/bonusCases').on('value', s => {
+    const v = s.val() || {};
+    caseBonus = { coupon: v.coupon || 0, coin: v.coin || 0 };
+    if (currentPage === 'cases') updateCaseTimers();
   });
 
   db.ref('users/' + uid + '/balance').on('value', s => {
@@ -1849,7 +1856,7 @@ function renderCaseCard(type) {
         <div class="case-strip-pointer"></div>
         <div class="case-strip" id="strip-${type}">${stripItems}</div>
       </div>
-      <button class="case-open-btn" id="btn-${type}" ${canOpen ? '' : 'disabled'} onclick="openCase('${type}')">
+      <button class="case-open-btn ${canOpen ? '' : 'cooling'}" id="btn-${type}" onclick="openCase('${type}')">
         ${canOpen ? (isCoupon ? '🎁 Открыть кейс' : '🪙 Открыть кейс') : '⏳ Ждите'}
       </button>
       <div class="case-timer" id="timer-${type}"></div>
@@ -2000,22 +2007,31 @@ function updateCaseTimers() {
     const timerEl = document.getElementById(`timer-${type}`);
     const btnEl = document.getElementById(`btn-${type}`);
     if (!timerEl || !btnEl) return;
+    if (caseOpening[type]) return;
+    const label = type === 'coupon' ? '🎁 Открыть кейс' : '🪙 Открыть кейс';
+    const bonus = caseBonus[type] || 0;
+    btnEl.disabled = false;
     if (user.isAdmin) {
       timerEl.innerHTML = '<span style="color:#06ffa5;">✅ Безлимит</span>';
-      btnEl.disabled = false;
-      btnEl.textContent = type === 'coupon' ? '🎁 Открыть кейс' : '🪙 Открыть кейс';
+      btnEl.textContent = label;
+      btnEl.classList.remove('cooling');
       return;
     }
     const cooldown = type === 'coupon' ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
     const left = cooldown - (Date.now() - caseLastOpen[type]);
+    const bonusTxt = bonus > 0 ? ` · 🎟 бонусных: ${bonus}` : '';
     if (left <= 0) {
-      timerEl.innerHTML = '<span style="color:#06ffa5;">✅ Можно открыть!</span>';
-      btnEl.disabled = false;
-      btnEl.textContent = type === 'coupon' ? '🎁 Открыть кейс' : '🪙 Открыть кейс';
+      timerEl.innerHTML = `<span style="color:#06ffa5;">✅ Можно открыть!</span>${bonusTxt}`;
+      btnEl.textContent = label;
+      btnEl.classList.remove('cooling');
+    } else if (bonus > 0) {
+      timerEl.innerHTML = `⏳ Через: <span style="color:#ffb020;font-weight:700;">${formatCooldown(left)}</span>${bonusTxt}`;
+      btnEl.textContent = `🎟 Бонусный кейс (${bonus})`;
+      btnEl.classList.remove('cooling');
     } else {
       timerEl.innerHTML = `⏳ Через: <span style="color:#ffb020;font-weight:700;">${formatCooldown(left)}</span>`;
-      btnEl.disabled = true;
       btnEl.textContent = '⏳ Ждите';
+      btnEl.classList.add('cooling');
     }
   });
 }
@@ -2026,7 +2042,14 @@ async function openCase(type) {
   if (caseOpening[type]) return;
   const isCoupon = type === 'coupon';
   const cooldown = isCoupon ? CONFIG.CASES.COUPON_COOLDOWN_MS : CONFIG.CASES.COIN_COOLDOWN_MS;
-  if (!user.isAdmin && Date.now() - caseLastOpen[type] < cooldown) { updateCaseTimers(); return; }
+  const onCooldown = !user.isAdmin && Date.now() - caseLastOpen[type] < cooldown;
+  const useBonus = onCooldown && (caseBonus[type] || 0) > 0;
+  if (onCooldown && !useBonus) {
+    const left = cooldown - (Date.now() - caseLastOpen[type]);
+    toast(`⏳ Следующий кейс через ${formatCooldown(left)}`, '⏳');
+    updateCaseTimers();
+    return;
+  }
   caseOpening[type] = true;
 
   // Проверка подписки на канал перед каждым открытием
@@ -2041,6 +2064,16 @@ async function openCase(type) {
     caseOpening[type] = false;
     showSubOverlay(type, sub);
     return;
+  }
+
+  // Списываем бонусное открытие
+  if (useBonus) {
+    let ok = false;
+    try {
+      const res = await db.ref('users/' + user.id + '/bonusCases/' + type).transaction(cur => (cur || 0) > 0 ? cur - 1 : undefined);
+      ok = res.committed;
+    } catch (e) { ok = false; }
+    if (!ok) { caseOpening[type] = false; toast('❌ Не удалось использовать бонусный кейс', '❌'); updateCaseTimers(); return; }
   }
 
   const btn = document.getElementById(`btn-${type}`);
@@ -2065,12 +2098,14 @@ async function openCase(type) {
   const targetX = -(WIN_POS * itemWidth - centerOffset) + jitter;
   strip.style.transition = 'transform 5s cubic-bezier(0.15, 0.85, 0.25, 1)';
   strip.style.transform = `translateX(${targetX}px)`;
-  if (!user.isAdmin) {
+  const prevLast = caseLastOpen[type];
+  if (!user.isAdmin && !useBonus) {
     caseLastOpen[type] = Date.now();
     localStorage.setItem(`sww_case_${type}_last`, String(caseLastOpen[type]));
   }
   setTimeout(async () => {
     caseOpening[type] = false;
+    try {
     const resultEl = document.getElementById(`result-${type}`);
     const btnEl = document.getElementById(`btn-${type}`);
     if (btnEl) { btnEl.disabled = false; updateCaseTimers(); }
@@ -2103,6 +2138,14 @@ async function openCase(type) {
       } else {
         if (resultEl) resultEl.innerHTML = `<div style="color:#ff6b6b;font-size:15px;">😔 Пусто</div>`;
       }
+    }
+    } catch (e) {
+      // Приз не выдался: возвращаем попытку
+      console.error('Ошибка выдачи приза:', e);
+      if (useBonus) { try { await db.ref('users/' + user.id + '/bonusCases/' + type).transaction(cur => (cur || 0) + 1); } catch (e2) {} }
+      else if (!user.isAdmin) { caseLastOpen[type] = prevLast; localStorage.setItem(`sww_case_${type}_last`, String(prevLast)); }
+      toast('❌ Не удалось выдать приз, попробуйте ещё раз', '❌');
+      updateCaseTimers();
     }
   }, 5200);
 }
@@ -2172,6 +2215,17 @@ function renderProfile() {
         </div>
       </div>
     ` : ''}
+
+    <section class="section">
+      <div class="section-title">🎟 Промокод</div>
+      <div style="display:flex;gap:8px;align-items:stretch;">
+        <input type="text" id="redeemInput" placeholder="Введите промокод" autocapitalize="characters" autocomplete="off"
+               style="flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-family:inherit;"
+               onkeydown="if(event.key==='Enter')redeemCode()" />
+        <button class="btn btn-primary" style="white-space:nowrap;" onclick="redeemCode()">Активировать</button>
+      </div>
+      <div id="redeemResult" style="margin-top:10px;font-size:14px;text-align:center;"></div>
+    </section>
 
     <section class="section">
       <div class="section-title">🤝 Реферальная программа</div>
@@ -2771,6 +2825,37 @@ function renderAdmin() {
     </div>
     <button class="admin-action-btn btn-gold" onclick="adminAdjustBalance()">💰 Изменить</button>
 
+    <div class="section-title" style="margin-top:20px;">🎟 Промокоды (для профиля)</div>
+    <div class="field">
+      <label>Код (пусто = случайный)</label>
+      <input type="text" id="rcCode" placeholder="например SUMMER или пусто" />
+    </div>
+    <div class="field">
+      <label>Тип награды</label>
+      <select id="rcType">
+        <option value="coins">🪙 Монеты</option>
+        <option value="discount">💎 Скидка %</option>
+        <option value="case_coupon">🎫 Кейс со скидками</option>
+        <option value="case_coin">🪙 Кейс с монетами</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Значение (монет / % скидки / кол-во кейсов)</label>
+      <input type="number" id="rcValue" value="50" min="1" />
+    </div>
+    <div class="field">
+      <label>Лимит активаций (сколько человек)</label>
+      <input type="number" id="rcMax" value="10" min="1" />
+    </div>
+    <div class="field">
+      <label>Сколько случайных кодов создать (до 50)</label>
+      <input type="number" id="rcCount" value="1" min="1" max="50" />
+    </div>
+    <button class="admin-action-btn btn-gold" onclick="adminCreateRedeemCodes()">🎲 Создать промокод</button>
+    <div id="rcCreated"></div>
+    <div id="rcList" style="margin-top:10px;"></div>
+    <button class="admin-action-btn btn-purple" onclick="adminRenderRedeemList()">🔄 Обновить список</button>
+
     <div class="section-title" style="margin-top:20px;">📋 Все скидки</div>
     <div id="allPromosList"></div>
     <button class="admin-action-btn btn-purple" onclick="renderAllPromosAdmin()">🔄 Обновить</button>
@@ -2782,6 +2867,7 @@ function renderAdmin() {
     <button class="admin-action-btn btn-red" onclick="adminLogout()">🚪 Выйти из админки</button>
   `;
   renderAllPromosAdmin();
+  adminRenderRedeemList();
 }
 
 async function adminSaveGlobalCashback() {
@@ -3050,6 +3136,193 @@ function adminBroadcast() {
   );
   Promise.all(promises).then(() => toast(`✅ ${sent} получателей`, '📢'));
   document.getElementById('broadcastMsg').value = '';
+}
+
+
+/* =========================================================
+   ПРОМОКОДЫ (отдельная система: redeemCodes)
+   ========================================================= */
+function sanitizeCode(raw) {
+  return String(raw || '').trim().toUpperCase().replace(/[.#$\[\]\/\s]/g, '');
+}
+
+function randomCodeStr() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let r = '';
+  for (let i = 0; i < 6; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return 'SWW-' + r;
+}
+
+function redeemLabel(type, value) {
+  if (type === 'coins') return `🪙 +${value} монет`;
+  if (type === 'discount') return `💎 скидка ${value}%`;
+  if (type === 'case_coupon') return `🎫 кейс со скидками ×${value}`;
+  if (type === 'case_coin') return `🪙 кейс с монетами ×${value}`;
+  return String(type);
+}
+
+function setRedeemResult(html) {
+  const el = document.getElementById('redeemResult');
+  if (el) el.innerHTML = html;
+}
+
+let redeemBusy = false;
+
+async function redeemCode() {
+  if (redeemBusy) return;
+  const input = document.getElementById('redeemInput');
+  const code = sanitizeCode(input ? input.value : '');
+  if (!code) { toast('Введите промокод', '❌'); return; }
+  redeemBusy = true;
+  try {
+    const ref = db.ref('redeemCodes/' + code);
+    const snap = await ref.once('value');
+    if (!snap.exists()) {
+      setRedeemResult('<div style="color:#ff6b6b;">❌ Такого промокода не существует</div>');
+      return;
+    }
+    let d = snap.val();
+    if (d.usedBy && d.usedBy[user.id]) {
+      setRedeemResult('<div style="color:var(--warning);">⚠️ Вы уже активировали этот промокод</div>');
+      return;
+    }
+    if ((d.uses || 0) >= (d.maxUses || 0)) {
+      setRedeemResult('<div style="color:#ff6b6b;">❌ Лимит данного промокода исчерпан</div>');
+      return;
+    }
+
+    // Занимаем активацию атомарно
+    const res = await ref.transaction(cur => {
+      if (cur === null) return cur;
+      if ((cur.uses || 0) >= (cur.maxUses || 0)) return;
+      if (cur.usedBy && cur.usedBy[user.id]) return;
+      cur.uses = (cur.uses || 0) + 1;
+      if (!cur.usedBy) cur.usedBy = {};
+      cur.usedBy[user.id] = Date.now();
+      return cur;
+    });
+    if (!res.committed) {
+      const again = (await ref.once('value')).val();
+      if (!again) setRedeemResult('<div style="color:#ff6b6b;">❌ Такого промокода не существует</div>');
+      else if (again.usedBy && again.usedBy[user.id]) setRedeemResult('<div style="color:var(--warning);">⚠️ Вы уже активировали этот промокод</div>');
+      else setRedeemResult('<div style="color:#ff6b6b;">❌ Лимит данного промокода исчерпан</div>');
+      return;
+    }
+    d = res.snapshot.val();
+
+    // Награда
+    const v = d.value || 0;
+    let msg = '';
+    if (d.type === 'coins') {
+      await db.ref('users/' + user.id + '/balance').transaction(cur => (cur || 0) + v);
+      await db.ref('users/' + user.id + '/balanceHistory').push({ type: 'promocode', amount: v, code, date: Date.now() });
+      msg = `<div style="font-size:22px;font-weight:900;color:var(--gold);">+${v} SWWCOIN</div>`;
+    } else if (d.type === 'discount') {
+      const pc = 'PC-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+      await db.ref('promos/' + pc).set({
+        discount: v, used: false, created: Date.now(), type: 'promocode',
+        userId: user.id, userName: user.firstName, uses: 0, maxUses: 1
+      });
+      msg = `<div style="font-size:22px;font-weight:900;color:var(--warning);">Скидка ${v}%</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Код скидки: <b style="color:var(--accent);font-family:monospace;">${pc}</b></div>`;
+    } else if (d.type === 'case_coupon' || d.type === 'case_coin') {
+      const k = d.type === 'case_coupon' ? 'coupon' : 'coin';
+      await db.ref('users/' + user.id + '/bonusCases/' + k).transaction(cur => (cur || 0) + v);
+      msg = `<div style="font-size:18px;font-weight:800;color:var(--accent);">🎁 Бонусный кейс ×${v}</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Откройте его во вкладке «Кейсы»</div>`;
+    }
+    setRedeemResult(`<div style="color:#06ffa5;font-weight:700;margin-bottom:4px;">✅ Промокод активирован</div>${msg}`);
+    toast('✅ Промокод активирован', '🎟');
+    if (input) input.value = '';
+  } catch (e) {
+    console.error('redeemCode', e);
+    setRedeemResult('<div style="color:#ff6b6b;">❌ Ошибка, попробуйте ещё раз</div>');
+  } finally {
+    redeemBusy = false;
+  }
+}
+
+async function adminCreateRedeemCodes() {
+  if (!user.isAdmin) return;
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const manual = sanitizeCode(g('rcCode'));
+  const type = g('rcType');
+  const value = parseInt(g('rcValue'));
+  const maxUses = parseInt(g('rcMax'));
+  let count = parseInt(g('rcCount')) || 1;
+
+  if (!value || value < 1) { toast('❌ Укажите значение', '❌'); return; }
+  if (type === 'discount' && value > 100) { toast('❌ Скидка 1–100%', '❌'); return; }
+  if (!maxUses || maxUses < 1) { toast('❌ Укажите лимит активаций', '❌'); return; }
+
+  const created = [];
+  try {
+    if (manual) {
+      const ex = await db.ref('redeemCodes/' + manual).once('value');
+      if (ex.exists()) { toast('❌ Такой промокод уже есть', '❌'); return; }
+      created.push(manual);
+    } else {
+      count = Math.max(1, Math.min(count, 50));
+      while (created.length < count) {
+        let code = '';
+        for (let t = 0; t < 8; t++) {
+          const cand = randomCodeStr();
+          if (created.includes(cand)) continue;
+          const ex = await db.ref('redeemCodes/' + cand).once('value');
+          if (!ex.exists()) { code = cand; break; }
+        }
+        if (!code) { toast('❌ Не удалось сгенерировать код', '❌'); break; }
+        created.push(code);
+      }
+    }
+    for (const code of created) {
+      await db.ref('redeemCodes/' + code).set({
+        type, value, maxUses, uses: 0, created: Date.now(), createdBy: user.id
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    toast('❌ Ошибка создания', '❌');
+    return;
+  }
+  const box = document.getElementById('rcCreated');
+  if (box) {
+    box.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:8px;font-size:13px;">
+      <div style="font-weight:700;margin-bottom:6px;">✅ Создано: ${created.length}</div>
+      ${created.map(c => `<div style="font-family:monospace;color:var(--accent);cursor:pointer;" onclick="copyText('${c}')">${c}</div>`).join('')}
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Нажмите на код, чтобы скопировать</div>
+    </div>`;
+  }
+  toast(`✅ Создано промокодов: ${created.length}`, '🎟');
+  adminRenderRedeemList();
+}
+
+async function adminRenderRedeemList() {
+  const el = document.getElementById('rcList');
+  if (!el) return;
+  try {
+    const snap = await db.ref('redeemCodes').once('value');
+    const all = snap.val() || {};
+    const rows = Object.entries(all).sort((a, b) => (b[1].created || 0) - (a[1].created || 0)).slice(0, 60);
+    if (!rows.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Промокодов пока нет</div>'; return; }
+    el.innerHTML = rows.map(([code, d]) => {
+      const left = (d.maxUses || 0) - (d.uses || 0);
+      return `<div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:6px;">
+        <div style="flex:1;min-width:0;" onclick="copyText('${code}')">
+          <div style="font-family:monospace;font-weight:700;color:var(--accent);">${code}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${redeemLabel(d.type, d.value)} · ${d.uses || 0}/${d.maxUses || 0}${left <= 0 ? ' · исчерпан' : ''}</div>
+        </div>
+        <button class="admin-action-btn btn-red" style="margin:0;padding:6px 10px;width:auto;" onclick="adminDeleteRedeem('${code}')">🗑️</button>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--danger);">Не удалось загрузить</div>';
+  }
+}
+
+async function adminDeleteRedeem(code) {
+  if (!user.isAdmin) return;
+  if (!confirm('Удалить промокод ' + code + '?')) return;
+  await db.ref('redeemCodes/' + code).remove();
+  adminRenderRedeemList();
 }
 
 function renderAllPromosAdmin() {
