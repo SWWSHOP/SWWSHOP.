@@ -961,3 +961,5 @@ body.light .bottom-nav { background: rgba(255,255,255,0.95); }
 }
 
 .product-grid::-webkit-scrollbar { display: none; }
+
+.case-open-btn.cooling { opacity: 0.55; }
