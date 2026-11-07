@@ -2,6 +2,17 @@
    SWWSHOP 4.1 — PDF ВЫПИСКИ (с поддержкой кириллицы)
    ========================================================= */
 
+/* Защита: если CDN (Firebase) не загрузился — показываем сообщение вместо поломанной страницы */
+if (typeof firebase === 'undefined') {
+  document.addEventListener('DOMContentLoaded', function () {
+    var app = document.getElementById('app');
+    if (app) app.innerHTML = '<div class="empty-state"><div class="icon">📡</div><h3>Не удалось загрузить сервис</h3><p>Проверьте интернет или отключите VPN и откройте заново</p></div>';
+    var pre = document.getElementById('preloader');
+    if (pre) pre.style.display = 'none';
+  });
+  throw new Error('firebase not loaded');
+}
+
 const CONFIG = {
   BOT_TOKEN: '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',
   CHAT_ID: '5993502384',
@@ -3366,33 +3377,61 @@ function adminLogout() {
    СТАРТ
    ========================================================= */
 window.addEventListener('load', async () => {
+  // 1) Сначала всё, что не зависит от сети: навигация, тема, прелоадер
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.page));
+  });
+  const themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
   const savedTheme = localStorage.getItem('sww_theme') || 'dark';
   if (savedTheme === 'light') document.body.classList.add('light');
   if (localStorage.getItem('sww_winter') === 'true') {
     document.body.classList.add('winter');
     createSnow();
   }
+
+  if (window.Telegram?.WebApp) {
+    try { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } catch (_) {}
+  }
+
+  // Прелоадер гарантированно уйдёт, даже если дальше что-то зависнет
+  setTimeout(() => { if (window.__stopPreloader) window.__stopPreloader(); }, 5000);
+
+  const withTimeout = (p, ms) => Promise.race([
+    p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+  ]);
+
+  // 2) Загрузка настроек (с таймаутом, ошибки не ломают запуск)
   try {
-    const cbSnap = await db.ref('meta/settings/cashback').once('value');
-    const cbVal = cbSnap.val();
+    const cbVal = (await withTimeout(db.ref('meta/settings/cashback').once('value'), 6000)).val();
     if (typeof cbVal === 'number') CONFIG.DEFAULT_CASHBACK = cbVal;
   } catch (_) {}
   try {
-    const mcSnap = await db.ref('meta/settings/maxCoinPercent').once('value');
-    const mcVal = mcSnap.val();
+    const mcVal = (await withTimeout(db.ref('meta/settings/maxCoinPercent').once('value'), 6000)).val();
     if (typeof mcVal === 'number') CONFIG.MAX_COIN_PERCENT = mcVal;
   } catch (_) {}
-  loadAssortment();
-  loadPromos();
-  loadUsers();
-  await initUser();
-  setTimeout(() => { if (window.__stopPreloader) window.__stopPreloader(); }, 5000);
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => navigate(btn.dataset.page));
-  });
-  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-  if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
+
+  // 3) Данные и пользователь
+  try { loadAssortment(); } catch (e) { console.error('loadAssortment', e); }
+  try { loadPromos(); } catch (e) { console.error('loadPromos', e); }
+  try { loadUsers(); } catch (e) { console.error('loadUsers', e); }
+
+  try {
+    await withTimeout(initUser(), 12000);
+  } catch (e) {
+    console.error('initUser', e);
+    // Резервный пользователь, чтобы интерфейс всё равно работал
+    if (!user) {
+      const uid = getUserId();
+      user = { id: uid, telegramId: null, firstName: 'Гость', lastName: '', username: '',
+               photoUrl: '', isAdmin: false, shortId: generateShortId(uid), balance: 0,
+               phone: '', contactUsername: '' };
+    }
+    toast('⚠️ Не всё загрузилось, потяните вниз и обновите', '⚠️');
   }
+
+  // 4) Отрисовка в любом случае
+  try { if (!initialized) { initialized = true; } render(); } catch (e) { console.error('render', e); }
+  if (window.__stopPreloader) window.__stopPreloader();
 });
