@@ -20,7 +20,7 @@ const CONFIG = {
   BOT_USERNAME: 'SWWSHOPBOT',
   APP_NAME: 'SHOP',
   SUPPORT_USERNAME: '@bmqna',
-  BASE_USERS_COUNT: 0,
+  BASE_USERS_COUNT: 79,
   DEFAULT_CASHBACK: 10,
   MAX_COIN_PERCENT: 20,
 
@@ -559,7 +559,6 @@ async function initUser() {
   loadUserOrders();
 
   if (isAdmin) setTimeout(() => toast('👑 Вы вошли как администратор', '👑'), 800);
-  setTimeout(() => { if (window.__stopPreloader) window.__stopPreloader(); }, 2400);
 }
 
 function updateBalanceUI() {
@@ -714,17 +713,19 @@ function pluralFlavors(n) {
 }
 
 function loadAssortment() {
-  db.ref('assortment').on('value', s => {
-    const v = s.val();
-    data = v || { liquids: [], pouches: [], coils: [], devices: [], other: [] };
-    normalizeAssortment();
-    syncCartWithData();
-    if (!initialized) {
-      initialized = true;
-      render();
-    } else if (currentPage === 'catalog') {
-      renderCatalog();
-    }
+  return new Promise((resolve, reject) => {
+    let first = true;
+    db.ref('assortment').on('value', s => {
+      const v = s.val();
+      data = v || { liquids: [], pouches: [], coils: [], devices: [], other: [] };
+      normalizeAssortment();
+      syncCartWithData();
+      if (first) { first = false; resolve(); return; }
+      if (initialized && currentPage === 'catalog') renderCatalog();
+    }, err => {
+      console.error('assortment error', err);
+      if (first) { first = false; reject(err); }
+    });
   });
 }
 
@@ -826,7 +827,7 @@ function navigate(page) {
 }
 
 function render() {
-  if (!user) return;
+  if (!user || !initialized) return;
   updateBalanceUI();
   if (currentPage === 'catalog') renderCatalog();
   else if (currentPage === 'order') renderOrder();
@@ -3376,62 +3377,60 @@ function adminLogout() {
 /* =========================================================
    СТАРТ
    ========================================================= */
+function withTimeout(p, ms) {
+  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+}
+
+function showLoadError() {
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = `
+    <div class="empty-state" style="padding-top:80px;">
+      <div class="icon">📡</div>
+      <h3>Не удалось загрузить данные</h3>
+      <p style="margin-bottom:16px;">Проверьте интернет и попробуйте ещё раз</p>
+      <button class="btn btn-primary" onclick="location.reload()">🔄 Обновить</button>
+    </div>`;
+  if (window.__stopPreloader) window.__stopPreloader();
+}
+
 window.addEventListener('load', async () => {
-  // 1) Сначала всё, что не зависит от сети: навигация, тема, прелоадер
+  // Не зависит от сети: навигация и тема
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.page));
   });
   const themeBtn = document.getElementById('themeToggle');
   if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
-  const savedTheme = localStorage.getItem('sww_theme') || 'dark';
-  if (savedTheme === 'light') document.body.classList.add('light');
+  if ((localStorage.getItem('sww_theme') || 'dark') === 'light') document.body.classList.add('light');
   if (localStorage.getItem('sww_winter') === 'true') {
     document.body.classList.add('winter');
     createSnow();
   }
-
   if (window.Telegram?.WebApp) {
     try { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } catch (_) {}
   }
 
-  // Прелоадер гарантированно уйдёт, даже если дальше что-то зависнет
-  setTimeout(() => { if (window.__stopPreloader) window.__stopPreloader(); }, 5000);
-
-  const withTimeout = (p, ms) => Promise.race([
-    p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
-  ]);
-
-  // 2) Загрузка настроек (с таймаутом, ошибки не ломают запуск)
+  // Настройки (не критично: при ошибке остаются значения по умолчанию)
   try {
-    const cbVal = (await withTimeout(db.ref('meta/settings/cashback').once('value'), 6000)).val();
-    if (typeof cbVal === 'number') CONFIG.DEFAULT_CASHBACK = cbVal;
-  } catch (_) {}
-  try {
-    const mcVal = (await withTimeout(db.ref('meta/settings/maxCoinPercent').once('value'), 6000)).val();
-    if (typeof mcVal === 'number') CONFIG.MAX_COIN_PERCENT = mcVal;
+    const [cb, mc] = await withTimeout(Promise.all([
+      db.ref('meta/settings/cashback').once('value'),
+      db.ref('meta/settings/maxCoinPercent').once('value')
+    ]), 8000);
+    if (typeof cb.val() === 'number') CONFIG.DEFAULT_CASHBACK = cb.val();
+    if (typeof mc.val() === 'number') CONFIG.MAX_COIN_PERCENT = mc.val();
   } catch (_) {}
 
-  // 3) Данные и пользователь
-  try { loadAssortment(); } catch (e) { console.error('loadAssortment', e); }
-  try { loadPromos(); } catch (e) { console.error('loadPromos', e); }
-  try { loadUsers(); } catch (e) { console.error('loadUsers', e); }
-
+  // Прелоадер остаётся, пока БД не ответила и пользователь не загружен
   try {
-    await withTimeout(initUser(), 12000);
+    const assortmentReady = loadAssortment();
+    loadPromos();
+    loadUsers();
+    await withTimeout(Promise.all([assortmentReady, initUser()]), 20000);
+    initialized = true;
+    render();
+    if (window.__stopPreloader) window.__stopPreloader();
   } catch (e) {
-    console.error('initUser', e);
-    // Резервный пользователь, чтобы интерфейс всё равно работал
-    if (!user) {
-      const uid = getUserId();
-      user = { id: uid, telegramId: null, firstName: 'Гость', lastName: '', username: '',
-               photoUrl: '', isAdmin: false, shortId: generateShortId(uid), balance: 0,
-               phone: '', contactUsername: '' };
-    }
-    toast('⚠️ Не всё загрузилось, потяните вниз и обновите', '⚠️');
+    console.error('startup error', e);
+    showLoadError();
   }
-
-  // 4) Отрисовка в любом случае
-  try { if (!initialized) { initialized = true; } render(); } catch (e) { console.error('render', e); }
-  if (window.__stopPreloader) window.__stopPreloader();
 });
