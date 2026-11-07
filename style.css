@@ -38,7 +38,7 @@ body {
    ============================================================ */
 #preloader {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   z-index: 99999;
   background: radial-gradient(circle at 50% 50%, #0f1a2e 0%, #0a0e17 60%, #05070c 100%);
   display: flex;
@@ -59,7 +59,7 @@ body {
 #preloader::before {
   content: '';
   position: absolute;
-  inset: -50%;
+  top: -50%; right: -50%; bottom: -50%; left: -50%;
   background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 50%);
   animation: preloaderBgPulse 4s ease-in-out infinite;
   pointer-events: none;
@@ -71,14 +71,14 @@ body {
 #preloader::after {
   content: '';
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.6) 100%);
   pointer-events: none;
   z-index: 1;
 }
 #preloaderCanvas {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -187,7 +187,7 @@ body {
 }
 
 /* ФОН */
-.bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bg-orbs { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .bg-orbs::before, .bg-orbs::after {
   content: ''; position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
   animation: float 18s ease-in-out infinite;
@@ -621,7 +621,7 @@ body.light .header { background: rgba(244,247,251,0.9); }
 .menu-item.admin-only .menu-icon { color: #ffd700; background: rgba(255,215,0,0.1); }
 
 .overlay {
-  position: fixed; inset: 0; z-index: 500;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 500;
   background: rgba(5,8,15,0.85); backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center; padding: 16px;
@@ -963,3 +963,11 @@ body.light .bottom-nav { background: rgba(255,255,255,0.95); }
 .product-grid::-webkit-scrollbar { display: none; }
 
 .case-open-btn.cooling { opacity: 0.55; }
+
+
+/* Фолбэки для старых WebView */
+@supports not (aspect-ratio: 1 / 1) {
+  .product-square { min-height: 170px; }
+}
+.product-grid { min-width: 0; }
+.product-square { min-width: 0; }
