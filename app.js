@@ -782,6 +782,14 @@ function openSupport() {
   else window.open(url, '_blank');
 }
 
+function openSupportWithOrder(orderId) {
+  const tg = window.Telegram?.WebApp;
+  const text = `Привет, мой заказ #${orderId}`;
+  const url = 'https://t.me/' + CONFIG.SUPPORT_USERNAME.replace('@', '') + '?text=' + encodeURIComponent(text);
+  if (tg?.openTelegramLink) tg.openTelegramLink(url);
+  else window.open(url, '_blank');
+}
+
 function toggleTheme() {
   const next = document.body.classList.contains('light') ? 'dark' : 'light';
   document.body.classList.remove('light', 'dark');
@@ -1750,7 +1758,8 @@ async function submitOrder() {
     saveCart();
     useBalanceInOrder = false;
     toast('✅ Заказ оформлен!', '🎉');
-    setTimeout(() => navigate('profile'), 600);
+    navigate('profile');
+    setTimeout(() => openSupportWithOrder(orderId), 500);
   } catch (e) {
     console.error('ORDER ERROR:', e);
     toast('❌ Ошибка: ' + (e.message || 'попробуйте снова'), '❌');
