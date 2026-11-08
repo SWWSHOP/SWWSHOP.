@@ -1648,6 +1648,16 @@ function toggleBalance() {
   renderOrder();
 }
 
+function buildClientChatUrl(typedUsername) {
+  const valid = u => /^[A-Za-z0-9_]{4,32}$/.test(u || '');
+  const fromTg = (user.username || '').replace(/^@/, '');
+  const typed = (typedUsername || '').trim().replace(/^@/, '').replace(/^https?:\/\/t\.me\//i, '');
+  if (valid(fromTg)) return 'https://t.me/' + fromTg;
+  if (valid(typed)) return 'https://t.me/' + typed;
+  if (user.telegramId) return 'tg://user?id=' + user.telegramId;
+  return null;
+}
+
 async function submitOrder() {
   if (submittingOrder) { toast('⏳ Заказ уже создаётся', '⏳'); return; }
   if (!cart.length) { toast('❌ Корзина пуста', '❌'); return; }
@@ -1738,7 +1748,12 @@ async function submitOrder() {
     if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: CHAT_ID, text: adminMsg })
+        body: JSON.stringify({
+          chat_id: CHAT_ID, text: adminMsg,
+          ...(buildClientChatUrl(contactUsername)
+            ? { reply_markup: { inline_keyboard: [[{ text: '💬 Написать клиенту', url: buildClientChatUrl(contactUsername) }]] } }
+            : {})
+        })
       }).catch(() => {});
     }
     if (user.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
