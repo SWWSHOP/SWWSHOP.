@@ -3719,6 +3719,13 @@ function adminMsgUser(uid) {
    В профиле показывается только пока status === 'live' и не вышло время окончания.
    ========================================================= */
 let advent = null, srvOffset = 0, advClaims = {}, advForm = null;
+const ADV_MAX_DAYS = 7;
+const ADV_TYPES = {
+  coins:       { icon: '🪙', name: 'Монеты (SWWCOIN)',  min: 1, max: 100000 },
+  discount:    { icon: '💎', name: 'Скидка (%)',        min: 1, max: 100 },
+  case_coupon: { icon: '🎟', name: 'Кейс со скидками (открытий)', min: 1, max: 5 },
+  case_coin:   { icon: '🎰', name: 'Кейс с монетами (открытий)',  min: 1, max: 5 }
+};
 const advEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nowMs = () => Date.now() + srvOffset;
 const advVisible = a => !!(a && a.status === 'live' && a.days > 0 && nowMs() <= a.endAt);
@@ -3728,6 +3735,27 @@ function fmtDur(ms) {
   const d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
   return d ? `${d} д ${h} ч` : h ? `${h} ч ${m} мин` : `${m} мин`;
 }
+// Награда дня: {type, value}. Старый формат {text, coins} читается как монеты.
+function advRw(rw) {
+  rw = rw || {};
+  if (!rw.type) return { type: 'coins', value: parseInt(rw.coins) || 0 };
+  return { type: ADV_TYPES[rw.type] ? rw.type : 'coins', value: parseInt(rw.value) || 0 };
+}
+function advLabel(rw) {
+  const r = advRw(rw);
+  if (r.type === 'discount') return `Скидка ${r.value}%`;
+  if (r.type === 'case_coupon') return `Кейс со скидками ×${r.value}`;
+  if (r.type === 'case_coin') return `Кейс с монетами ×${r.value}`;
+  return `+${r.value} SWWCOIN`;
+}
+function advShort(rw) {
+  const r = advRw(rw);
+  if (r.type === 'discount') return `−${r.value}%`;
+  if (r.type === 'case_coupon') return `🎟 ×${r.value}`;
+  if (r.type === 'case_coin') return `🎰 ×${r.value}`;
+  return `+${r.value} 🪙`;
+}
+const advClamp = (type, v) => { const t = ADV_TYPES[type] || ADV_TYPES.coins; return Math.min(t.max, Math.max(t.min, parseInt(v) || t.min)); };
 
 function listenAdvent() {
   db.ref('.info/serverTimeOffset').on('value', s => { srvOffset = s.val() || 0; });
@@ -3760,44 +3788,51 @@ function renderAdventUser() {
   const el = document.getElementById('adventUserContent'); if (!el) return;
   if (!advVisible(advent)) { el.innerHTML = '<div class="empty-state"><div class="icon">🎄</div><h3>Календарь завершён</h3></div>'; return; }
   const a = advent, cur = advDay(a);
-  const today = a.rewards && a.rewards[cur - 1];
   let tiles = '';
   for (let i = 1; i <= a.days; i++) {
-    const rw = (a.rewards && a.rewards[i - 1]) || {};
+    const rw = a.rewards && a.rewards[i - 1];
     const got = !!advClaims['d' + i], open = i <= cur;
     tiles += `<div onclick="${open && !got ? `claimAdventDay(${i})` : `advTileInfo(${i})`}" style="padding:12px 4px;border-radius:14px;text-align:center;cursor:pointer;background:var(--card);border:1px solid ${open && !got ? 'var(--accent)' : 'var(--border)'};opacity:${open || got ? 1 : .55};">
       <div style="font-size:11px;opacity:.7;">День ${i}</div>
       <div style="font-size:24px;margin:4px 0;">${got ? '✅' : open ? '🎁' : '🔒'}</div>
-      <div style="font-size:11px;color:var(--gold);min-height:14px;">${rw.coins ? '+' + rw.coins + ' 🪙' : ''}</div></div>`;
+      <div style="font-size:11px;color:var(--gold);min-height:14px;">${advShort(rw)}</div></div>`;
   }
   el.innerHTML = `
     <div style="font-size:13px;opacity:.75;margin-bottom:12px;">Закончится через ${fmtDur(a.endAt - nowMs())} · ${new Date(a.endAt).toLocaleString('ru-RU')}</div>
-    ${today && today.text ? `<div style="padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:12px;font-size:14px;">🎁 Сегодня: <b>${advEsc(today.text)}</b></div>` : ''}
+    ${cur ? `<div style="padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:12px;font-size:14px;">🎁 Сегодня: <b>${advEsc(advLabel(a.rewards && a.rewards[cur - 1]))}</b></div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">${tiles}</div>`;
 }
 
 function advTileInfo(i) {
-  const a = advent, rw = (a.rewards && a.rewards[i - 1]) || {};
-  const label = (rw.text || '') + (rw.coins ? ` (+${rw.coins} SWWCOIN)` : '');
-  if (advClaims['d' + i]) toast('✅ Получено: ' + (label || 'награда'), '🎁');
-  else toast(`🔒 Откроется через ${fmtDur(a.startAt + (i - 1) * 86400000 - nowMs())}` + (label ? ` · ${label}` : ''), '🔒');
+  const a = advent, label = advLabel(a.rewards && a.rewards[i - 1]);
+  if (advClaims['d' + i]) toast('✅ Получено: ' + label, '🎁');
+  else toast(`🔒 Откроется через ${fmtDur(a.startAt + (i - 1) * 86400000 - nowMs())} · ${label}`, '🔒');
 }
 
 async function claimAdventDay(d) {
   const a = advent;
   if (!advVisible(a) || d > advDay(a) || d < 1) return;
-  const rw = (a.rewards && a.rewards[d - 1]) || {};
-  const coins = parseInt(rw.coins) || 0;
+  const rw = advRw(a.rewards && a.rewards[d - 1]);
+  if (!rw.value) return;
   try {
     const res = await db.ref(`adventClaims/${a.id}/${user.id}/d${d}`)
-      .transaction(cur => cur ? undefined : { t: nowMs(), coins, text: rw.text || '' });
+      .transaction(cur => cur ? undefined : { t: nowMs(), type: rw.type, value: rw.value });
     if (!res.committed) { advClaims['d' + d] = true; renderAdventUser(); toast('Уже получено', 'ℹ️'); return; }
     advClaims['d' + d] = true;
-    if (coins > 0) {
-      await db.ref('users/' + user.id + '/balance').transaction(c => (c || 0) + coins);
-      await db.ref('users/' + user.id + '/balanceHistory').push({ type: 'advent', amount: coins, day: d, date: Date.now() });
+    if (rw.type === 'coins') {
+      await db.ref('users/' + user.id + '/balance').transaction(c => (c || 0) + rw.value);
+      await db.ref('users/' + user.id + '/balanceHistory').push({ type: 'advent', amount: rw.value, day: d, date: Date.now() });
+    } else if (rw.type === 'discount') {
+      const pc = 'PC-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+      await db.ref('promos/' + pc).set({
+        discount: rw.value, used: false, created: Date.now(), type: 'advent',
+        userId: user.id, userName: user.firstName, uses: 0, maxUses: 1
+      });
+    } else {
+      const k = rw.type === 'case_coupon' ? 'coupon' : 'coin';
+      await db.ref('users/' + user.id + '/bonusCases/' + k).transaction(c => (c || 0) + rw.value);
     }
-    toast('🎁 ' + ((rw.text || '') + (coins ? ` +${coins} SWWCOIN` : '')).trim() || 'Награда получена', '🎄');
+    toast('🎁 ' + advLabel(rw), '🎄');
     renderAdventUser();
   } catch (e) { toast('❌ Не удалось получить награду', '❌'); }
 }
@@ -3805,63 +3840,86 @@ async function claimAdventDay(d) {
 /* ---------- Админка адвента ---------- */
 function advNewForm() {
   const s = Date.now();
-  return { id: 'adv_' + s, name: 'Адвент-календарь', days: 7, startAt: s, endAt: s + 7 * 86400000,
-           rewards: Array.from({ length: 7 }, () => ({ text: '', coins: 10 })), status: 'draft' };
+  return { id: 'adv_' + s, name: 'Адвент-календарь', days: ADV_MAX_DAYS, startAt: s, endAt: s + ADV_MAX_DAYS * 86400000,
+           rewards: Array.from({ length: ADV_MAX_DAYS }, () => ({ type: 'coins', value: 10 })), status: 'draft' };
 }
 const toLocalInput = ms => new Date(ms - new Date(ms).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 function openAdventAdmin() {
   if (!user.isAdmin) return;
   advForm = advent ? JSON.parse(JSON.stringify(advent)) : advNewForm();
   if (!Array.isArray(advForm.rewards)) advForm.rewards = Object.values(advForm.rewards || {});
+  advForm.days = Math.min(ADV_MAX_DAYS, advForm.days || ADV_MAX_DAYS);
+  advForm.rewards = advForm.rewards.map(advRw);
   openOverlay('adventOverlay'); renderAdventAdmin();
+}
+function advMsg(text, ok) {
+  const box = document.getElementById('advMsg');
+  if (box) {
+    box.style.cssText = `margin:10px 0;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:600;border:1px solid ${ok ? '#06ffa5' : '#ff6b6b'};color:${ok ? '#06ffa5' : '#ff6b6b'};`;
+    box.textContent = text;
+    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  toast(text, ok ? '🎄' : '❌');
 }
 function advReadForm() {
   const g = id => document.getElementById(id);
   advForm.name = g('advName').value.trim();
-  advForm.days = Math.max(1, Math.min(60, parseInt(g('advDays').value) || 1));
+  advForm.days = Math.max(1, Math.min(ADV_MAX_DAYS, parseInt(g('advDays').value) || 1));
   advForm.startAt = new Date(g('advStart').value).getTime() || advForm.startAt;
   advForm.endAt = new Date(g('advEnd').value).getTime() || advForm.endAt;
-  advForm.rewards = Array.from({ length: advForm.days }, (_, i) => ({
-    text: (g('advTxt' + i) ? g('advTxt' + i).value.trim() : ''),
-    coins: Math.max(0, parseInt(g('advCoins' + i) ? g('advCoins' + i).value : 0) || 0)
-  }));
+  advForm.rewards = Array.from({ length: advForm.days }, (_, i) => {
+    const t = g('advType' + i) ? g('advType' + i).value : 'coins';
+    return { type: t, value: advClamp(t, g('advVal' + i) ? g('advVal' + i).value : 0) };
+  });
 }
 function advDaysChanged() {
   advReadForm();
   advForm.endAt = advForm.startAt + advForm.days * 86400000;
   renderAdventAdmin();
 }
-function advFillCoins() {
-  const v = Math.max(0, parseInt(document.getElementById('advFill').value) || 0);
-  advReadForm(); advForm.rewards.forEach(r => r.coins = v); renderAdventAdmin();
+function advTypeChanged(i) {
+  const t = document.getElementById('advType' + i).value, inp = document.getElementById('advVal' + i);
+  inp.min = ADV_TYPES[t].min; inp.max = ADV_TYPES[t].max;
+  inp.value = advClamp(t, inp.value);
 }
+function advFillAll() {
+  const t = document.getElementById('advFillType').value;
+  const v = advClamp(t, document.getElementById('advFillVal').value);
+  advReadForm(); advForm.rewards = advForm.rewards.map(() => ({ type: t, value: v })); renderAdventAdmin();
+}
+const advTypeOptions = sel => Object.entries(ADV_TYPES).map(([k, t]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${t.icon} ${t.name}</option>`).join('');
 function renderAdventAdmin() {
   const f = advForm, el = document.getElementById('adventContent'); if (!el) return;
   const live = f.status === 'live', ended = live && nowMs() > f.endAt;
   const badge = ended ? '⏹ Завершён по времени' : live ? '🟢 Запущен (виден в профиле)' : f.status === 'stopped' ? '🔴 Остановлен' : '⚪ Черновик (не виден пользователям)';
   let rows = '';
   for (let i = 0; i < f.days; i++) {
-    const r = f.rewards[i] || { text: '', coins: 0 };
-    rows += `<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
-      <div style="width:30px;font-weight:700;font-size:13px;">${i + 1}</div>
-      <input type="text" id="advTxt${i}" value="${advEsc(r.text)}" placeholder="Что получат" style="flex:1;min-width:0;" />
-      <input type="number" id="advCoins${i}" value="${r.coins || 0}" min="0" style="width:72px;" title="SWWCOIN" /></div>`;
+    const r = advRw(f.rewards[i]), t = ADV_TYPES[r.type];
+    rows += `<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+      <div style="width:22px;font-weight:700;font-size:13px;">${i + 1}</div>
+      <select id="advType${i}" onchange="advTypeChanged(${i})" style="flex:1;min-width:0;">${advTypeOptions(r.type)}</select>
+      <input type="number" id="advVal${i}" value="${r.value || t.min}" min="${t.min}" max="${t.max}" style="width:76px;" /></div>`;
   }
   el.innerHTML = `
-    <div style="font-size:13px;margin-bottom:12px;">${badge}</div>
+    <div style="font-size:13px;margin-bottom:4px;">${badge}</div>
+    <div id="advMsg"></div>
     <div class="field"><label>Название</label><input type="text" id="advName" value="${advEsc(f.name)}" /></div>
-    <div class="field"><label>Количество дней (1–60)</label><input type="number" id="advDays" value="${f.days}" min="1" max="60" onchange="advDaysChanged()" /></div>
+    <div class="field"><label>Количество дней (1–${ADV_MAX_DAYS})</label><input type="number" id="advDays" value="${f.days}" min="1" max="${ADV_MAX_DAYS}" onchange="advDaysChanged()" /></div>
     <div class="field"><label>Время начала</label><input type="datetime-local" id="advStart" value="${toLocalInput(f.startAt)}" onchange="advDaysChanged()" /></div>
     <div class="field"><label>Время окончания</label><input type="datetime-local" id="advEnd" value="${toLocalInput(f.endAt)}" /></div>
-    <div style="font-size:13px;font-weight:700;margin:14px 0 6px;">Награды по дням <span style="opacity:.6;font-weight:400;">(текст · SWWCOIN)</span></div>
-    <div style="display:flex;gap:6px;margin-bottom:10px;"><input type="number" id="advFill" placeholder="SWWCOIN всем дням" style="flex:1;" /><button class="btn btn-sm" onclick="advFillCoins()">Заполнить</button></div>
+    <div style="font-size:13px;font-weight:700;margin:14px 0 6px;">Подарки по дням</div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <select id="advFillType" style="flex:1;min-width:0;">${advTypeOptions('coins')}</select>
+      <input type="number" id="advFillVal" value="10" style="width:64px;" />
+      <button class="btn btn-sm" onclick="advFillAll()">Всем</button>
+    </div>
     ${rows}
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
-      <button class="btn btn-primary btn-block" onclick="advSave(false)">💾 Сохранить</button>
+      <button class="btn btn-primary btn-block" onclick="advSave(false)">${live && !ended ? '💾 Сохранить изменения' : '💾 Сохранить черновик'}</button>
       ${live && !ended
         ? `<button class="btn btn-danger btn-block" onclick="advSetStatus('stopped')">⏹ Остановить</button>`
         : `<button class="btn btn-success btn-block" onclick="advSave(true)">🚀 Запустить (показать в профиле)</button>`}
-      <button class="btn btn-block" onclick="advStats()">📊 Кто получил</button>
+      <button class="btn btn-block" onclick="advStats()">📊 Статистика</button>
       <button class="btn btn-block" onclick="advNew()">➕ Новый календарь</button>
       <button class="btn btn-danger btn-block" onclick="advDelete()">🗑 Удалить</button>
     </div>
@@ -3869,8 +3927,8 @@ function renderAdventAdmin() {
 }
 function advValidate() {
   const f = advForm;
-  if (!f.name) { toast('❌ Введите название', '❌'); return false; }
-  if (!(f.endAt > f.startAt)) { toast('❌ Окончание должно быть позже начала', '❌'); return false; }
+  if (!f.name) { advMsg('Введите название', false); return false; }
+  if (!(f.endAt > f.startAt)) { advMsg('Окончание должно быть позже начала', false); return false; }
   return true;
 }
 async function advSave(launch) {
@@ -3879,15 +3937,19 @@ async function advSave(launch) {
   if (!advValidate()) return;
   if (launch) { advForm.status = 'live'; advForm.launchedAt = nowMs(); }
   try {
-    await db.ref('meta/advent').set(advForm);
-    toast(launch ? '🚀 Адвент запущен — пользователи видят его в профиле' : '💾 Сохранено', '🎄');
+    await db.ref('meta/advent').set(JSON.parse(JSON.stringify(advForm)));
     renderAdventAdmin();
-  } catch (e) { toast('❌ Нет прав записи. Войдите админом в «Консоли» и проверьте правила Firebase', '❌'); }
+    advMsg(launch ? '🚀 Запущен — пользователи видят календарь в профиле' : '✅ Сохранено ' + new Date().toLocaleTimeString('ru-RU'), true);
+  } catch (e) {
+    advMsg('Не удалось сохранить: ' + ((e && (e.code || e.message)) || 'ошибка') + '. Проверьте вход админа в «Консоли» и правила Firebase', false);
+  }
 }
 async function advSetStatus(st) {
-  advForm.status = st;
-  try { await db.ref('meta/advent/status').set(st); toast(st === 'stopped' ? '⏹ Остановлен, из профилей скрыт' : 'Готово', '🎄'); renderAdventAdmin(); }
-  catch (_) { toast('❌ Нет прав записи', '❌'); }
+  try {
+    await db.ref('meta/advent/status').set(st);
+    advForm.status = st; renderAdventAdmin();
+    advMsg(st === 'stopped' ? '⏹ Остановлен, из профилей скрыт' : 'Готово', true);
+  } catch (e) { advMsg('Не удалось: ' + ((e && (e.code || e.message)) || 'ошибка'), false); }
 }
 function advNew() {
   if (advent && !confirm('Создать новый календарь? Текущий будет заменён при сохранении.')) return;
@@ -3895,23 +3957,17 @@ function advNew() {
 }
 async function advDelete() {
   if (!confirm('Удалить календарь?')) return;
-  try { await db.ref('meta/advent').remove(); advForm = advNewForm(); toast('🗑 Удалено', '🎄'); renderAdventAdmin(); }
-  catch (_) { toast('❌ Нет прав записи', '❌'); }
+  try { await db.ref('meta/advent').remove(); advForm = advNewForm(); renderAdventAdmin(); advMsg('🗑 Удалено', true); }
+  catch (e) { advMsg('Не удалось: ' + ((e && (e.code || e.message)) || 'ошибка'), false); }
 }
 async function advStats() {
   const box = document.getElementById('advStatsBox'); box.textContent = 'Загрузка…';
   try {
     const all = (await db.ref('adventClaims/' + advForm.id).once('value')).val() || {};
-    const perDay = {}, prizes = [];
-    Object.entries(all).forEach(([uid, days]) => Object.entries(days || {}).forEach(([k, v]) => {
-      perDay[k] = (perDay[k] || 0) + 1;
-      if (v && v.text) prizes.push({ uid, day: k.slice(1), text: v.text, t: v.t });
-    }));
-    const counts = Array.from({ length: advForm.days }, (_, i) => `День ${i + 1}: ${perDay['d' + (i + 1)] || 0}`).join(' · ');
-    prizes.sort((a, b) => (b.t || 0) - (a.t || 0));
-    box.innerHTML = `<div style="margin-bottom:8px;">Участников: <b>${Object.keys(all).length}</b></div><div style="opacity:.8;margin-bottom:10px;">${counts}</div>` +
-      (prizes.length ? '<div style="font-weight:700;margin-bottom:6px;">Выданные призы (текст):</div>' +
-        prizes.slice(0, 50).map(p => { const u = users[p.uid]; return `<div>${advEsc(u ? u.firstName : p.uid)} · день ${p.day} · ${advEsc(p.text)}</div>`; }).join('') : '');
+    const perDay = {};
+    Object.values(all).forEach(days => Object.keys(days || {}).forEach(k => { perDay[k] = (perDay[k] || 0) + 1; }));
+    box.innerHTML = `<div style="margin-bottom:8px;">Участников: <b>${Object.keys(all).length}</b></div>` +
+      Array.from({ length: advForm.days }, (_, i) => `<div>День ${i + 1} · ${advLabel(advForm.rewards[i])}: <b>${perDay['d' + (i + 1)] || 0}</b></div>`).join('');
   } catch (_) { box.textContent = '❌ Не удалось загрузить'; }
 }
 
