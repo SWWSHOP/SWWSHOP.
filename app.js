@@ -14,8 +14,8 @@ if (typeof firebase === 'undefined') {
 }
 
 const CONFIG = {
-  // Токен бота больше НЕ хранится в клиенте. Он лежит в секретах Cloudflare Worker (см. worker.js).
-  // Вставьте сюда URL вашего воркера, например: 'https://sww-tg.ваш-аккаунт.workers.dev'
+  // Токен бота НЕ хранится в коде. Он лежит в БД (secrets/botToken) и доступен только админу после входа в «Консоли».
+  // Если используете воркер (необязательно), вставьте сюда его URL.
   TG_PROXY: '',
   CHAT_ID: '5993502384',
   ADMIN_TELEGRAM_ID: 5993502384,
@@ -524,7 +524,7 @@ async function initUser() {
     id: uid, shortId: user.shortId, referralCode: user.referralCode,
     firstName: user.firstName, lastName: user.lastName, username: user.username,
     telegramId: user.telegramId, photoUrl: user.photoUrl || null,
-    balance: user.balance, isAdmin,
+    balance: user.balance, isAdmin, botReady: true,
     lastSeen: Date.now(),
     firstSeen: u?.firstSeen || Date.now()
   });
@@ -570,37 +570,44 @@ function updateBalanceUI() {
   if (el) el.textContent = (user?.balance || 0).toLocaleString('ru-RU');
 }
 
+let discountOptions = [];
+let chosenDiscountCode = localStorage.getItem('sww_disc_choice') || null;
+
 async function applySavedPromo() {
   const uid = getUserId();
   const ordersSnap = await db.ref('orders').orderByChild('userId').equalTo(uid).once('value');
   const ordersVal = ordersSnap.val() || {};
   const hasOrders = Object.values(ordersVal).some(o => o.status === 'completed' || o.status === 'pending');
+
+  const opts = [];
   if (!hasOrders && !isAdmin) {
-    appliedDiscount = {
-      code: 'FIRST-' + CONFIG.REFERRAL.NEW_USER_DISCOUNT,
-      discount: CONFIG.REFERRAL.NEW_USER_DISCOUNT,
-      type: 'first_order', locked: true
-    };
-    useDiscountInOrder = true;
-    return;
+    opts.push({ code: 'FIRST-' + CONFIG.REFERRAL.NEW_USER_DISCOUNT, discount: CONFIG.REFERRAL.NEW_USER_DISCOUNT, type: 'first_order' });
   }
-  const myPromos = Object.entries(promos || {}).filter(([code, p]) => {
-    if (p.used) return false;
-    if (p.userId === uid) return true;
-    if (!p.userId && !p.usedBy) return true;
-    return false;
+  Object.entries(promos || {}).forEach(([code, p]) => {
+    if (p.used) return;
+    if (p.userId === uid || (!p.userId && !p.usedBy)) opts.push({ code, discount: p.discount, type: p.type || 'promo' });
   });
-  if (myPromos.length > 0) {
-    const best = myPromos.reduce((a, b) => (a[1].discount > b[1].discount ? a : b));
-    appliedDiscount = {
-      code: best[0], discount: best[1].discount,
-      type: best[1].type || 'promo', locked: false
-    };
-    db.ref('users/' + uid + '/savedDiscount').set(appliedDiscount);
-  } else {
-    appliedDiscount = null;
-    useDiscountInOrder = false;
-  }
+  opts.sort((x, y) => y.discount - x.discount);
+  // «Новичок» нельзя отключить, только если это единственная скидка
+  opts.forEach(o => { o.locked = opts.length === 1 && o.type === 'first_order'; });
+  discountOptions = opts;
+
+  if (!opts.length) { appliedDiscount = null; useDiscountInOrder = false; return; }
+  const pick = opts.find(o => o.code === chosenDiscountCode) || opts[0];
+  appliedDiscount = { ...pick };
+  if (pick.locked) useDiscountInOrder = true;
+  if (pick.type !== 'first_order') db.ref('users/' + uid + '/savedDiscount').set(appliedDiscount);
+}
+
+// Пользователь сам выбирает, какую скидку применить
+function chooseDiscount(code) {
+  const o = discountOptions.find(x => x.code === code);
+  if (!o) return;
+  chosenDiscountCode = code;
+  try { localStorage.setItem('sww_disc_choice', code); } catch (_) {}
+  appliedDiscount = { ...o };
+  useDiscountInOrder = true;
+  renderOrder();
 }
 
 function loadUserOrders() {
@@ -636,6 +643,8 @@ function formatMg(mg) {
   return /мг|mg/i.test(t) ? t : t + ' мг';
 }
 
+const CAT_PREFIX = { liquids: 'Жидкость', pouches: 'Шайбы', devices: 'Одноразка', coils: 'Испарители', other: '' };
+const catFull = (cat, name) => ((CAT_PREFIX[cat] || '') + ' ' + name).trim();
 const NEW_NOUN = { liquids: 'Новая жидкость', pouches: 'Новые шайбы', devices: 'Новая одноразка', coils: 'Новый испаритель', other: 'Новый товар' };
 
 function notifyCheckbox() {
@@ -1260,7 +1269,7 @@ async function adminAddLineSubmit() {
   closeOverlay('editProductOverlay');
   if (notify) {
     const names = flavors.filter(f => f.quantity > 0).map(f => f.name).join(', ');
-    notifyRestock(`🆕 Пополнение!\n\n${NEW_NOUN[category] || 'Новинка'}: ${name}${mg ? ' — ' + formatMg(mg) : ''}${names ? '\nВкусы: ' + names : ''}`);
+    notifyRestock(`🆕 Пополнение!\n\n${catFull(category, name)}${mg ? ' ' + formatMg(mg) : ''}`);
   }
 }
 
@@ -1283,7 +1292,7 @@ async function adminAddItemSubmit() {
   await db.ref('assortment').set(data);
   toast('✅ Товар добавлен', '✅');
   closeOverlay('editProductOverlay');
-  if (notify && qty > 0) notifyRestock(`🆕 Пополнение!\n\n${NEW_NOUN[category] || 'Новинка'}: ${name}`);
+  if (notify && qty > 0) notifyRestock(`🆕 Пополнение!\n\n${catFull(category, name)}`);
 }
 
 async function adminSaveLine(catId, index) {
@@ -1320,7 +1329,7 @@ async function adminSaveItem(catId, index) {
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
   renderProductsInPlace();
-  if (notify && oldQty === 0 && qty > 0) notifyRestock(`🔄 Снова в наличии!\n\n${name}`);
+  if (notify && oldQty === 0 && qty > 0) notifyRestock(`🔄 Снова в наличии!\n\n${catFull(catId, name)}`);
 }
 
 async function adminAddFlavorSubmit(catId, lineIndex) {
@@ -1340,7 +1349,7 @@ async function adminAddFlavorSubmit(catId, lineIndex) {
   toast('✅ Вкус добавлен', '✅');
   closeOverlay('editProductOverlay');
   openLine(catId, lineIndex);
-  if (notify && qty > 0) notifyRestock(`🆕 Пополнение!\n\n${line.name}${line.mg ? ' ' + formatMg(line.mg) : ''}: новый вкус — ${name}`);
+  if (notify && qty > 0) notifyRestock(`🆕 Пополнение!\n\n${catFull(catId, line.name)}${line.mg ? ' ' + formatMg(line.mg) : ''}`);
 }
 
 async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
@@ -1359,7 +1368,7 @@ async function adminSaveFlavor(catId, lineIndex, flavorIndex) {
   toast('✅ Сохранено', '✅');
   closeOverlay('editProductOverlay');
   openLine(catId, lineIndex);
-  if (notify && oldQty === 0 && qty > 0) notifyRestock(`🔄 Снова в наличии!\n\n${line.name}${line.mg ? ' ' + formatMg(line.mg) : ''}: ${name}`);
+  if (notify && oldQty === 0 && qty > 0) notifyRestock(`🔄 Снова в наличии!\n\n${catFull(catId, line.name)}${line.mg ? ' ' + formatMg(line.mg) : ''}`);
 }
 
 async function adminDeleteFlavor(catId, lineIndex, flavorIndex) {
@@ -1601,6 +1610,14 @@ function renderOrder() {
     ${cart.length && appliedDiscount ? `
       <section class="section">
         <div class="section-title">🎫 Купон</div>
+        ${discountOptions.length > 1 ? `
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">У вас несколько скидок — выберите одну:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            ${discountOptions.map(o => {
+              const on = o.code === appliedDiscount.code;
+              return `<button type="button" onclick="chooseDiscount('${o.code}')" style="padding:8px 12px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid ${on ? 'var(--accent)' : 'var(--border)'};background:${on ? 'var(--accent)' : 'var(--card)'};color:${on ? '#fff' : 'inherit'};">−${o.discount}% · ${o.type === 'first_order' ? 'новичок' : o.code}</button>`;
+            }).join('')}
+          </div>` : ''}
         <div class="promo-toggle ${useDiscountInOrder ? 'active' : ''} ${appliedDiscount.locked ? 'locked' : ''}"
              onclick="${appliedDiscount.locked ? '' : 'toggleDiscount()'}">
           <div class="left">
@@ -2243,6 +2260,8 @@ function renderProfile() {
       <button class="btn btn-gold btn-sm" onclick="navigate('cases')">Кейсы</button>
     </div>
 
+    ${adventCardHtml()}
+
     <section class="section">
       <div class="section-title">📞 Контакты для заказов</div>
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:8px;cursor:pointer;" onclick="openContactEditor()">
@@ -2455,6 +2474,7 @@ function showOrderDetail(order, isAdminView) {
         <button class="btn btn-danger btn-block" onclick="adminCancelOrder('${order.id}')">❌ Отменить</button>
       </div>
     ` : ''}
+    ${isAdminView && order.userId ? `<button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="adminMsgUser('${order.userId}')">✉️ Написать клиенту (через бота)</button>` : ''}
   `;
   openOverlay('orderDetailOverlay');
 }
@@ -2815,6 +2835,12 @@ function renderAdmin() {
         <div class="menu-text"><div class="title">Консоль</div><div class="sub">Рассылка</div></div>
         <span class="menu-arrow">›</span>
       </button>
+
+      <button class="menu-item admin-only" onclick="openAdventAdmin()">
+        <div class="menu-icon" style="font-size:20px;">🎄</div>
+        <div class="menu-text"><div class="title">Адвент-календарь</div><div class="sub">Создать и запустить</div></div>
+        <span class="menu-arrow">›</span>
+      </button>
     </div>
 
     <div class="section-title" style="margin-top:20px;">🪙 Кешбек по умолчанию</div>
@@ -2996,15 +3022,42 @@ async function adminAdjustBalance() {
   document.getElementById('balanceAmount').value = '';
 }
 
+const expandedOrders = new Set();
+function toggleOrderExpand(id) {
+  if (expandedOrders.has(id)) expandedOrders.delete(id); else expandedOrders.add(id);
+  renderAllOrders();
+}
+
 function renderAllOrders() {
   const el = document.getElementById('allOrdersContent');
   if (!orders.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><h3>Заказов нет</h3></div>'; return; }
   const sorted = [...orders].sort((a, b) => (b.date || 0) - (a.date || 0));
+  const row = (l, v) => `<div class="order-detail-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
   el.innerHTML = sorted.map(o => {
     const s = { pending: {c:'status-pending',t:'⏳'}, completed: {c:'status-completed',t:'✅'}, cancelled: {c:'status-cancelled',t:'❌'} }[o.status] || {c:'status-pending',t:'⏳'};
     const totalPrice = o.totalPrice || o.total || 0;
+    const open = expandedOrders.has(o.id);
+    const items = o.items || [];
+    const details = open ? `
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;" onclick="event.stopPropagation()">
+        ${row('Телефон:', o.userPhone || '—')}
+        ${row('Username:', o.userUsername || '—')}
+        ${row('Оплата:', o.payment || '—')}
+        ${o.comment ? row('Комментарий:', o.comment) : ''}
+        <div style="margin:10px 0 4px;font-size:13px;font-weight:700;">📋 Товары</div>
+        ${items.map(it => row(it.name, `× ${it.qty || 1} = ${it.price * (it.qty || 1)} ₽`)).join('')}
+        ${o.subtotal != null ? row('Подытог:', o.subtotal + ' ₽') : ''}
+        ${o.discount > 0 ? row('Купон:', '−' + o.discount + ' ₽') : ''}
+        ${o.coinSpent > 0 ? row('SWWCOIN:', '−' + o.coinSpent + ' ₽') : ''}
+      </div>` : '';
+    const actions = o.status === 'pending' ? `
+      <div style="display:flex;gap:8px;margin-top:12px;" onclick="event.stopPropagation()">
+        <button class="btn btn-success btn-block" onclick="adminCompleteOrder('${o.id}')">✅ Выполнить</button>
+        <button class="btn btn-danger btn-block" onclick="adminCancelOrder('${o.id}')">❌ Отменить</button>
+      </div>` : '';
+    const write = open && o.userId ? `<button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="event.stopPropagation();adminMsgUser('${o.userId}')">✉️ Написать клиенту</button>` : '';
     return `
-      <div class="order-card" data-order-id="${o.id}">
+      <div class="order-card" data-order-id="${o.id}" onclick="toggleOrderExpand('${o.id}')">
         <div class="order-head">
           <div>
             <div class="order-id">#${o.id}</div>
@@ -3013,17 +3066,10 @@ function renderAllOrders() {
           </div>
           <span class="order-status ${s.c}">${s.t}</span>
         </div>
-        <div class="order-total">${totalPrice} ₽</div>
-      </div>
-    `;
+        <div class="order-total">${totalPrice} ₽ <span style="font-size:12px;opacity:.6;font-weight:500;">· ${items.length} поз. ${open ? '▲' : '▼'}</span></div>
+        ${details}${actions}${write}
+      </div>`;
   }).join('');
-  el.querySelectorAll('.order-card').forEach(card => {
-    card.onclick = () => {
-      const oid = card.dataset.orderId;
-      const order = orders.find(x => x.id === oid);
-      if (order) showOrderDetail(order, true);
-    };
-  });
 }
 
 async function adminCompleteOrder(orderId) {
@@ -3033,6 +3079,7 @@ async function adminCompleteOrder(orderId) {
   const order = snap.val();
   if (!order) { toast('❌ Не найден', '❌'); return; }
   await db.ref('orders/' + orderId).update({ status: 'completed', completedAt: Date.now() });
+  { const lo = orders.find(x => x.id === orderId); if (lo) lo.status = 'completed'; }
   const cb = order.cashbackEarned || Math.round((order.totalPrice || 0) * CONFIG.DEFAULT_CASHBACK / 100);
   if (cb > 0 && order.userId) {
     const ref = db.ref('users/' + order.userId + '/balance');
@@ -3080,6 +3127,7 @@ async function adminCancelOrder(orderId) {
     });
   }
   await db.ref('orders/' + orderId).update({ status: 'cancelled', cancelledAt: Date.now() });
+  { const lo = orders.find(x => x.id === orderId); if (lo) lo.status = 'cancelled'; }
   toast('❌ Отменён', '❌');
   closeOverlay('orderDetailOverlay');
   renderAllOrders();
@@ -3598,6 +3646,276 @@ function adminLogout() {
 }
 
 /* =========================================================
+   ВХОД ТОЛЬКО ЧЕРЕЗ TELEGRAM + ПРОВЕРКА, ЧТО ЧЕЛОВЕК РАЗРЕШИЛ БОТУ ПИСАТЬ
+   ========================================================= */
+function showGate(mode) {
+  document.getElementById('botGate')?.remove();
+  const g = document.createElement('div');
+  g.id = 'botGate';
+  g.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:var(--bg,#0b0b12);color:var(--text,#fff);';
+  const botUrl = `https://t.me/${CONFIG.BOT_USERNAME}`;
+  g.innerHTML = mode === 'open' ? `
+    <div style="max-width:340px;">
+      <div style="font-size:56px;margin-bottom:12px;">✈️</div>
+      <h2 style="margin-bottom:10px;">Откройте магазин в Telegram</h2>
+      <p style="opacity:.7;font-size:14px;margin-bottom:20px;">Вход возможен только через Telegram-бота.</p>
+      <a href="${botUrl}" class="btn btn-primary" style="display:inline-block;padding:12px 22px;border-radius:14px;text-decoration:none;">Открыть бота</a>
+    </div>` : `
+    <div style="max-width:340px;">
+      <div style="font-size:56px;margin-bottom:12px;">🤖</div>
+      <h2 style="margin-bottom:10px;">Сначала напишите боту</h2>
+      <p style="opacity:.7;font-size:14px;margin-bottom:20px;">Нажмите «Открыть бота» → <b>Start</b>, затем закройте и снова откройте магазин. Так мы сможем сообщать вам о заказах.</p>
+      <button class="btn btn-primary btn-block" style="margin-bottom:10px;" onclick="gateOpenBot()">Открыть бота</button>
+      <button class="btn btn-block" style="background:var(--card);border:1px solid var(--border);color:inherit;" onclick="gateRecheck()">Я написал(а) — проверить</button>
+    </div>`;
+  document.body.appendChild(g);
+  if (window.__stopPreloader) window.__stopPreloader();
+}
+function gateOpenBot() {
+  const url = `https://t.me/${CONFIG.BOT_USERNAME}?start=verify`;
+  try { window.Telegram.WebApp.openTelegramLink(url); } catch (_) { window.open(url, '_blank'); }
+}
+function askWriteAccess() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg || typeof tg.requestWriteAccess !== 'function') return Promise.resolve(false);
+  try { if (tg.isVersionAtLeast && !tg.isVersionAtLeast('6.9')) return Promise.resolve(false); } catch (_) {}
+  return new Promise(res => {
+    const t = setTimeout(() => res(false), 120000);
+    try { tg.requestWriteAccess(ok => { clearTimeout(t); res(!!ok); }); } catch (_) { clearTimeout(t); res(false); }
+  });
+}
+async function gateRecheck() {
+  const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (u && (u.allows_write_to_pm || await askWriteAccess())) {
+    localStorage.setItem('sww_botready_' + u.id, '1');
+    location.reload();
+  } else toast('Бот ещё не получил ваше сообщение. Нажмите Start в боте и откройте магазин заново', 'ℹ️');
+}
+// true — можно пускать на сайт
+async function ensureBotChat() {
+  const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (!u) { showGate('open'); return false; }
+  if (u.id === ADMIN_TELEGRAM_ID) return true;
+  if (u.allows_write_to_pm || localStorage.getItem('sww_botready_' + u.id) === '1') {
+    localStorage.setItem('sww_botready_' + u.id, '1');
+    return true;
+  }
+  if (await askWriteAccess()) { localStorage.setItem('sww_botready_' + u.id, '1'); return true; }
+  showGate('start');
+  return false;
+}
+
+// Админ: быстро написать клиенту из карточки заказа
+function adminMsgUser(uid) {
+  closeOverlay('orderDetailOverlay');
+  openOverlay('consoleOverlay'); renderConsole();
+  const sel = document.getElementById('consoleUser'); if (sel) sel.value = uid;
+}
+
+/* =========================================================
+   АДВЕНТ-КАЛЕНДАРЬ
+   Данные: meta/advent  {id,name,days,startAt,endAt,rewards:[{text,coins}],status:'draft'|'live'|'stopped'}
+   Получения: adventClaims/<id>/<uid>/d<день>
+   В профиле показывается только пока status === 'live' и не вышло время окончания.
+   ========================================================= */
+let advent = null, srvOffset = 0, advClaims = {}, advForm = null;
+const advEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nowMs = () => Date.now() + srvOffset;
+const advVisible = a => !!(a && a.status === 'live' && a.days > 0 && nowMs() <= a.endAt);
+const advDay = a => Math.max(0, Math.min(a.days, Math.floor((nowMs() - a.startAt) / 86400000) + 1));
+function fmtDur(ms) {
+  if (ms <= 0) return '0 мин';
+  const d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return d ? `${d} д ${h} ч` : h ? `${h} ч ${m} мин` : `${m} мин`;
+}
+
+function listenAdvent() {
+  db.ref('.info/serverTimeOffset').on('value', s => { srvOffset = s.val() || 0; });
+  db.ref('meta/advent').on('value', s => {
+    advent = s.val() || null;
+    if (initialized && currentPage === 'profile') render();
+    if (document.getElementById('adventUserOverlay')?.classList.contains('open')) renderAdventUser();
+  });
+}
+
+function adventCardHtml() {
+  if (!advVisible(advent)) return '';
+  const d = advDay(advent);
+  return `<div class="balance-card" style="cursor:pointer;margin-top:12px;" onclick="openAdventUser()">
+    <div class="left"><div class="coin-big" style="font-size:26px;">🎄</div>
+      <div><div class="val" style="font-size:17px;">${advEsc(advent.name)}</div>
+      <div class="lbl">${d ? `День ${d} из ${advent.days}` : 'Скоро старт'} · осталось ${fmtDur(advent.endAt - nowMs())}</div></div></div>
+    <button class="btn btn-gold btn-sm">Открыть</button></div>`;
+}
+
+async function openAdventUser() {
+  if (!advVisible(advent)) return;
+  openOverlay('adventUserOverlay');
+  document.getElementById('adventUserContent').innerHTML = '<div class="empty-state"><h3>Загрузка…</h3></div>';
+  try { advClaims = (await db.ref(`adventClaims/${advent.id}/${user.id}`).once('value')).val() || {}; } catch (_) { advClaims = {}; }
+  renderAdventUser();
+}
+
+function renderAdventUser() {
+  const el = document.getElementById('adventUserContent'); if (!el) return;
+  if (!advVisible(advent)) { el.innerHTML = '<div class="empty-state"><div class="icon">🎄</div><h3>Календарь завершён</h3></div>'; return; }
+  const a = advent, cur = advDay(a);
+  const today = a.rewards && a.rewards[cur - 1];
+  let tiles = '';
+  for (let i = 1; i <= a.days; i++) {
+    const rw = (a.rewards && a.rewards[i - 1]) || {};
+    const got = !!advClaims['d' + i], open = i <= cur;
+    tiles += `<div onclick="${open && !got ? `claimAdventDay(${i})` : `advTileInfo(${i})`}" style="padding:12px 4px;border-radius:14px;text-align:center;cursor:pointer;background:var(--card);border:1px solid ${open && !got ? 'var(--accent)' : 'var(--border)'};opacity:${open || got ? 1 : .55};">
+      <div style="font-size:11px;opacity:.7;">День ${i}</div>
+      <div style="font-size:24px;margin:4px 0;">${got ? '✅' : open ? '🎁' : '🔒'}</div>
+      <div style="font-size:11px;color:var(--gold);min-height:14px;">${rw.coins ? '+' + rw.coins + ' 🪙' : ''}</div></div>`;
+  }
+  el.innerHTML = `
+    <div style="font-size:13px;opacity:.75;margin-bottom:12px;">Закончится через ${fmtDur(a.endAt - nowMs())} · ${new Date(a.endAt).toLocaleString('ru-RU')}</div>
+    ${today && today.text ? `<div style="padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--border);margin-bottom:12px;font-size:14px;">🎁 Сегодня: <b>${advEsc(today.text)}</b></div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">${tiles}</div>`;
+}
+
+function advTileInfo(i) {
+  const a = advent, rw = (a.rewards && a.rewards[i - 1]) || {};
+  const label = (rw.text || '') + (rw.coins ? ` (+${rw.coins} SWWCOIN)` : '');
+  if (advClaims['d' + i]) toast('✅ Получено: ' + (label || 'награда'), '🎁');
+  else toast(`🔒 Откроется через ${fmtDur(a.startAt + (i - 1) * 86400000 - nowMs())}` + (label ? ` · ${label}` : ''), '🔒');
+}
+
+async function claimAdventDay(d) {
+  const a = advent;
+  if (!advVisible(a) || d > advDay(a) || d < 1) return;
+  const rw = (a.rewards && a.rewards[d - 1]) || {};
+  const coins = parseInt(rw.coins) || 0;
+  try {
+    const res = await db.ref(`adventClaims/${a.id}/${user.id}/d${d}`)
+      .transaction(cur => cur ? undefined : { t: nowMs(), coins, text: rw.text || '' });
+    if (!res.committed) { advClaims['d' + d] = true; renderAdventUser(); toast('Уже получено', 'ℹ️'); return; }
+    advClaims['d' + d] = true;
+    if (coins > 0) {
+      await db.ref('users/' + user.id + '/balance').transaction(c => (c || 0) + coins);
+      await db.ref('users/' + user.id + '/balanceHistory').push({ type: 'advent', amount: coins, day: d, date: Date.now() });
+    }
+    toast('🎁 ' + ((rw.text || '') + (coins ? ` +${coins} SWWCOIN` : '')).trim() || 'Награда получена', '🎄');
+    renderAdventUser();
+  } catch (e) { toast('❌ Не удалось получить награду', '❌'); }
+}
+
+/* ---------- Админка адвента ---------- */
+function advNewForm() {
+  const s = Date.now();
+  return { id: 'adv_' + s, name: 'Адвент-календарь', days: 7, startAt: s, endAt: s + 7 * 86400000,
+           rewards: Array.from({ length: 7 }, () => ({ text: '', coins: 10 })), status: 'draft' };
+}
+const toLocalInput = ms => new Date(ms - new Date(ms).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+function openAdventAdmin() {
+  if (!user.isAdmin) return;
+  advForm = advent ? JSON.parse(JSON.stringify(advent)) : advNewForm();
+  if (!Array.isArray(advForm.rewards)) advForm.rewards = Object.values(advForm.rewards || {});
+  openOverlay('adventOverlay'); renderAdventAdmin();
+}
+function advReadForm() {
+  const g = id => document.getElementById(id);
+  advForm.name = g('advName').value.trim();
+  advForm.days = Math.max(1, Math.min(60, parseInt(g('advDays').value) || 1));
+  advForm.startAt = new Date(g('advStart').value).getTime() || advForm.startAt;
+  advForm.endAt = new Date(g('advEnd').value).getTime() || advForm.endAt;
+  advForm.rewards = Array.from({ length: advForm.days }, (_, i) => ({
+    text: (g('advTxt' + i) ? g('advTxt' + i).value.trim() : ''),
+    coins: Math.max(0, parseInt(g('advCoins' + i) ? g('advCoins' + i).value : 0) || 0)
+  }));
+}
+function advDaysChanged() {
+  advReadForm();
+  advForm.endAt = advForm.startAt + advForm.days * 86400000;
+  renderAdventAdmin();
+}
+function advFillCoins() {
+  const v = Math.max(0, parseInt(document.getElementById('advFill').value) || 0);
+  advReadForm(); advForm.rewards.forEach(r => r.coins = v); renderAdventAdmin();
+}
+function renderAdventAdmin() {
+  const f = advForm, el = document.getElementById('adventContent'); if (!el) return;
+  const live = f.status === 'live', ended = live && nowMs() > f.endAt;
+  const badge = ended ? '⏹ Завершён по времени' : live ? '🟢 Запущен (виден в профиле)' : f.status === 'stopped' ? '🔴 Остановлен' : '⚪ Черновик (не виден пользователям)';
+  let rows = '';
+  for (let i = 0; i < f.days; i++) {
+    const r = f.rewards[i] || { text: '', coins: 0 };
+    rows += `<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+      <div style="width:30px;font-weight:700;font-size:13px;">${i + 1}</div>
+      <input type="text" id="advTxt${i}" value="${advEsc(r.text)}" placeholder="Что получат" style="flex:1;min-width:0;" />
+      <input type="number" id="advCoins${i}" value="${r.coins || 0}" min="0" style="width:72px;" title="SWWCOIN" /></div>`;
+  }
+  el.innerHTML = `
+    <div style="font-size:13px;margin-bottom:12px;">${badge}</div>
+    <div class="field"><label>Название</label><input type="text" id="advName" value="${advEsc(f.name)}" /></div>
+    <div class="field"><label>Количество дней (1–60)</label><input type="number" id="advDays" value="${f.days}" min="1" max="60" onchange="advDaysChanged()" /></div>
+    <div class="field"><label>Время начала</label><input type="datetime-local" id="advStart" value="${toLocalInput(f.startAt)}" onchange="advDaysChanged()" /></div>
+    <div class="field"><label>Время окончания</label><input type="datetime-local" id="advEnd" value="${toLocalInput(f.endAt)}" /></div>
+    <div style="font-size:13px;font-weight:700;margin:14px 0 6px;">Награды по дням <span style="opacity:.6;font-weight:400;">(текст · SWWCOIN)</span></div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;"><input type="number" id="advFill" placeholder="SWWCOIN всем дням" style="flex:1;" /><button class="btn btn-sm" onclick="advFillCoins()">Заполнить</button></div>
+    ${rows}
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+      <button class="btn btn-primary btn-block" onclick="advSave(false)">💾 Сохранить</button>
+      ${live && !ended
+        ? `<button class="btn btn-danger btn-block" onclick="advSetStatus('stopped')">⏹ Остановить</button>`
+        : `<button class="btn btn-success btn-block" onclick="advSave(true)">🚀 Запустить (показать в профиле)</button>`}
+      <button class="btn btn-block" onclick="advStats()">📊 Кто получил</button>
+      <button class="btn btn-block" onclick="advNew()">➕ Новый календарь</button>
+      <button class="btn btn-danger btn-block" onclick="advDelete()">🗑 Удалить</button>
+    </div>
+    <div id="advStatsBox" style="margin-top:14px;font-size:13px;"></div>`;
+}
+function advValidate() {
+  const f = advForm;
+  if (!f.name) { toast('❌ Введите название', '❌'); return false; }
+  if (!(f.endAt > f.startAt)) { toast('❌ Окончание должно быть позже начала', '❌'); return false; }
+  return true;
+}
+async function advSave(launch) {
+  if (!user.isAdmin) return;
+  advReadForm();
+  if (!advValidate()) return;
+  if (launch) { advForm.status = 'live'; advForm.launchedAt = nowMs(); }
+  try {
+    await db.ref('meta/advent').set(advForm);
+    toast(launch ? '🚀 Адвент запущен — пользователи видят его в профиле' : '💾 Сохранено', '🎄');
+    renderAdventAdmin();
+  } catch (e) { toast('❌ Нет прав записи. Войдите админом в «Консоли» и проверьте правила Firebase', '❌'); }
+}
+async function advSetStatus(st) {
+  advForm.status = st;
+  try { await db.ref('meta/advent/status').set(st); toast(st === 'stopped' ? '⏹ Остановлен, из профилей скрыт' : 'Готово', '🎄'); renderAdventAdmin(); }
+  catch (_) { toast('❌ Нет прав записи', '❌'); }
+}
+function advNew() {
+  if (advent && !confirm('Создать новый календарь? Текущий будет заменён при сохранении.')) return;
+  advForm = advNewForm(); renderAdventAdmin();
+}
+async function advDelete() {
+  if (!confirm('Удалить календарь?')) return;
+  try { await db.ref('meta/advent').remove(); advForm = advNewForm(); toast('🗑 Удалено', '🎄'); renderAdventAdmin(); }
+  catch (_) { toast('❌ Нет прав записи', '❌'); }
+}
+async function advStats() {
+  const box = document.getElementById('advStatsBox'); box.textContent = 'Загрузка…';
+  try {
+    const all = (await db.ref('adventClaims/' + advForm.id).once('value')).val() || {};
+    const perDay = {}, prizes = [];
+    Object.entries(all).forEach(([uid, days]) => Object.entries(days || {}).forEach(([k, v]) => {
+      perDay[k] = (perDay[k] || 0) + 1;
+      if (v && v.text) prizes.push({ uid, day: k.slice(1), text: v.text, t: v.t });
+    }));
+    const counts = Array.from({ length: advForm.days }, (_, i) => `День ${i + 1}: ${perDay['d' + (i + 1)] || 0}`).join(' · ');
+    prizes.sort((a, b) => (b.t || 0) - (a.t || 0));
+    box.innerHTML = `<div style="margin-bottom:8px;">Участников: <b>${Object.keys(all).length}</b></div><div style="opacity:.8;margin-bottom:10px;">${counts}</div>` +
+      (prizes.length ? '<div style="font-weight:700;margin-bottom:6px;">Выданные призы (текст):</div>' +
+        prizes.slice(0, 50).map(p => { const u = users[p.uid]; return `<div>${advEsc(u ? u.firstName : p.uid)} · день ${p.day} · ${advEsc(p.text)}</div>`; }).join('') : '');
+  } catch (_) { box.textContent = '❌ Не удалось загрузить'; }
+}
+
+/* =========================================================
    СТАРТ
    ========================================================= */
 function withTimeout(p, ms) {
@@ -3626,6 +3944,7 @@ window.addEventListener('load', async () => {
 
   if ((localStorage.getItem('sww_theme') || 'dark') === 'light') document.body.classList.add('light');
   try { listenWinter(); } catch (_) {}
+  try { listenAdvent(); } catch (_) {}
   if (window.Telegram?.WebApp) {
     try { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } catch (_) {}
   }
@@ -3642,6 +3961,7 @@ window.addEventListener('load', async () => {
 
   // Прелоадер остаётся, пока БД не ответила и пользователь не загружен
   try {
+    if (!(await ensureBotChat())) return;   // только Telegram + разрешение писать боту
     const assortmentReady = loadAssortment();
     loadPromos();
     loadUsers();
