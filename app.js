@@ -61,7 +61,7 @@ const db = firebase.database();
 
 const TG_PROXY = (CONFIG.TG_PROXY || '').replace(/\/$/, '');
 // Флаг-заглушка: существующие проверки !BOT_TOKEN.startsWith('__') продолжают работать
-const BOT_TOKEN = TG_PROXY ? 'proxy' : '__no_proxy__';
+let BOT_TOKEN = TG_PROXY ? 'proxy' : '__no_proxy__';
 const CHAT_ID = CONFIG.CHAT_ID;
 const ADMIN_TELEGRAM_ID = CONFIG.ADMIN_TELEGRAM_ID;
 const BASE_USERS_COUNT = CONFIG.BASE_USERS_COUNT;
@@ -391,7 +391,7 @@ async function handleReferral(startParam, uid, existingUserData) {
   });
   const refTgId = found[referrerUid].telegramId;
   if (refTgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`${TG_PROXY}/sendMessage`, {
+    fetch(`${tgBase()}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: refTgId,
@@ -443,7 +443,7 @@ async function giveReferrerReward(referrerUid, referralUid, referralSum) {
   const tgSnap = await db.ref('users/' + referrerUid + '/telegramId').once('value');
   const tgId = tgSnap.val();
   if (tgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`${TG_PROXY}/sendMessage`, {
+    fetch(`${tgBase()}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: tgId,
@@ -654,7 +654,7 @@ async function notifyRestock(text) {
   let sent = 0;
   for (let i = 0; i < targets.length; i++) {
     try {
-      await fetch(`${TG_PROXY}/sendMessage`, {
+      await fetch(`${tgBase()}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: targets[i].telegramId, text })
       });
@@ -815,7 +815,7 @@ async function toggleWinter() {
     await db.ref('meta/settings/winter').set(on);
     toast(on ? '❄️ Зима включена для всех' : '☀️ Зима выключена для всех', '❄️');
   } catch (e) {
-    toast('❌ Нет прав на запись (проверьте правила Firebase)', '❌');
+    toast('❌ Нет прав: войдите админом в «Консоли» и проверьте правила Firebase', '❌');
   }
 }
 
@@ -1763,7 +1763,7 @@ async function submitOrder() {
     if (comment) adminMsg += `\n\n💬 ${comment}`;
 
     if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-      fetch(`${TG_PROXY}/sendMessage`, {
+      fetch(`${tgBase()}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: CHAT_ID, text: adminMsg,
@@ -1780,7 +1780,7 @@ async function submitOrder() {
       if (discount > 0) userMsg += `\n💎 Купон: −${discount}₽`;
       userMsg += `\n💰 К оплате: ${finalTotal}₽`;
       userMsg += `\n🪙 Кешбек: +${cashbackEarned}\n\n⏳ Ожидает подтверждения`;
-      fetch(`${TG_PROXY}/sendMessage`, {
+      fetch(`${tgBase()}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: user.telegramId, text: userMsg })
       }).catch(() => {});
@@ -1973,7 +1973,7 @@ async function checkChannelSub() {
   if (!chId) return 'unconfigured';
   if (!user.telegramId || !BOT_TOKEN || BOT_TOKEN.startsWith('__')) return 'error';
   try {
-    const r = await fetch(`${TG_PROXY}/getChatMember`, {
+    const r = await fetch(`${tgBase()}/getChatMember`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chId, user_id: user.telegramId })
     });
@@ -3049,7 +3049,7 @@ async function adminCompleteOrder(orderId) {
   closeOverlay('orderDetailOverlay');
   renderAllOrders();
   if (order.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`${TG_PROXY}/sendMessage`, {
+    fetch(`${tgBase()}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: order.telegramId, text: `✅ Заказ #${orderId} выполнен!\n🪙 +${cb} SWWCOIN` })
     }).catch(() => {});
@@ -3145,50 +3145,232 @@ async function quickGiveCoins(uid, amount) {
   closeOverlay('editUserOverlay');
 }
 
+/* =========================================================
+   КОНСОЛЬ АДМИНА: вход через Firebase Auth + рассылка с форматированием
+   Токен бота лежит в БД (secrets/botToken) и читается ТОЛЬКО админом после входа.
+   ========================================================= */
+let adminBotToken = null;
+function tgBase() { return TG_PROXY || `https://api.telegram.org/bot${adminBotToken}`; }
+function updateBotFlag() { BOT_TOKEN = TG_PROXY ? 'proxy' : (adminBotToken ? 'admin' : '__no_proxy__'); }
+const bcSleep = ms => new Promise(r => setTimeout(r, ms));
+
+const fbAuth = (firebase.auth ? firebase.auth() : null);
+if (fbAuth) {
+  fbAuth.onAuthStateChanged(async u => {
+    adminBotToken = null;
+    if (u) {
+      try {
+        const s = await db.ref('secrets/botToken').once('value');
+        if (typeof s.val() === 'string' && s.val()) adminBotToken = s.val();
+      } catch (_) { /* нет прав — значит это не админ */ }
+    }
+    updateBotFlag();
+    if (document.getElementById('bcAuth')) renderConsole();
+  });
+}
+
+async function adminFbLogin() {
+  const email = document.getElementById('bcEmail').value.trim();
+  const pass = document.getElementById('bcPass').value;
+  if (!email || !pass) { toast('❌ Введите email и пароль', '❌'); return; }
+  try { await fbAuth.signInWithEmailAndPassword(email, pass); toast('✅ Вход выполнен', '🔐'); }
+  catch (e) { toast('❌ ' + (e.code || 'ошибка входа'), '❌'); }
+}
+async function adminFbLogout() { try { await fbAuth.signOut(); } catch (_) {} toast('👋 Вышли', '🔐'); }
+
+async function adminSaveBotToken() {
+  const t = document.getElementById('bcTokenInput').value.trim();
+  if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(t)) { toast('❌ Неверный формат токена', '❌'); return; }
+  try {
+    await db.ref('secrets/botToken').set(t);
+    adminBotToken = t; updateBotFlag();
+    toast('✅ Токен сохранён в БД', '🔐'); renderConsole();
+  } catch (e) { toast('❌ Нет прав записи (правила Firebase)', '❌'); }
+}
+
+function ensureBcStyles() {
+  if (document.getElementById('bcStyles')) return;
+  const st = document.createElement('style'); st.id = 'bcStyles';
+  st.textContent = `
+    .bc-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+    .bc-toolbar button{min-width:38px;height:36px;padding:0 10px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text,inherit);font-size:14px;cursor:pointer}
+    .bc-editor{min-height:140px;max-height:320px;overflow:auto;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text,inherit);font-size:15px;line-height:1.45;outline:none;white-space:pre-wrap;word-break:break-word}
+    .bc-editor:focus{border-color:var(--accent)}
+    .bc-editor blockquote{margin:4px 0;padding:2px 0 2px 10px;border-left:3px solid var(--accent)}
+    .bc-editor .tg-spoiler{background:rgba(128,128,128,.4);border-radius:4px}
+    .bc-editor code{font-family:monospace;background:rgba(128,128,128,.25);padding:0 4px;border-radius:4px}
+    .bc-editor a{color:var(--accent);text-decoration:underline}`;
+  document.head.appendChild(st);
+}
+
 function renderConsole() {
+  ensureBcStyles();
+  const ready = !!(TG_PROXY || adminBotToken);
+  const signedIn = !!(fbAuth && fbAuth.currentUser);
+  let authHtml;
+  if (ready) {
+    authHtml = `<div style="font-size:13px;color:var(--success,#06ffa5);margin-bottom:12px;">✅ Бот подключён${TG_PROXY ? ' (прокси)' : ' (токен из БД)'}
+      ${signedIn ? `<a href="#" onclick="adminFbLogout();return false;" style="margin-left:10px;color:var(--text-dim);">выйти</a>` : ''}</div>`;
+  } else if (!signedIn) {
+    authHtml = `<div style="margin-bottom:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;">🔐 Вход админа (Firebase)</div>
+      <div class="field"><input type="email" id="bcEmail" placeholder="email" autocomplete="username" /></div>
+      <div class="field"><input type="password" id="bcPass" placeholder="пароль" autocomplete="current-password" /></div>
+      <button class="admin-action-btn btn-purple" onclick="adminFbLogin()">🔐 Войти</button></div>`;
+  } else {
+    authHtml = `<div style="margin-bottom:14px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;">🔑 Токена в БД нет или нет прав на чтение</div>
+      <div class="field"><input type="password" id="bcTokenInput" placeholder="Вставьте токен бота (один раз)" /></div>
+      <button class="admin-action-btn btn-purple" onclick="adminSaveBotToken()">💾 Сохранить токен в БД</button>
+      <a href="#" onclick="adminFbLogout();return false;" style="font-size:12px;color:var(--text-dim);">выйти</a></div>`;
+  }
+
   document.getElementById('consoleContent').innerHTML = `
+    <div id="bcAuth">${authHtml}</div>
     <div class="field">
       <label>Кому</label>
       <select id="consoleUser" class="field">
-        <option value="">-- Выберите --</option>
-        ${Object.values(users).map(u => `<option value="${u.id}">${u.firstName} (${u.shortId || u.id})</option>`).join('')}
+        <option value="__all__">📢 Всем пользователям</option>
+        ${Object.values(users).filter(u => u.telegramId).map(u => `<option value="${u.id}">${u.firstName} (${u.shortId || u.id})</option>`).join('')}
       </select>
     </div>
-    <div class="field"><label>Сообщение</label><textarea id="consoleMsg" placeholder="Текст..."></textarea></div>
-    <button class="admin-action-btn btn-purple" onclick="adminSendToUser()">📨 Отправить</button>
-    <div class="section-title" style="margin-top:20px;">📢 Рассылка</div>
-    <div class="field"><textarea id="broadcastMsg" placeholder="Текст для всех..."></textarea></div>
-    <button class="admin-action-btn btn-orange" onclick="adminBroadcast()">📢 Отправить всем</button>
+    <div class="bc-toolbar">
+      <button type="button" onmousedown="event.preventDefault();bcCmd('bold')"><b>B</b></button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('italic')"><i>I</i></button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('underline')"><u>U</u></button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('strikeThrough')"><s>S</s></button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('quote')">❝</button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('spoiler')">👁</button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('code')">&lt;/&gt;</button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('link')">🔗</button>
+      <button type="button" onmousedown="event.preventDefault();bcCmd('clear')">✖︎</button>
+    </div>
+    <div id="bcEditor" class="bc-editor" contenteditable="true" data-placeholder="Текст сообщения..."></div>
+    <div style="font-size:11px;color:var(--text-dim);margin:6px 0 12px;">Выделите текст и нажмите кнопку: жирный, курсив, цитата, спойлер, код, ссылка.</div>
+    <div id="bcStatus" style="font-size:13px;margin-bottom:10px;"></div>
+    <button class="admin-action-btn btn-cyan" onclick="bcSend('test')">🧪 Тест мне</button>
+    <button class="admin-action-btn btn-orange" onclick="bcSend('send')">📢 Отправить</button>
   `;
+  const ed = document.getElementById('bcEditor');
+  ed.addEventListener('paste', e => {          // вставляем только чистый текст, без чужих стилей
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
 }
 
-function adminSendToUser() {
-  const uid = document.getElementById('consoleUser').value;
-  const msg = document.getElementById('consoleMsg').value.trim();
-  if (!uid || !msg) { toast('❌ Заполни', '❌'); return; }
-  const u = users[uid];
-  if (!u?.telegramId) { toast('❌ Нет Telegram', '❌'); return; }
-  fetch(`${TG_PROXY}/sendMessage`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: u.telegramId, text: '📨 От админа:\n\n' + msg })
-  }).catch(() => {});
-  toast('✅ Отправлено', '📨');
-  document.getElementById('consoleMsg').value = '';
+function bcCmd(cmd) {
+  const ed = document.getElementById('bcEditor'); if (!ed) return;
+  ed.focus();
+  try { document.execCommand('styleWithCSS', false, false); } catch (_) {}
+  if (cmd === 'link') {
+    const url = prompt('Ссылка (https://...)');
+    if (url && url.trim()) document.execCommand('createLink', false, url.trim());
+  } else if (cmd === 'quote') bcWrap('blockquote');
+  else if (cmd === 'spoiler') bcWrap('span', 'tg-spoiler');
+  else if (cmd === 'code') bcWrap('code');
+  else if (cmd === 'clear') { document.execCommand('removeFormat'); document.execCommand('unlink'); bcUnwrap(); }
+  else document.execCommand(cmd);
+}
+function bcWrap(tag, cls) {
+  const ed = document.getElementById('bcEditor'), sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed || !ed.contains(sel.getRangeAt(0).commonAncestorContainer)) { toast('Сначала выделите текст', 'ℹ️'); return; }
+  const r = sel.getRangeAt(0), el = document.createElement(tag);
+  if (cls) el.className = cls;
+  el.appendChild(r.extractContents()); r.insertNode(el);
+  sel.removeAllRanges(); const nr = document.createRange(); nr.selectNodeContents(el); sel.addRange(nr);
+}
+function bcUnwrap() {
+  const ed = document.getElementById('bcEditor'), sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  ed.querySelectorAll('blockquote, code, span.tg-spoiler').forEach(el => {
+    if (sel.containsNode(el, true)) { while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el); el.remove(); }
+  });
 }
 
-function adminBroadcast() {
-  const msg = document.getElementById('broadcastMsg').value.trim();
-  if (!msg) return;
-  if (!confirm('Отправить всем?')) return;
-  let sent = 0;
-  const promises = Object.values(users).filter(u => u.telegramId).map(u =>
-    fetch(`${TG_PROXY}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: u.telegramId, text: '📢 SWWSHOP:\n\n' + msg })
-    }).then(() => sent++).catch(() => {})
-  );
-  Promise.all(promises).then(() => toast(`✅ ${sent} получателей`, '📢'));
-  document.getElementById('broadcastMsg').value = '';
+// HTML редактора -> HTML, который понимает Telegram (parse_mode: 'HTML')
+function bcToTelegramHtml(root) {
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const wrap = (tag, inner) => inner.trim() ? `<${tag}>${inner}</${tag}>` : inner;
+  const walk = node => {
+    let out = '';
+    node.childNodes.forEach(n => {
+      if (n.nodeType === 3) { out += esc(n.nodeValue.replace(/\u00a0/g, ' ')); return; }
+      if (n.nodeType !== 1) return;
+      const t = n.tagName.toLowerCase();
+      if (t === 'br') { out += '\n'; return; }
+      if (t === 'code' || t === 'pre') { out += wrap('code', esc(n.textContent)); return; }
+      const inner = walk(n);
+      if (t === 'b' || t === 'strong') out += wrap('b', inner);
+      else if (t === 'i' || t === 'em') out += wrap('i', inner);
+      else if (t === 'u' || t === 'ins') out += wrap('u', inner);
+      else if (t === 's' || t === 'strike' || t === 'del') out += wrap('s', inner);
+      else if (t === 'a') {
+        const h = n.getAttribute('href') || '';
+        out += /^(https?:\/\/|tg:\/\/|mailto:)/i.test(h) && inner.trim()
+          ? `<a href="${esc(h).replace(/"/g, '&quot;')}">${inner}</a>` : inner;
+      }
+      else if (t === 'span') out += n.classList.contains('tg-spoiler') ? wrap('tg-spoiler', inner) : inner;
+      else if (t === 'blockquote') out += (out && !out.endsWith('\n') ? '\n' : '') + wrap('blockquote', inner.trim()) + '\n';
+      else if (t === 'div' || t === 'p') out += (out && !out.endsWith('\n') ? '\n' : '') + inner;
+      else out += inner;
+    });
+    return out;
+  };
+  return walk(root).replace(/\n{3,}/g, '\n\n').trim();
+}
+
+async function tgSendHtml(chatId, html) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let j;
+    try {
+      const r = await fetch(`${tgBase()}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML' })
+      });
+      j = await r.json();
+    } catch (_) { return { ok: false, desc: 'нет связи с Telegram' }; }
+    if (j.ok) return { ok: true };
+    if (j.error_code === 429 && attempt === 0) { await bcSleep(((j.parameters && j.parameters.retry_after) || 1) * 1000); continue; }
+    return { ok: false, code: j.error_code, desc: j.description };
+  }
+  return { ok: false };
+}
+
+let bcSending = false;
+async function bcSend(mode) {
+  if (bcSending) return;
+  if (!TG_PROXY && !adminBotToken) { toast('🔐 Сначала войдите как админ', '🔐'); return; }
+  const html = bcToTelegramHtml(document.getElementById('bcEditor'));
+  if (!html) { toast('❌ Пустое сообщение', '❌'); return; }
+  const status = document.getElementById('bcStatus');
+
+  if (mode === 'test') {
+    const r = await tgSendHtml(ADMIN_TELEGRAM_ID, html);
+    status.textContent = r.ok ? '✅ Тест отправлен вам в бота' : '❌ ' + (r.desc || 'ошибка');
+    return;
+  }
+
+  const target = document.getElementById('consoleUser').value;
+  let ids;
+  if (target === '__all__') {
+    ids = [...new Set(Object.values(users).map(u => u && u.telegramId).filter(Boolean).map(String))];
+  } else {
+    ids = users[target] && users[target].telegramId ? [String(users[target].telegramId)] : [];
+  }
+  if (!ids.length) { toast('❌ Нет получателей', '❌'); return; }
+  if (!confirm(`Отправить ${ids.length} получателям?`)) return;
+
+  bcSending = true;
+  let sent = 0, blocked = 0, failed = 0, lastErr = '';
+  for (let i = 0; i < ids.length; i++) {
+    const r = await tgSendHtml(ids[i], html);
+    if (r.ok) sent++;
+    else if (r.code === 403) blocked++;
+    else { failed++; lastErr = r.desc || lastErr; }
+    status.textContent = `⏳ ${i + 1}/${ids.length}…`;
+    await bcSleep(45);
+  }
+  bcSending = false;
+  status.textContent = `✅ Готово. Доставлено: ${sent}, заблокировали бота: ${blocked}, ошибок: ${failed}` + (lastErr ? ` (${lastErr})` : '');
 }
 
 
