@@ -14,7 +14,9 @@ if (typeof firebase === 'undefined') {
 }
 
 const CONFIG = {
-  BOT_TOKEN: '8753888540:AAG67A5-W6_3J99mM-Om_P2HdiDKO_S3htY',
+  // Токен бота больше НЕ хранится в клиенте. Он лежит в секретах Cloudflare Worker (см. worker.js).
+  // Вставьте сюда URL вашего воркера, например: 'https://sww-tg.ваш-аккаунт.workers.dev'
+  TG_PROXY: '',
   CHAT_ID: '5993502384',
   ADMIN_TELEGRAM_ID: 5993502384,
   BOT_USERNAME: 'SWWSHOPBOT',
@@ -57,7 +59,9 @@ const CONFIG = {
 firebase.initializeApp(CONFIG.FIREBASE);
 const db = firebase.database();
 
-const BOT_TOKEN = CONFIG.BOT_TOKEN;
+const TG_PROXY = (CONFIG.TG_PROXY || '').replace(/\/$/, '');
+// Флаг-заглушка: существующие проверки !BOT_TOKEN.startsWith('__') продолжают работать
+const BOT_TOKEN = TG_PROXY ? 'proxy' : '__no_proxy__';
 const CHAT_ID = CONFIG.CHAT_ID;
 const ADMIN_TELEGRAM_ID = CONFIG.ADMIN_TELEGRAM_ID;
 const BASE_USERS_COUNT = CONFIG.BASE_USERS_COUNT;
@@ -387,7 +391,7 @@ async function handleReferral(startParam, uid, existingUserData) {
   });
   const refTgId = found[referrerUid].telegramId;
   if (refTgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    fetch(`${TG_PROXY}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: refTgId,
@@ -439,7 +443,7 @@ async function giveReferrerReward(referrerUid, referralUid, referralSum) {
   const tgSnap = await db.ref('users/' + referrerUid + '/telegramId').once('value');
   const tgId = tgSnap.val();
   if (tgId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    fetch(`${TG_PROXY}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: tgId,
@@ -650,7 +654,7 @@ async function notifyRestock(text) {
   let sent = 0;
   for (let i = 0; i < targets.length; i++) {
     try {
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      await fetch(`${TG_PROXY}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: targets[i].telegramId, text })
       });
@@ -798,13 +802,26 @@ function toggleTheme() {
   toast(next === 'light' ? '☀️ Светлая' : '🌙 Тёмная', '🎨');
 }
 
-function toggleWinter() {
-  if (!user.isAdmin) return;
-  document.body.classList.toggle('winter');
-  const on = document.body.classList.contains('winter');
-  localStorage.setItem('sww_winter', on ? 'true' : 'false');
+function applyWinter(on) {
+  document.body.classList.toggle('winter', !!on);
   if (on) createSnow(); else removeSnow();
-  toast(on ? '❄️ Зима' : '☀️ Обычная', '❄️');
+}
+
+// Включает/выключает зиму для ВСЕХ пользователей (флаг хранится в Firebase)
+async function toggleWinter() {
+  if (!user || !user.isAdmin) return;
+  const on = !document.body.classList.contains('winter');
+  try {
+    await db.ref('meta/settings/winter').set(on);
+    toast(on ? '❄️ Зима включена для всех' : '☀️ Зима выключена для всех', '❄️');
+  } catch (e) {
+    toast('❌ Нет прав на запись (проверьте правила Firebase)', '❌');
+  }
+}
+
+// Подписка на изменения в реальном времени
+function listenWinter() {
+  db.ref('meta/settings/winter').on('value', snap => applyWinter(snap.val() === true));
 }
 
 function createSnow() {
@@ -1746,7 +1763,7 @@ async function submitOrder() {
     if (comment) adminMsg += `\n\n💬 ${comment}`;
 
     if (BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      fetch(`${TG_PROXY}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: CHAT_ID, text: adminMsg,
@@ -1763,7 +1780,7 @@ async function submitOrder() {
       if (discount > 0) userMsg += `\n💎 Купон: −${discount}₽`;
       userMsg += `\n💰 К оплате: ${finalTotal}₽`;
       userMsg += `\n🪙 Кешбек: +${cashbackEarned}\n\n⏳ Ожидает подтверждения`;
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      fetch(`${TG_PROXY}/sendMessage`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: user.telegramId, text: userMsg })
       }).catch(() => {});
@@ -1956,7 +1973,7 @@ async function checkChannelSub() {
   if (!chId) return 'unconfigured';
   if (!user.telegramId || !BOT_TOKEN || BOT_TOKEN.startsWith('__')) return 'error';
   try {
-    const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember`, {
+    const r = await fetch(`${TG_PROXY}/getChatMember`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chId, user_id: user.telegramId })
     });
@@ -3032,7 +3049,7 @@ async function adminCompleteOrder(orderId) {
   closeOverlay('orderDetailOverlay');
   renderAllOrders();
   if (order.telegramId && BOT_TOKEN && !BOT_TOKEN.startsWith('__')) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    fetch(`${TG_PROXY}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: order.telegramId, text: `✅ Заказ #${orderId} выполнен!\n🪙 +${cb} SWWCOIN` })
     }).catch(() => {});
@@ -3151,7 +3168,7 @@ function adminSendToUser() {
   if (!uid || !msg) { toast('❌ Заполни', '❌'); return; }
   const u = users[uid];
   if (!u?.telegramId) { toast('❌ Нет Telegram', '❌'); return; }
-  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+  fetch(`${TG_PROXY}/sendMessage`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: u.telegramId, text: '📨 От админа:\n\n' + msg })
   }).catch(() => {});
@@ -3165,7 +3182,7 @@ function adminBroadcast() {
   if (!confirm('Отправить всем?')) return;
   let sent = 0;
   const promises = Object.values(users).filter(u => u.telegramId).map(u =>
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    fetch(`${TG_PROXY}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: u.telegramId, text: '📢 SWWSHOP:\n\n' + msg })
     }).then(() => sent++).catch(() => {})
@@ -3426,10 +3443,7 @@ window.addEventListener('load', async () => {
   if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
   if ((localStorage.getItem('sww_theme') || 'dark') === 'light') document.body.classList.add('light');
-  if (localStorage.getItem('sww_winter') === 'true') {
-    document.body.classList.add('winter');
-    createSnow();
-  }
+  try { listenWinter(); } catch (_) {}
   if (window.Telegram?.WebApp) {
     try { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); } catch (_) {}
   }
